@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.MainActivity">
+    <item
+        android:id="@+id/undo"
+        android:title="@string/undo"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/redo"
+        android:title="@string/redo"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/load"
+        android:title="@string/load"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/save"
+        android:title="@string/save"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/grid"
+        android:title="@string/show_grid"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/settings"
+        android:title="@string/settings"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/exit"
+        android:title="@string/exit" />
+</menu>
