@@ -26,11 +26,14 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.ansdoship.ansdopix.R;
 import com.ansdoship.ansdopix.util.FileIO;
 import com.ansdoship.ansdopix.view.CanvasView;
+import com.ansdoship.ansdopix.view.PaletteView;
+import com.ansdoship.ansdopix.viewgroup.PaletteGroup;
 
 import java.util.Stack;
 
@@ -92,8 +95,6 @@ public class MainActivity extends AppCompatActivity {
         final static int SELECTION = 4;
         final static int COLOR_PICKER = 5;
     }
-    
-    private boolean isPaintRbtnChecked;
 
     // Graph
     private int graphType;
@@ -246,8 +247,7 @@ public class MainActivity extends AppCompatActivity {
         currentCanvas = new Canvas(currentBmp);
         // Scale mode
         scaleMode = false;
-        // is rbtn checked
-        isPaintRbtnChecked = false;
+        // Is RadioButton checked
         isGraphRbtnChecked = false;
         // Selection flag
         selectionFlag = -1;
@@ -267,6 +267,7 @@ public class MainActivity extends AppCompatActivity {
     private RadioButton rbtnColorPicker;
     // PaletteBar
     private TextView tvPalettePage;
+    private PaletteGroup groupPalettes;
     // CanvasView
     private CanvasView canvasView;
 
@@ -305,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
                 imgScale * bgImgScale(), false);
         BitmapShader bgShader = new BitmapShader(bgBmp, BitmapShader.TileMode.REPEAT,
                 BitmapShader.TileMode.REPEAT);
-        bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bgPaint = new Paint();
         bgPaint.setShader(bgShader);
         bgBmp = Bitmap.createBitmap(currentBmp.getWidth() * imgScale,
                 currentBmp.getHeight() * imgScale, Bitmap.Config.ARGB_8888);
@@ -326,9 +327,37 @@ public class MainActivity extends AppCompatActivity {
     private Path path;
 
     // Dialogs
+    @SuppressLint("SetTextI18n")
     private void buildPaintDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.paint_width);
+        View view = View.inflate(this, R.layout.dialog_paint_width, null);
+        SeekBar barPaintWidthValue = view.findViewById(R.id.bar_paint_width_value);
+        final TextView tvPaintWidthValue = view.findViewById(R.id.tv_paint_width_value);
+        barPaintWidthValue.setProgress(paintWidth - 1);
+        tvPaintWidthValue.setText(Integer.toString(paintWidth));
+        barPaintWidthValue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                setPaintWidth(progress + 1);
+                tvPaintWidthValue.setText(Integer.toString(paintWidth));
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                tvPaintWidth.setText(R.string.paint_width);
+                tvPaintWidth.append(": " + paintWidth);
+                tvPaintWidth.requestLayout();
+            }
+        });
+        builder.setView(view);
         builder.create().show();
     }
     private void buildGraphDialog () {
@@ -365,20 +394,26 @@ public class MainActivity extends AppCompatActivity {
                 switch (which) {
                     case 0:
                         graphType = GraphType.LINE;
+                        rbtnGraph.setText(R.string.line);
                         break;
                     case 1:
                         graphType = GraphType.CIRCLE;
+                        rbtnGraph.setText(R.string.circle);
                         break;
                     case 2:
                         graphType = GraphType.OVAL;
+                        rbtnGraph.setText(R.string.oval);
                         break;
                     case 3:
                         graphType = GraphType.SQUARE;
+                        rbtnGraph.setText(R.string.square);
                         break;
                     case 4:
                         graphType = GraphType.RECT;
+                        rbtnGraph.setText(R.string.rect);
                         break;
                 }
+                rbtnGraph.requestLayout();
                 dialog.dismiss();
             }
         });
@@ -510,6 +545,7 @@ public class MainActivity extends AppCompatActivity {
         rbtnColorPicker = findViewById(R.id.rbtn_color_picker);
         // PaletteBar
         tvPalettePage = findViewById(R.id.tv_palette_page);
+        groupPalettes = findViewById(R.id.group_palettes);
         // CanvasView
         canvasView = findViewById(R.id.canvas_view);
 
@@ -519,7 +555,7 @@ public class MainActivity extends AppCompatActivity {
         // Init paints
         bgPaint = new Paint();
         bmpPaint = new Paint();
-        bmpPaint.setAntiAlias(true);
+        bmpPaint.setAntiAlias(false);
         bmpPaint.setFilterBitmap(false);
         paint = new Paint();
         paint.setStyle(Paint.Style.STROKE);
@@ -555,6 +591,36 @@ public class MainActivity extends AppCompatActivity {
 
         // Init matrix
         matrix = new Matrix();
+
+        // Paint width text
+        tvPaintWidth.append(": " + paintWidth);
+
+        // Graph text
+        switch (graphType) {
+            case GraphType.LINE:
+                rbtnGraph.setText(R.string.line);
+                break;
+            case GraphType.CIRCLE:
+                rbtnGraph.setText(R.string.circle);
+                break;
+            case GraphType.OVAL:
+                rbtnGraph.setText(R.string.oval);
+                break;
+            case GraphType.SQUARE:
+                rbtnGraph.setText(R.string.square);
+                break;
+            case GraphType.RECT:
+                rbtnGraph.setText(R.string.rect);
+                break;
+        }
+
+        // Paint width TextView onClickListener
+        tvPaintWidth.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                buildPaintDialog();
+            }
+        });
 
         // Default checked RatioButton
         switch (drawFlag) {
@@ -630,9 +696,17 @@ public class MainActivity extends AppCompatActivity {
                 if (isGraphRbtnChecked) {
                     buildGraphDialog();
                 }
-                if (!isGraphRbtnChecked) {
+                else {
                     isGraphRbtnChecked = true;
                 }
+            }
+        });
+
+        // Select Palette
+        groupPalettes.setOnCheckedChangeListener(new PaletteGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(PaletteGroup group, int checkedId, int checkedPosition) {
+                PaletteView palette = findViewById(checkedId);
             }
         });
 

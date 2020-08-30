@@ -129,7 +129,30 @@
                 <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:scrollbars="none" />
+                    android:scrollbars="none" >
+
+                    <com.ansdoship.ansdopix.viewgroup.PaletteGroup
+                        android:id="@+id/group_palettes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent">
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/paletteView3"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="match_parent" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/paletteView2"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="match_parent" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/paletteView"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="match_parent" />
+                    </com.ansdoship.ansdopix.viewgroup.PaletteGroup>
+
+                </HorizontalScrollView>
 
             </LinearLayout>
 
