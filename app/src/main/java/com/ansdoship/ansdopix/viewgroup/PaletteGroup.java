@@ -84,11 +84,11 @@ public class PaletteGroup extends LinearLayout implements View.OnClickListener{
 
     public PaletteGroup(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        palettes = new ArrayList<>();
+        position = -1;
     }
 
     private void init() {
-        palettes = new ArrayList<>();
-        position = -1;
         for (int i = 0; i < getChildCount(); i ++) {
             palettes.add((PaletteView)getChildAt(i));
         }

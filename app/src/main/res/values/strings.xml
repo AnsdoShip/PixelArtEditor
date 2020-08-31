@@ -13,7 +13,7 @@
     <string name="square">Square</string>
     <string name="rect">Rectangle</string>
     <string name="palette">Palette</string>
-    <string name="palette_page">Palette Page</string>
+    <string name="palette_name">Palette Name</string>
     <string name="export_palette">Export Palette</string>
     <string name="import_palette">Import Palette</string>
     <string name="iv_canvas">ImageView to Show The Canvas</string>
@@ -25,6 +25,12 @@
     <string name="show_grid">Show Grid</string>
     <string name="hide_grid">Hide Grid</string>
     <string name="exit">Exit</string>
+    <string name="rotate">Rotate</string>
+    <string name="mirror">Mirror</string>
+
+    <string name="palette_1">Palette 1</string>
+    <string name="palette_2">Palette 2</string>
+    <string name="palette_3">Palette 3</string>
 
     <string name="selection_cut">Cut</string>
     <string name="selection_copy">Copy</string>

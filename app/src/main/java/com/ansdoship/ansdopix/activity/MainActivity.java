@@ -20,7 +20,6 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,6 +34,8 @@ import com.ansdoship.ansdopix.view.CanvasView;
 import com.ansdoship.ansdopix.view.PaletteView;
 import com.ansdoship.ansdopix.viewgroup.PaletteGroup;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 public class MainActivity extends AppCompatActivity {
@@ -162,9 +163,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Palette
-    private int palettePage;
-    private int paletteSlot;
-    private int[][] palettes;
+    private String currentPalette;
+    private int currentPalettePage;
+    private List<Integer> currentPaletteColors;
+    private List<Integer> palette1Colors;
+    private List<Integer> palette2Colors;
+    private List<Integer> palette3Colors;
     // File save & load path
     private String CACHE_PATH;
     private String IMAGE_PATH;
@@ -191,13 +195,18 @@ public class MainActivity extends AppCompatActivity {
         prefEditor.putInt("grid_height", gridHeight);
         prefEditor.putInt("grid_color", gridColor);
         // Palette
-        prefEditor.putInt("palette_page", palettePage);
-        prefEditor.putInt("palette_slot", paletteSlot);
-        for(int page = 0; page < palettes.length; page ++) {
-            for(int slot = 0; slot < palettes[page].length; slot ++) {
-                prefEditor.putInt("palette_" + page + "color_" + slot, palettes[page][slot]);
-            }
+        prefEditor.putString("current_palette", currentPalette);
+        prefEditor.putInt("current_palette_slot", groupPalettes.getCheckedPalettePosition());
+        for (int slot = 0; slot < 10; slot ++) {
+            prefEditor.putInt("palette_1" + "color_" + slot, palette1Colors.get(slot));
         }
+        for (int slot = 0; slot < 10; slot ++) {
+            prefEditor.putInt("palette_2" + "color_" + slot, palette2Colors.get(slot));
+        }
+        for (int slot = 0; slot < 10; slot ++) {
+            prefEditor.putInt("palette_3" + "color_" + slot, palette3Colors.get(slot));
+        }
+        prefEditor.putInt("current_palette_page", currentPalettePage);
         // File save & load path
         prefEditor.putString("CACHE_PATH", CACHE_PATH);
         prefEditor.putString("IMAGE_PATH", IMAGE_PATH);
@@ -223,15 +232,36 @@ public class MainActivity extends AppCompatActivity {
         gridHeight = prefData.getInt("grid_height", 1);
         gridColor = prefData.getInt("grid_color", Color.BLACK);
         // Palette
-        palettePage = prefData.getInt("palette_page", 0);
-        paletteSlot = prefData.getInt("palette_slot", 0);
-        if(palettes == null) {
-            palettes = new int[3][10];
+        groupPalettes.checkPosition(prefData.getInt("current_palette_slot", 0));
+        currentPaletteColors = new ArrayList<>();
+        palette1Colors = new ArrayList<>();
+        palette2Colors = new ArrayList<>();
+        palette3Colors = new ArrayList<>();
+        for (int slot = 0; slot < 10; slot ++) {
+            palette1Colors.add(prefData.getInt("palette_1" + "color_" + slot, Color.TRANSPARENT));
         }
-        for(int page = 0; page < palettes.length; page ++) {
-            for(int slot = 0; slot < palettes[page].length; slot ++) {
-                palettes[page][slot] = prefData.getInt("palette_" + page + "color_" + slot, Color.TRANSPARENT);
-            }
+        for (int slot = 0; slot < 10; slot ++) {
+            palette2Colors.add(prefData.getInt("palette_2" + "color_" + slot, Color.TRANSPARENT));
+        }
+        for (int slot = 0; slot < 10; slot ++) {
+            palette3Colors.add(prefData.getInt("palette_3" + "color_" + slot, Color.TRANSPARENT));
+        }
+        currentPalettePage = prefData.getInt("current_palette_page", 1);
+        switch (currentPalettePage) {
+            case 1:
+                currentPalette = getString(R.string.palette_1);
+                currentPaletteColors = palette1Colors;
+                break;
+            case 2:
+                currentPalette = getString(R.string.palette_2);
+                currentPaletteColors = palette2Colors;
+                break;
+            case 3:
+                currentPalette = getString(R.string.palette_3);
+                currentPaletteColors = palette3Colors;
+                break;
+            default:
+                break;
         }
         // Save & load path
         CACHE_PATH = getExternalCacheDir() + "/";
@@ -266,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
     private RadioButton rbtnSelection;
     private RadioButton rbtnColorPicker;
     // PaletteBar
-    private TextView tvPalettePage;
+    private TextView tvPaletteName;
     private PaletteGroup groupPalettes;
     // CanvasView
     private CanvasView canvasView;
@@ -544,7 +574,7 @@ public class MainActivity extends AppCompatActivity {
         rbtnSelection = findViewById(R.id.rbtn_selection);
         rbtnColorPicker = findViewById(R.id.rbtn_color_picker);
         // PaletteBar
-        tvPalettePage = findViewById(R.id.tv_palette_page);
+        tvPaletteName = findViewById(R.id.tv_palette_name);
         groupPalettes = findViewById(R.id.group_palettes);
         // CanvasView
         canvasView = findViewById(R.id.canvas_view);
@@ -701,6 +731,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        // Palette name
+        tvPaletteName.setText(currentPalette);
+        tvPaletteName.requestLayout();
 
         // Select Palette
         groupPalettes.setOnCheckedChangeListener(new PaletteGroup.OnCheckedChangeListener() {

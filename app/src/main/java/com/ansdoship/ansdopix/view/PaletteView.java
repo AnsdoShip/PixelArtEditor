@@ -89,6 +89,12 @@ public class PaletteView extends View {
 			if (checked || touched) {
 				canvas.drawRect(getWidth() * 0.2f, getHeight() * 0.2f,
 						getWidth() * 0.8f, getHeight() * 0.8f, paint);
+				paint.setColor(Color.WHITE);
+				canvas.drawRect(getWidth() * 0.4f, getHeight() * 0.4f,
+						getWidth() * 0.6f, getHeight() * 0.6f, paint);
+				paint.setColor(Color.BLACK);
+				canvas.drawRect(getWidth() * 0.45f, getHeight() * 0.45f,
+						getWidth() * 0.55f, getHeight() * 0.55f, paint);
 			}
 			else {
 				canvas.drawRect(getWidth() * 0.1f, getHeight() * 0.1f,

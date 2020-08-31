@@ -33,9 +33,38 @@
                     android:layout_width="match_parent"
                     android:layout_height="?attr/actionBarSize"
                     android:layout_marginLeft="16dp"
-                    android:layout_marginRight="10dp"
+                    android:layout_marginRight="16dp"
                     android:gravity="center"
                     android:text="@string/paint_width"
+                    android:textColor="@android:color/black"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?android:attr/listDivider" />
+
+                <TextView
+                    android:id="@+id/tv_rotate"
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:gravity="center"
+                    android:text="@string/rotate"
+                    android:textColor="@android:color/black"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_mirror"
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:gravity="center"
+                    android:text="@string/mirror"
                     android:textColor="@android:color/black"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -55,7 +84,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:paddingRight="6dp">
+                        android:paddingLeft="8dp"
+                        android:paddingRight="8dp">
 
                         <RadioButton
                             android:id="@+id/rbtn_paint"
@@ -108,13 +138,13 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tv_palette_page"
+                    android:id="@+id/tv_palette_name"
                     android:layout_width="wrap_content"
                     android:layout_height="?attr/actionBarSize"
                     android:layout_marginLeft="16dp"
                     android:layout_marginRight="16dp"
                     android:gravity="center"
-                    android:text="@string/palette_page"
+                    android:text="@string/palette_name"
                     android:textColor="@android:color/black"
                     android:textStyle="bold" />
 
@@ -126,7 +156,86 @@
                 <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:scrollbars="none" />
+                    android:scrollbars="none" >
+
+                    <com.ansdoship.ansdopix.viewgroup.PaletteGroup
+                        android:id="@+id/group_palettes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette1"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette2"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette3"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette4"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette5"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette6"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette7"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette8"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette9"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.ansdoship.ansdopix.view.PaletteView
+                            android:id="@+id/palette10"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="8dp" />
+                    </com.ansdoship.ansdopix.viewgroup.PaletteGroup>
+                </ScrollView>
 
             </LinearLayout>
 
