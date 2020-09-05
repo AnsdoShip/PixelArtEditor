@@ -1,4 +1,5 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
+
     <string name="app_name">AnsdoPix</string>
     <string name="paint">Paint</string>
     <string name="eraser">Eraser</string>
@@ -16,7 +17,6 @@
     <string name="palette_name">Palette Name</string>
     <string name="export_palette">Export Palette</string>
     <string name="import_palette">Import Palette</string>
-    <string name="iv_canvas">ImageView to Show The Canvas</string>
     <string name="undo">Undo</string>
     <string name="redo">Redo</string>
     <string name="settings">Settings</string>
@@ -34,27 +34,8 @@
     <string name="palette_2">Palette 2</string>
     <string name="palette_3">Palette 3</string>
 
-    <string name="selection_cut">Cut</string>
-    <string name="selection_copy">Copy</string>
-
     <string name="clear">Clear</string>
     <string name="done">Done</string>
     <string name="none">None</string>
 
-    <string name="title_activity_settings">Settings</string>
-
-    <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
-
-    <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
-
-    <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
 </resources>

@@ -23,9 +23,11 @@
             android:layout_height="match_parent"
             android:layout_toEndOf="@id/palette_dialog"
             android:layout_toRightOf="@id/palette_dialog"
+            android:background="?attr/selectableItemBackground"
             android:gravity="center"
+            android:textAllCaps="true"
             android:textColor="@android:color/black"
-            android:textSize="14sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
     </RelativeLayout>

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -32,9 +31,10 @@
                     android:id="@+id/tv_paint_width"
                     android:layout_width="match_parent"
                     android:layout_height="?attr/actionBarSize"
-                    android:layout_marginLeft="16dp"
-                    android:layout_marginRight="16dp"
+                    android:background="?attr/selectableItemBackground"
                     android:gravity="center"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
                     android:text="@string/paint_width"
                     android:textColor="@android:color/black"
                     android:textSize="14sp"
@@ -112,9 +112,10 @@
                     android:id="@+id/tv_palette_name"
                     android:layout_width="wrap_content"
                     android:layout_height="?attr/actionBarSize"
-                    android:layout_marginLeft="16dp"
-                    android:layout_marginRight="16dp"
+                    android:background="?attr/selectableItemBackground"
                     android:gravity="center"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
                     android:text="@string/palette_name"
                     android:textColor="@android:color/black"
                     android:textStyle="bold" />
@@ -127,7 +128,7 @@
                 <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:scrollbars="none" >
+                    android:scrollbars="none">
 
                     <com.ansdoship.ansdopix.viewgroup.PaletteGroup
                         android:id="@+id/group_palettes"
