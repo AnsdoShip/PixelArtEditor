@@ -13,6 +13,7 @@ public class PaletteView extends View {
 	private int paletteColor;
 	private boolean checked;
 	private boolean touched;
+	private boolean disabled;
 
 	public PaletteView(Context context){
 		this(context, null);
@@ -31,6 +32,17 @@ public class PaletteView extends View {
 
 	public void setChecked(boolean checked) {
 		this.checked = checked;
+		invalidate();
+	}
+
+	public boolean isDisabled() {
+		return disabled;
+	}
+
+	public void setDisabled(boolean disabled) {
+		this.disabled = disabled;
+		touched = false;
+		checked = false;
 		invalidate();
 	}
 
@@ -89,12 +101,17 @@ public class PaletteView extends View {
 			if (checked || touched) {
 				canvas.drawRect(getWidth() * 0.2f, getHeight() * 0.2f,
 						getWidth() * 0.8f, getHeight() * 0.8f, paint);
+				paint.setStyle(Paint.Style.STROKE);
+				paint.setStrokeWidth(getWidth() * 0.2f);
 				paint.setColor(Color.WHITE);
-				canvas.drawRect(getWidth() * 0.4f, getHeight() * 0.4f,
-						getWidth() * 0.6f, getHeight() * 0.6f, paint);
+				canvas.drawRect(getWidth() * 0.2f, getHeight() * 0.2f,
+						getWidth() * 0.8f, getHeight() * 0.8f, paint);
+				paint.setStrokeWidth(getWidth() * 0.1f);
 				paint.setColor(Color.BLACK);
-				canvas.drawRect(getWidth() * 0.45f, getHeight() * 0.45f,
-						getWidth() * 0.55f, getHeight() * 0.55f, paint);
+				canvas.drawRect(getWidth() * 0.2f, getHeight() * 0.2f,
+						getWidth() * 0.8f, getHeight() * 0.8f, paint);
+				paint.setStyle(Paint.Style.FILL);
+				paint.setStrokeWidth(1);
 			}
 			else {
 				canvas.drawRect(getWidth() * 0.1f, getHeight() * 0.1f,
@@ -106,6 +123,9 @@ public class PaletteView extends View {
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		if (isDisabled()) {
+			return false;
+		}
 		if (hasOnClickListeners()) {
 			return super.onTouchEvent(event);
 		}

@@ -10,7 +10,7 @@ import java.io.IOException;
 
 
 public class FileIO {
-	 public static boolean saveBitmapToPNG(String pathAndName, Bitmap bitmap, boolean override) {
+	 public static boolean saveBMP2PNG(String pathAndName, Bitmap bitmap, boolean override) {
 		boolean result = false;
 		File file = new File(pathAndName);
 		if(!file.exists()) {
@@ -40,7 +40,7 @@ public class FileIO {
 				 }
 				 catch (IOException e)
 				 {
-					 e.printStackTrace();
+				 	e.printStackTrace();
 					 result = false;
 				 }
 			}
@@ -48,7 +48,7 @@ public class FileIO {
 		return result;
 	}
 	
-	public static boolean saveBitmapToJPEG(String pathAndName, Bitmap bitmap, boolean override, int value) {
+	public static boolean saveBMP2JPEG(String pathAndName, Bitmap bitmap, boolean override, int value) {
 		boolean result = false;
 		File file = new File(pathAndName);
 		if(!file.exists()) {

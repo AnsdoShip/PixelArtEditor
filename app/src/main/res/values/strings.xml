@@ -26,7 +26,9 @@
     <string name="hide_grid">Hide Grid</string>
     <string name="exit">Exit</string>
     <string name="rotate">Rotate</string>
-    <string name="mirror">Mirror</string>
+    <string name="flip">Flip</string>
+    <string name="replace">Replace</string>
+    <string name="override">Override</string>
 
     <string name="palette_1">Palette 1</string>
     <string name="palette_2">Palette 2</string>

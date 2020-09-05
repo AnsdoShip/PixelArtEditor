@@ -1,5 +1,6 @@
 package com.ansdoship.ansdopix.activity;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,14 +22,17 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
+import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.ansdoship.ansdopix.R;
+import com.ansdoship.ansdopix.util.ColorUtils;
 import com.ansdoship.ansdopix.util.FileIO;
 import com.ansdoship.ansdopix.view.CanvasView;
 import com.ansdoship.ansdopix.view.PaletteView;
@@ -85,6 +89,13 @@ public class MainActivity extends AppCompatActivity {
         paint.setStrokeWidth(width);
         eraser.setStrokeWidth(width);
     }
+    private int paintType;
+    private static class PaintType {
+        final static int REPLACE = 0;
+        final static int OVERRIDE = 1;
+    }
+
+    private boolean isPaintRbtnChecked;
 
     // Draw
     private int drawFlag;
@@ -169,6 +180,10 @@ public class MainActivity extends AppCompatActivity {
     private List<Integer> palette1Colors;
     private List<Integer> palette2Colors;
     private List<Integer> palette3Colors;
+    private int dialogTempColor;
+    private int dialogTempColorH;
+    private float dialogTempColorS;
+
     // File save & load path
     private String CACHE_PATH;
     private String IMAGE_PATH;
@@ -189,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
         prefEditor.putInt("paint_width", paintWidth);
         prefEditor.putInt("draw_flag", drawFlag);
         prefEditor.putInt("graph_type", graphType);
+        prefEditor.putInt("paint_type", paintType);
         // Grid
         prefEditor.putBoolean("is_draw_grid", isDrawGrid);
         prefEditor.putInt("grid_width", gridWidth);
@@ -219,13 +235,14 @@ public class MainActivity extends AppCompatActivity {
     private void loadData() {
         // Image
         imgName = prefData.getString("img_name", "Untitled.png");
-        imgScale = prefData.getInt("img_scale", 50);
+        imgScale = prefData.getInt("img_scale", 20);
         imgTranslationX = prefData.getFloat("img_translation_x", 0);
         imgTranslationY = prefData.getFloat("img_translation_y", 0);
         // Paint
         paintWidth = prefData.getInt("paint_width", 1);
         drawFlag = prefData.getInt("draw_flag", DrawFlag.PAINT);
         graphType = prefData.getInt("graph_type", GraphType.LINE);
+        paintType = prefData.getInt("paint_type", PaintType.REPLACE);
         // Grid
         isDrawGrid = prefData.getBoolean("is_draw_grid", true);
         gridWidth = prefData.getInt("grid_width", 1);
@@ -271,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
         if(currentBmp == null) {
             currentBmp = FileIO.loadBitmapFromFile(CACHE_PATH + "current_bitmap.png");
             if(currentBmp == null) {
-                currentBmp = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888);
+                currentBmp = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888);
             }
         }
         currentCanvas = new Canvas(currentBmp);
@@ -357,10 +374,40 @@ public class MainActivity extends AppCompatActivity {
     private Path path;
 
     // Dialogs
-    @SuppressLint("SetTextI18n")
     private void buildPaintDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.paint_width);
+        String [] items = {
+                getString(R.string.replace),
+                getString(R.string.override)
+        };
+        int checkedItem = -1;
+        switch (paintType) {
+            case PaintType.REPLACE:
+                checkedItem = 0;
+                break;
+            case PaintType.OVERRIDE:
+                checkedItem = 1;
+                break;
+        }
+        builder.setSingleChoiceItems(items, checkedItem, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        paintType = PaintType.REPLACE;
+                        break;
+                    case 1:
+                        paintType = PaintType.OVERRIDE;
+                        break;
+                }
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
+    }
+    @SuppressLint("SetTextI18n")
+    private void buildPaintWidthDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = View.inflate(this, R.layout.dialog_paint_width, null);
         SeekBar barPaintWidthValue = view.findViewById(R.id.bar_paint_width_value);
         final TextView tvPaintWidthValue = view.findViewById(R.id.tv_paint_width_value);
@@ -379,6 +426,12 @@ public class MainActivity extends AppCompatActivity {
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+            }
+        });
         builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
             public void onDismiss(DialogInterface dialog) {
@@ -387,12 +440,10 @@ public class MainActivity extends AppCompatActivity {
                 tvPaintWidth.requestLayout();
             }
         });
-        builder.setView(view);
         builder.create().show();
     }
     private void buildGraphDialog () {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.graph);
         String [] items = {
                 getString(R.string.line),
                 getString(R.string.circle),
@@ -452,7 +503,6 @@ public class MainActivity extends AppCompatActivity {
     private void buildSelectionDialog() {
         selectionFlag = -1;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.selection);
         String[] items = {
                 getString(R.string.selection_cut),
                 getString(R.string.selection_copy),
@@ -484,10 +534,12 @@ public class MainActivity extends AppCompatActivity {
                         selectionFlag = SelectionFlag.CLEAR;
                         selected = false;
                         eraser.setStyle(Paint.Style.FILL_AND_STROKE);
+                        eraser.setStrokeJoin(Paint.Join.MITER);
                         currentCanvas.drawRect(selectionRectF, eraser);
                         currentCanvas.save();
                         currentCanvas.restore();
                         eraser.setStyle(Paint.Style.STROKE);
+                        eraser.setStrokeJoin(Paint.Join.ROUND);
                         canvasView.invalidate();
                         break;
                 }
@@ -506,7 +558,6 @@ public class MainActivity extends AppCompatActivity {
     }
     private void buildSelectionDialog2() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.selection);
         String[] items = {
                 getString(R.string.done),
                 getString(R.string.none),
@@ -544,6 +595,213 @@ public class MainActivity extends AppCompatActivity {
                     selected = false;
                     canvasView.invalidate();
                 }
+            }
+        });
+        builder.create().show();
+    }
+    @SuppressLint("SetTextI18n")
+    private void buildPaletteDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_palette, null);
+        TabHost tabHost = view.findViewById(R.id.tabhost_palette);
+        tabHost.setup();
+        TabHost.TabSpec rgb = tabHost.newTabSpec("rgb");
+        rgb.setIndicator("RGB");
+        rgb.setContent(R.id.ll_palette_rgb);
+        tabHost.addTab(rgb);
+        TabHost.TabSpec hsv = tabHost.newTabSpec("hsv");
+        hsv.setIndicator("HSV");
+        hsv.setContent(R.id.ll_palette_hsv);
+        tabHost.addTab(hsv);
+        builder.setView(view);
+        final PaletteView palette = view.findViewById(R.id.palette_dialog);
+        final TextView tvPaletteColorValue = view.findViewById(R.id.tv_palette_color_value);
+        final TextView tvColorA = view.findViewById(R.id.tv_color_a);
+        final TextView tvColorR = view.findViewById(R.id.tv_color_r);
+        final TextView tvColorG = view.findViewById(R.id.tv_color_g);
+        final TextView tvColorB = view.findViewById(R.id.tv_color_b);
+        final TextView tvColorH = view.findViewById(R.id.tv_color_h);
+        final TextView tvColorS = view.findViewById(R.id.tv_color_s);
+        final TextView tvColorV = view.findViewById(R.id.tv_color_v);
+        SeekBar barColorA = view.findViewById(R.id.bar_color_a);
+        final SeekBar barColorR = view.findViewById(R.id.bar_color_r);
+        final SeekBar barColorG = view.findViewById(R.id.bar_color_g);
+        final SeekBar barColorB = view.findViewById(R.id.bar_color_b);
+        final SeekBar barColorH = view.findViewById(R.id.bar_color_h);
+        final SeekBar barColorS = view.findViewById(R.id.bar_color_s);
+        final SeekBar barColorV = view.findViewById(R.id.bar_color_v);
+        dialogTempColor = currentPaletteColors.get(groupPalettes.getCheckedPalettePosition());
+        dialogTempColorH = (int) ColorUtils.hue(dialogTempColor);
+        dialogTempColorS = ColorUtils.saturation(dialogTempColor);
+
+        tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
+        tvColorA.setText("A: " + Color.alpha(dialogTempColor));
+        tvColorR.setText("R: " + Color.red(dialogTempColor));
+        tvColorG.setText("G: " + Color.green(dialogTempColor));
+        tvColorB.setText("B: " + Color.blue(dialogTempColor));
+        tvColorH.setText("H: " + (int) ColorUtils.hue(dialogTempColor));
+        tvColorS.setText("S: " + (int) (ColorUtils.saturation(dialogTempColor) * 100));
+        tvColorV.setText("V: " + (int) (ColorUtils.value(dialogTempColor) * 100));
+        palette.setDisabled(true);
+        palette.setPaletteColor(dialogTempColor);
+        barColorA.setProgress(Color.alpha(dialogTempColor));
+        barColorR.setProgress(Color.red(dialogTempColor));
+        barColorG.setProgress(Color.green(dialogTempColor));
+        barColorB.setProgress(Color.blue(dialogTempColor));
+        barColorH.setProgress((int) ColorUtils.hue(dialogTempColor));
+        barColorS.setProgress((int) ColorUtils.saturation(dialogTempColor) * 100);
+        barColorV.setProgress((int) ColorUtils.value(dialogTempColor) * 100);
+        barColorA.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorA.setText("A: " + progress);
+                dialogTempColor = ColorUtils.setAlpha(dialogTempColor, progress);
+                tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
+                palette.setPaletteColor(dialogTempColor);
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorR.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorR.setText("R: " + progress);
+                if (fromUser) {
+                    dialogTempColor = ColorUtils.setRed(dialogTempColor, progress);
+                    tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
+                    barColorH.setProgress((int) ColorUtils.hue(dialogTempColor));
+                    barColorS.setProgress((int) ColorUtils.saturation(dialogTempColor) * 100);
+                    barColorV.setProgress((int) ColorUtils.value(dialogTempColor) * 100);
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorG.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorG.setText("G: " + progress);
+                if (fromUser) {
+                    dialogTempColor = ColorUtils.setGreen(dialogTempColor, progress);
+                    tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
+                    barColorH.setProgress((int) ColorUtils.hue(dialogTempColor));
+                    barColorS.setProgress((int) ColorUtils.saturation(dialogTempColor) * 100);
+                    barColorV.setProgress((int) ColorUtils.value(dialogTempColor) * 100);
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorB.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorB.setText("B: " + progress);
+                if (fromUser) {
+                    dialogTempColor = ColorUtils.setBlue(dialogTempColor, progress);
+                    tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
+                    barColorH.setProgress((int) ColorUtils.hue(dialogTempColor));
+                    barColorS.setProgress((int) ColorUtils.saturation(dialogTempColor) * 100);
+                    barColorV.setProgress((int) ColorUtils.value(dialogTempColor) * 100);
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorH.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorH.setText("H: " + progress);
+                if (fromUser) {
+                    dialogTempColorH = progress;
+                    dialogTempColor = ColorUtils.setHue(dialogTempColor, progress);
+                    tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
+                    barColorR.setProgress(Color.red(dialogTempColor));
+                    barColorG.setProgress(Color.green(dialogTempColor));
+                    barColorB.setProgress(Color.blue(dialogTempColor));
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorS.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorS.setText("S: " + progress);
+                if (fromUser) {
+                    dialogTempColorS = progress * 0.01f;
+                    dialogTempColor = ColorUtils.setSaturation(dialogTempColor, progress * 0.01f);
+                    dialogTempColor = ColorUtils.setHue(dialogTempColor, dialogTempColorH);
+                    tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
+                    barColorR.setProgress(Color.red(dialogTempColor));
+                    barColorG.setProgress(Color.green(dialogTempColor));
+                    barColorB.setProgress(Color.blue(dialogTempColor));
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorV.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorV.setText("V: " + progress);
+                if (fromUser) {
+                    dialogTempColor = ColorUtils.setValue(dialogTempColor, progress * 0.01f);
+                    dialogTempColor = ColorUtils.setSaturation(dialogTempColor, dialogTempColorS);
+                    dialogTempColor = ColorUtils.setHue(dialogTempColor, dialogTempColorH);
+                    tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
+                    barColorR.setProgress(Color.red(dialogTempColor));
+                    barColorG.setProgress(Color.green(dialogTempColor));
+                    barColorB.setProgress(Color.blue(dialogTempColor));
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), dialogTempColor);
+                paint.setColor(dialogTempColor);
+                flushPaletteColors();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
             }
         });
         builder.create().show();
@@ -648,7 +906,7 @@ public class MainActivity extends AppCompatActivity {
         tvPaintWidth.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                buildPaintDialog();
+                buildPaintWidthDialog();
             }
         });
 
@@ -656,18 +914,37 @@ public class MainActivity extends AppCompatActivity {
         switch (drawFlag) {
             case DrawFlag.PAINT:
                 groupTools.check(R.id.rbtn_paint);
-                paint.setStrokeCap(Paint.Cap.ROUND);
-                eraser.setStrokeCap(Paint.Cap.ROUND);
+                paint.setStrokeCap(Paint.Cap.SQUARE);
+                eraser.setStrokeCap(Paint.Cap.SQUARE);
+                paint.setStrokeJoin(Paint.Join.ROUND);
+                eraser.setStrokeJoin(Paint.Join.ROUND);
+                isPaintRbtnChecked = true;
                 break;
             case DrawFlag.GRAPH:
                 groupTools.check(R.id.rbtn_graph);
-                paint.setStrokeCap(Paint.Cap.SQUARE);
-                eraser.setStrokeCap(Paint.Cap.SQUARE);
+                switch (graphType) {
+                    case GraphType.CIRCLE:
+                    case GraphType.OVAL:
+                        paint.setStrokeCap(Paint.Cap.ROUND);
+                        eraser.setStrokeCap(Paint.Cap.ROUND);
+                        paint.setStrokeJoin(Paint.Join.ROUND);
+                        eraser.setStrokeJoin(Paint.Join.ROUND);
+                        break;
+                    case GraphType.LINE:
+                    case GraphType.SQUARE:
+                    case GraphType.RECT:
+                        paint.setStrokeCap(Paint.Cap.SQUARE);
+                        eraser.setStrokeCap(Paint.Cap.SQUARE);
+                        paint.setStrokeJoin(Paint.Join.MITER);
+                        eraser.setStrokeJoin(Paint.Join.MITER);
+                        break;
+                }
                 isGraphRbtnChecked = true;
                 break;
             case DrawFlag.ERASER:
                 groupTools.check(R.id.rbtn_eraser);
-                eraser.setStrokeCap(Paint.Cap.ROUND);
+                eraser.setStrokeCap(Paint.Cap.SQUARE);
+                eraser.setStrokeJoin(Paint.Join.ROUND);
                 break;
             case DrawFlag.FILL:
                 groupTools.check(R.id.rbtn_fill);
@@ -687,17 +964,35 @@ public class MainActivity extends AppCompatActivity {
                 switch (checkedId) {
                     case R.id.rbtn_paint:
                         drawFlag = DrawFlag.PAINT;
-                        paint.setStrokeCap(Paint.Cap.ROUND);
-                        eraser.setStrokeCap(Paint.Cap.ROUND);
+                        paint.setStrokeCap(Paint.Cap.SQUARE);
+                        eraser.setStrokeCap(Paint.Cap.SQUARE);
+                        paint.setStrokeJoin(Paint.Join.ROUND);
+                        eraser.setStrokeJoin(Paint.Join.ROUND);
                         break;
                     case R.id.rbtn_graph:
                         drawFlag = DrawFlag.GRAPH;
-                        paint.setStrokeCap(Paint.Cap.SQUARE);
-                        eraser.setStrokeCap(Paint.Cap.SQUARE);
+                        switch (graphType) {
+                            case GraphType.CIRCLE:
+                            case GraphType.OVAL:
+                                paint.setStrokeCap(Paint.Cap.ROUND);
+                                eraser.setStrokeCap(Paint.Cap.ROUND);
+                                paint.setStrokeJoin(Paint.Join.ROUND);
+                                eraser.setStrokeJoin(Paint.Join.ROUND);
+                                break;
+                            case GraphType.LINE:
+                            case GraphType.SQUARE:
+                            case GraphType.RECT:
+                                paint.setStrokeCap(Paint.Cap.SQUARE);
+                                eraser.setStrokeCap(Paint.Cap.SQUARE);
+                                paint.setStrokeJoin(Paint.Join.MITER);
+                                eraser.setStrokeJoin(Paint.Join.MITER);
+                                break;
+                        }
                         break;
                     case R.id.rbtn_eraser:
                         drawFlag = DrawFlag.ERASER;
-                        eraser.setStrokeCap(Paint.Cap.ROUND);
+                        eraser.setStrokeCap(Paint.Cap.SQUARE);
+                        eraser.setStrokeJoin(Paint.Join.ROUND);
                         break;
                     case R.id.rbtn_fill:
                         drawFlag = DrawFlag.FILL;
@@ -709,6 +1004,9 @@ public class MainActivity extends AppCompatActivity {
                         drawFlag = DrawFlag.COLOR_PICKER;
                         break;
                 }
+                if (drawFlag != DrawFlag.PAINT) {
+                    isPaintRbtnChecked = false;
+                }
                 if (drawFlag != DrawFlag.GRAPH) {
                     isGraphRbtnChecked = false;
                 }
@@ -717,6 +1015,18 @@ public class MainActivity extends AppCompatActivity {
                     selectionFlag = -1;
                 }
                 canvasView.invalidate();
+            }
+        });
+
+        rbtnPaint.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isPaintRbtnChecked) {
+                    buildPaintDialog();
+                }
+                else {
+                    isPaintRbtnChecked = true;
+                }
             }
         });
 
@@ -739,8 +1049,19 @@ public class MainActivity extends AppCompatActivity {
         // Select Palette
         groupPalettes.setOnCheckedChangeListener(new PaletteGroup.OnCheckedChangeListener() {
             @Override
+            public void onInitialCheck(PaletteGroup group, int checkedId, int checkedPosition) {
+                paint.setColor(currentPaletteColors.get(checkedPosition));
+                flushPaletteColors();
+            }
+            @Override
             public void onCheckedChanged(PaletteGroup group, int checkedId, int checkedPosition) {
-                PaletteView palette = findViewById(checkedId);
+                paint.setColor(currentPaletteColors.get(checkedPosition));
+            }
+        });
+        groupPalettes.setOnDoubleTapListener(new PaletteGroup.OnDoubleTapListener() {
+            @Override
+            public void onDoubleTap(PaletteGroup group, int checkedId, int checkedPosition) {
+                buildPaletteDialog();
             }
         });
 
@@ -777,7 +1098,7 @@ public class MainActivity extends AppCompatActivity {
                     int selectionTop;
                     int selectionRight;
                     int selectionBottom;
-                    RectF selectionRectF = new RectF();
+                    RectF selectionRectF;
                     switch (selectionFlag) {
                         case SelectionFlag.CUT:
                         case SelectionFlag.COPY:
@@ -824,17 +1145,13 @@ public class MainActivity extends AppCompatActivity {
                         path.moveTo(downX, downY);
                         switch (drawFlag) {
                             case DrawFlag.PAINT:
-                                currentCanvas.drawPoint(downX, downY, eraser);
-                                currentCanvas.drawPoint(downX, downY, paint);
-                                if (downX >=0 && downY >= 0 && downX < currentBmp.getWidth() && downY < currentBmp.getHeight()) {
-                                    currentBmp.setPixel(downX, downY, paint.getColor());
+                                if (paintType == PaintType.REPLACE) {
+                                    currentCanvas.drawPoint(downX, downY, eraser);
                                 }
+                                currentCanvas.drawPoint(downX, downY, paint);
                                 break;
                             case DrawFlag.ERASER:
                                 currentCanvas.drawPoint(downX, downY, eraser);
-                                if (downX >=0 && downY >= 0 && downX < currentBmp.getWidth() && downY < currentBmp.getHeight()) {
-                                    currentBmp.setPixel(downX, downY, Color.TRANSPARENT);
-                                }
                                 break;
                             case DrawFlag.SELECTION:
                                 switch (selectionFlag) {
@@ -864,6 +1181,9 @@ public class MainActivity extends AppCompatActivity {
                                 break;
                             case DrawFlag.COLOR_PICKER:
                                 if (downX >=0 && downY >= 0 && downX < currentBmp.getWidth() && downY < currentBmp.getHeight()) {
+                                    currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), currentBmp.getPixel(downX, downY));
+                                    paint.setColor(currentBmp.getPixel(downX, downY));
+                                    flushPaletteColors();
                                 }
                                 break;
                         }
@@ -940,8 +1260,9 @@ public class MainActivity extends AppCompatActivity {
                                             if (moveY < downY) {
                                                 circleTop = circleBottom - circleDiameter;
                                             }
-                                            RectF circleRectF = new RectF(circleLeft, circleTop, circleRight, circleBottom);
-                                            path.addOval(circleRectF, Path.Direction.CW);
+                                            float circleX = (circleRight + circleLeft) * 0.5f;
+                                            float circleY = (circleTop + circleBottom) * 0.5f;
+                                            path.addCircle(circleX, circleY, circleDiameter * 0.5f, Path.Direction.CW);
                                             break;
                                         case GraphType.OVAL:
                                             int ovalLeft = Math.min(downX, moveX);
@@ -1008,6 +1329,11 @@ public class MainActivity extends AppCompatActivity {
                                     selected = true;
                                     break;
                                 case DrawFlag.COLOR_PICKER:
+                                    if (downX >=0 && downY >= 0 && downX < currentBmp.getWidth() && downY < currentBmp.getHeight()) {
+                                        currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), currentBmp.getPixel(moveX, moveY));
+                                        paint.setColor(currentBmp.getPixel(moveX, moveY));
+                                        flushPaletteColors();
+                                    }
                                     break;
                             }
                             // Clear canvas
@@ -1017,24 +1343,25 @@ public class MainActivity extends AppCompatActivity {
                             currentCanvas.save();
                             currentCanvas.restore();
                             // Draw path
-                            currentCanvas.drawPath(path, eraser);
                             if (drawFlag != DrawFlag.ERASER) {
+                                if (paintType == PaintType.REPLACE) {
+                                    currentCanvas.drawPath(path, eraser);
+                                }
                                 currentCanvas.drawPath(path, paint);
+                            }
+                            else {
+                                currentCanvas.drawPath(path, eraser);
                             }
                             switch (drawFlag) {
                                 // Draw down point
                                 case DrawFlag.PAINT:
-                                    currentCanvas.drawPoint(downX, downY, eraser);
-                                    currentCanvas.drawPoint(downX, downY, paint);
-                                    if (downX >=0 && downY >= 0 && downX < currentBmp.getWidth() && downY < currentBmp.getHeight()) {
-                                        currentBmp.setPixel(downX, downY, paint.getColor());
+                                    if (paintType == PaintType.REPLACE) {
+                                        currentCanvas.drawPoint(downX, downY, eraser);
                                     }
+                                    currentCanvas.drawPoint(downX, downY, paint);
                                     break;
                                 case DrawFlag.ERASER:
                                     currentCanvas.drawPoint(downX, downY, eraser);
-                                    if (downX >=0 && downY >= 0 && downX < currentBmp.getWidth() && downY < currentBmp.getHeight()) {
-                                        currentBmp.setPixel(downX, downY, Color.TRANSPARENT);
-                                    }
                                     break;
                                 // Draw selection bmp
                                 case DrawFlag.SELECTION:
@@ -1079,8 +1406,6 @@ public class MainActivity extends AppCompatActivity {
                                             break;
                                     }
                                     break;
-                                case DrawFlag.COLOR_PICKER:
-                                    break;
                             }
                             if (drawFlag != DrawFlag.SELECTION) {
                                 currentCanvas.save();
@@ -1101,6 +1426,12 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+    }
+
+    private void flushPaletteColors() {
+        for (int i = 0; i < currentPaletteColors.size(); i ++) {
+            groupPalettes.getPalettes().get(i).setPaletteColor(currentPaletteColors.get(i));
+        }
     }
 
     // Calculate linear distance of two fingers
@@ -1247,27 +1578,76 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu, menu);
+        MenuItem itemGrid = menu.findItem(R.id.item_grid);
+        if (isDrawGrid) {
+            itemGrid.setTitle(getString(R.string.hide_grid));
+        }
+        else {
+            itemGrid.setTitle(getString(R.string.show_grid));
+        }
         return true;
+    }
+
+    // ActionBar menu listener
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.item_undo:
+                return true;
+            case R.id.item_redo:
+                return true;
+            case R.id.item_load:
+                return true;
+            case R.id.item_save:
+                return true;
+            case R.id.item_grid:
+                isDrawGrid = !isDrawGrid;
+                if (isDrawGrid) {
+                    item.setTitle(getString(R.string.hide_grid));
+                }
+                else {
+                    item.setTitle(getString(R.string.show_grid));
+                }
+                canvasView.invalidate();
+                return true;
+            case R.id.item_settings:
+                return true;
+            case R.id.item_exit:
+                finish();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        //Recycle bitmaps
-        /*
-        if(!currentBmp.isRecycled()) {
-            currentBmp.recycle();
+        // Recycle bitmaps
+        if (currentBmp != null) {
+            if(!currentBmp.isRecycled()) {
+                currentBmp.recycle();
+            }
         }
-        if(!cacheBmp.isRecycled()) {
-            cacheBmp.recycle();
+        if (cacheBmp != null) {
+            if(!cacheBmp.isRecycled()) {
+                cacheBmp.recycle();
+            }
         }
-        if(!gridBmp.isRecycled()) {
-            gridBmp.recycle();
+        if (gridBmp != null) {
+            if(!gridBmp.isRecycled()) {
+                gridBmp.recycle();
+            }
         }
-        if(!bgBmp.isRecycled()) {
-            bgBmp.recycle();
+        if (bgBmp != null) {
+            if(!bgBmp.isRecycled()) {
+                bgBmp.recycle();
+            }
         }
-
-         */
+        if (selectionBmp != null) {
+            if(!selectionBmp.isRecycled()) {
+                selectionBmp.recycle();
+            }
+        }
     }
 }

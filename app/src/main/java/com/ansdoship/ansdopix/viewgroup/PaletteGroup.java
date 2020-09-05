@@ -16,15 +16,26 @@ public class PaletteGroup extends LinearLayout implements View.OnClickListener{
     private List<PaletteView> palettes;
     private int position;
     private OnCheckedChangeListener mOnCheckedChangeListener;
+    private OnDoubleTapListener mOnDoubleTapListener;
 
     @Override
     public void onClick(View v) {
         int preId = getCheckedPaletteViewId();
         int posId = v.getId();
         if (preId != posId) {
+            if (mOnCheckedChangeListener == null) {
+                return;
+            }
             mOnCheckedChangeListener.onCheckedChanged(this, posId,
                     palettes.indexOf((PaletteView) findViewById(posId)));
             check(posId);
+        }
+        else {
+            if (mOnDoubleTapListener == null) {
+                return;
+            }
+            mOnDoubleTapListener.onDoubleTap(this, posId,
+                    palettes.indexOf((PaletteView) findViewById(posId)));
         }
     }
 
@@ -38,8 +49,17 @@ public class PaletteGroup extends LinearLayout implements View.OnClickListener{
         mOnCheckedChangeListener = onCheckedChangeListener;
     }
 
+    public void setOnDoubleTapListener(OnDoubleTapListener onDoubleTapListener) {
+        mOnDoubleTapListener = onDoubleTapListener;
+    }
+
     public interface OnCheckedChangeListener {
+        void onInitialCheck(PaletteGroup group, int checkedId, int checkedPosition);
         void onCheckedChanged(PaletteGroup group, int checkedId, int checkedPosition);
+    }
+
+    public interface OnDoubleTapListener {
+        void onDoubleTap(PaletteGroup group, int checkedId, int checkedPosition);
     }
 
     public int getCheckedPaletteViewId() {
@@ -99,6 +119,7 @@ public class PaletteGroup extends LinearLayout implements View.OnClickListener{
             palette.setOnClickListener(this);
         }
         checkPosition(0);
+        mOnCheckedChangeListener.onInitialCheck(this, palettes.get(0).getId(), 0);
     }
 
 }
