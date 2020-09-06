@@ -128,7 +128,7 @@ public class BitmapUtils {
 		return result;
 	}
 
-	public static boolean saveBitmapToBMP (String pathAndName, Bitmap bitmap, boolean override) {
+	public static boolean saveBitmapToBMP(String pathAndName, Bitmap bitmap, boolean override) {
 		boolean result = false;
 		File file = new File(pathAndName + ".bmp");
 		if(!file.exists()) {
