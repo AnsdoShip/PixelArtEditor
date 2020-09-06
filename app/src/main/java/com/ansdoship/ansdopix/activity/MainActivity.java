@@ -236,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
         prefEditor.putString("IMAGE_PATH", IMAGE_PATH);
         prefEditor.putString("PALETTE_PATH", PALETTE_PATH);
         // Bitmap cache
-        BitmapUtils.saveBitmapToBase64(CACHE_PATH + "current_bitmap", currentBmp, true);
+        BitmapUtils.saveBitmapToBMP(CACHE_PATH + "current_bitmap", currentBmp, true);
 
         //Apply data
         prefEditor.apply();

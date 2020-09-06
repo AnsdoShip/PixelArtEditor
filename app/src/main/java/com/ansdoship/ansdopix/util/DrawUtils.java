@@ -5,7 +5,7 @@ import android.graphics.Point;
 
 import java.util.Stack;
 
-public class DrawUtils {
+public final class DrawUtils {
 
     // Scan line seed fill
     public static void fill(Bitmap bitmap, int x, int y, int newColor) {
