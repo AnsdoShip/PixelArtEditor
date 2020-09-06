@@ -235,6 +235,8 @@ public class MainActivity extends AppCompatActivity {
         prefEditor.putString("CACHE_PATH", CACHE_PATH);
         prefEditor.putString("IMAGE_PATH", IMAGE_PATH);
         prefEditor.putString("PALETTE_PATH", PALETTE_PATH);
+        // Bitmap cache
+        BitmapUtils.saveBitmapToBase64(CACHE_PATH + "current_bitmap", currentBmp, true);
 
         //Apply data
         prefEditor.apply();
@@ -292,12 +294,10 @@ public class MainActivity extends AppCompatActivity {
         CACHE_PATH = getExternalCacheDir() + "/";
         IMAGE_PATH = prefData.getString("IMAGE_PATH", getExternalFilesDir("images") + "/");
         PALETTE_PATH = prefData.getString("PALETTE_PATH", getExternalFilesDir("palettes") + "/");
-        // Cache bitmap
+        // Load bitmap
+        currentBmp = BitmapUtils.loadBitmapFromFile(CACHE_PATH + "current_bitmap");
         if(currentBmp == null) {
-            currentBmp = BitmapUtils.loadBitmapFromFile(CACHE_PATH + "current_bitmap.png");
-            if(currentBmp == null) {
-                currentBmp = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888);
-            }
+            currentBmp = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888);
         }
         currentCanvas = new Canvas(currentBmp);
         // Scale mode
