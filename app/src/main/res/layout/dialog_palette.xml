@@ -15,7 +15,8 @@
             android:layout_width="?attr/actionBarSize"
             android:layout_height="match_parent"
             android:layout_marginStart="24dp"
-            android:layout_marginLeft="24dp" />
+            android:layout_marginLeft="24dp"
+            android:checked="false" />
 
         <TextView
             android:id="@+id/tv_palette_color_value"
@@ -96,12 +97,12 @@
                         android:layout_height="wrap_content">
 
                         <include
-                            layout="@layout/dialog_palette_rgb"
+                            layout="@layout/dialog_palette_tab_rgb"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent" />
 
                         <include
-                            layout="@layout/dialog_palette_hsv"
+                            layout="@layout/dialog_palette_tab_hsv"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent" />
 

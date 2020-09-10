@@ -119,6 +119,9 @@ public class PaletteGroup extends LinearLayout implements View.OnClickListener{
             palette.setOnClickListener(this);
         }
         checkPosition(0);
+        if (mOnCheckedChangeListener == null) {
+            return;
+        }
         mOnCheckedChangeListener.onInitialCheck(this, palettes.get(0).getId(), 0);
     }
 

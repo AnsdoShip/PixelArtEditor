@@ -68,6 +68,19 @@ public final class FileUtils {
         return temp[temp.length - 1];
     }
 
+    public static String getParentDirectory (String filePath) {
+        File file = new File(filePath);
+        if (file.exists()) {
+            if (file.getAbsolutePath().equals("/")) {
+                return "/";
+            }
+            else {
+                return file.getParent();
+            }
+        }
+        return null;
+    }
+
     public static List<String> getExternalSDCardPathList() {
         List<String> paths = new ArrayList<>();
         String extFileStatus = Environment.getExternalStorageState();

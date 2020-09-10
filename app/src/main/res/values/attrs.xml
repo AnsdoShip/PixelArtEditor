@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="PaletteView">
+        <attr name="android:checked"/>
+    </declare-styleable>
+
+    <declare-styleable name="PaletteList">
+        <attr name="size" format="integer" />
+        <attr name="checkedIndex" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="CheckedImageView">
+        <attr name="android:checked"/>
+    </declare-styleable>
+
+</resources>

@@ -777,7 +777,6 @@ public class MainActivity extends AppCompatActivity {
         tvColorH.setText("H: " + (int) ColorUtils.hue(dialogTempColor));
         tvColorS.setText("S: " + (int) (ColorUtils.saturation(dialogTempColor) * 100));
         tvColorV.setText("V: " + (int) (ColorUtils.value(dialogTempColor) * 100));
-        palette.setDisabled(true);
         palette.setPaletteColor(dialogTempColor);
         barColorA.setProgress(Color.alpha(dialogTempColor));
         barColorR.setProgress(Color.red(dialogTempColor));

@@ -49,7 +49,7 @@ public final class BitmapUtils {
 		return result;
 	}
 	
-	public static boolean saveBitmapToJPEG(String pathAndName, Bitmap bitmap, boolean override, int value) {
+	public static boolean saveBitmapToJPEG(String pathAndName, Bitmap bitmap, boolean override, int quality) {
 		boolean result = false;
 		File file = new File(pathAndName + ".jpeg");
 		if(!file.exists()) {
@@ -57,7 +57,7 @@ public final class BitmapUtils {
 			{
 				result = file.createNewFile();
 				FileOutputStream fileOS = new FileOutputStream(file);
-				bitmap.compress(Bitmap.CompressFormat.JPEG, value, fileOS);
+				bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fileOS);
 				fileOS.flush();
 				fileOS.close();
 			}
@@ -73,7 +73,7 @@ public final class BitmapUtils {
 				{
 					result = file.createNewFile();
 					FileOutputStream fileOS = new FileOutputStream(file);
-					bitmap.compress(Bitmap.CompressFormat.JPEG, value, fileOS);
+					bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fileOS);
 					fileOS.flush();
 					fileOS.close();
 				}

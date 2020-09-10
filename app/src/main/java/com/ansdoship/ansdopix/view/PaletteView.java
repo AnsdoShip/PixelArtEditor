@@ -1,5 +1,6 @@
 package com.ansdoship.ansdopix.view;
 import android.annotation.SuppressLint;
+import android.content.res.TypedArray;
 import android.view.MotionEvent;
 import android.view.View;
 import android.content.Context;
@@ -7,13 +8,15 @@ import android.util.AttributeSet;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Color;
+import android.widget.Checkable;
 
-public class PaletteView extends View {
+import com.ansdoship.ansdopix.R;
+
+public class PaletteView extends View implements Checkable {
 	private Paint paint;
 	private int paletteColor;
-	private boolean checked;
-	private boolean touched;
-	private boolean disabled;
+	private boolean mChecked;
+	private boolean mTouched;
 
 	public PaletteView(Context context){
 		this(context, null);
@@ -23,33 +26,32 @@ public class PaletteView extends View {
     }
     public PaletteView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+		paletteColor = Color.TRANSPARENT;
+		TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.PaletteView, defStyleAttr, 0);
+		mChecked = typedArray.getBoolean(R.styleable.PaletteView_android_checked, false);
+		typedArray.recycle();
     }
 
+    @Override
 	public boolean isChecked() {
-		return checked;
+		return mChecked;
 	}
 
+	@Override
+	public void toggle() {
+		mChecked = !mChecked;
+	}
+
+	@Override
 	public void setChecked(boolean checked) {
-		this.checked = checked;
+		this.mChecked = checked;
 		invalidate();
 	}
 
-	public boolean isDisabled() {
-		return disabled;
-	}
-
-	public void setDisabled(boolean disabled) {
-		this.disabled = disabled;
-		touched = false;
-		checked = false;
-		invalidate();
-	}
-
-	private void init() {
-		paletteColor = Color.TRANSPARENT;
-		checked = false;
-		touched = false;
+	@Override
+	public void setClickable(boolean clickable) {
+		super.setClickable(clickable);
+		mTouched = false;
 		invalidate();
 	}
 
@@ -98,7 +100,7 @@ public class PaletteView extends View {
 			canvas.drawRect(getWidth() * 0.5f, 0, getWidth(), getHeight() * 0.5f, paint);
 			canvas.drawRect(0, getHeight() * 0.5f, getWidth() * 0.5f, getHeight(), paint);
 			paint.setColor(paletteColor);
-			if (checked || touched) {
+			if (mChecked || mTouched) {
 				canvas.drawRect(getWidth() * 0.2f, getHeight() * 0.2f,
 						getWidth() * 0.8f, getHeight() * 0.8f, paint);
 				paint.setStyle(Paint.Style.STROKE);
@@ -123,7 +125,7 @@ public class PaletteView extends View {
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		if (isDisabled()) {
+		if (!isClickable()) {
 			return false;
 		}
 		if (hasOnClickListeners()) {
@@ -131,11 +133,11 @@ public class PaletteView extends View {
 		}
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
-				touched = true;
+				mTouched = true;
 				break;
 			case MotionEvent.ACTION_UP:
-				touched = false;
-				checked = !checked;
+				mTouched = false;
+				toggle();
 				break;
 		}
 		invalidate();
