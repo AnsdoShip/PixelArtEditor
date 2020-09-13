@@ -8,6 +8,8 @@
     <declare-styleable name="PaletteList">
         <attr name="size" format="integer" />
         <attr name="checkedIndex" format="integer" />
+        <attr name="paletteWidth" format="dimension" />
+        <attr name="paletteHeight" format="dimension" />
     </declare-styleable>
 
     <declare-styleable name="CheckedImageView">

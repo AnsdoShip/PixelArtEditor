@@ -10,49 +10,54 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tv_rotate"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?android:attr/selectableItemBackground"
-            android:gravity="start|center_vertical"
-            android:padding="16dp"
-            android:text="@string/rotate"
-            android:textColor="@android:color/black"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/tv_flip"
-            android:layout_width="match_parent"
+        <ImageButton
+            android:id="@+id/img_rotate_left"
+            android:layout_width="?attr/actionBarSize"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/selectableItemBackground"
-            android:gravity="start|center_vertical"
-            android:padding="16dp"
-            android:text="@string/flip"
-            android:textColor="@android:color/black"
-            android:textSize="14sp" />
+            android:contentDescription="@string/rotate_left"
+            app:srcCompat="@drawable/ic_baseline_rotate_left_24" />
 
-        <TextView
-            android:id="@+id/tv_done"
-            android:layout_width="match_parent"
+        <ImageButton
+            android:id="@+id/img_rotate_right"
+            android:layout_width="?attr/actionBarSize"
             android:layout_height="?attr/actionBarSize"
-            android:background="?android:attr/selectableItemBackground"
-            android:gravity="start|center_vertical"
-            android:padding="16dp"
-            android:text="@string/done"
-            android:textColor="@android:color/black"
-            android:textSize="14sp" />
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/rotate_right"
+            app:srcCompat="@drawable/ic_baseline_rotate_right_24" />
 
-        <TextView
-            android:id="@+id/tv_none"
-            android:layout_width="match_parent"
+        <ImageButton
+            android:id="@+id/img_flip_horizontal"
+            android:layout_width="?attr/actionBarSize"
             android:layout_height="?attr/actionBarSize"
-            android:background="?android:attr/selectableItemBackground"
-            android:gravity="start|center_vertical"
-            android:padding="16dp"
-            android:text="@string/none"
-            android:textColor="@android:color/black"
-            android:textSize="14sp" />
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/flip_horizontal"
+            app:srcCompat="@drawable/ic_baseline_flip_horizontal_24" />
+
+        <ImageButton
+            android:id="@+id/img_flip_vertical"
+            android:layout_width="?attr/actionBarSize"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/flip_vertical"
+            app:srcCompat="@drawable/ic_baseline_flip_vertical_24" />
+
+        <ImageButton
+            android:id="@+id/img_done"
+            android:layout_width="?attr/actionBarSize"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/done"
+            app:srcCompat="@drawable/ic_baseline_done_24" />
+
+        <ImageButton
+            android:id="@+id/img_none"
+            android:layout_width="?attr/actionBarSize"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/none"
+            app:srcCompat="@drawable/ic_baseline_none_24" />
+
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

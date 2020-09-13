@@ -1,6 +1,7 @@
-package com.ansdoship.ansdopix.view;
+package com.ansdoship.pixart.view;
 import android.annotation.SuppressLint;
 import android.content.res.TypedArray;
+import android.os.Build;
 import android.view.MotionEvent;
 import android.view.View;
 import android.content.Context;
@@ -10,7 +11,9 @@ import android.graphics.Paint;
 import android.graphics.Color;
 import android.widget.Checkable;
 
-import com.ansdoship.ansdopix.R;
+import androidx.annotation.RequiresApi;
+
+import com.ansdoship.pixart.R;
 
 public class PaletteView extends View implements Checkable {
 	private Paint paint;
@@ -122,6 +125,7 @@ public class PaletteView extends View implements Checkable {
 		}
 	}
 
+	@RequiresApi(api = Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {

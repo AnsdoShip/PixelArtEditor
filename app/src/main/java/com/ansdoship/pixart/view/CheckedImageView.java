@@ -1,4 +1,4 @@
-package com.ansdoship.ansdopix.view;
+package com.ansdoship.pixart.view;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageButton;
 
-import com.ansdoship.ansdopix.R;
+import com.ansdoship.pixart.R;
 
 public class CheckedImageView extends AppCompatImageButton implements Checkable {
 

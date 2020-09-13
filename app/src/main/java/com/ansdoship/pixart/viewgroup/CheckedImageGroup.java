@@ -1,4 +1,4 @@
-package com.ansdoship.ansdopix.viewgroup;
+package com.ansdoship.pixart.viewgroup;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -7,7 +7,7 @@ import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
 
-import com.ansdoship.ansdopix.view.CheckedImageView;
+import com.ansdoship.pixart.view.CheckedImageView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,9 +15,11 @@ import java.util.List;
 public class CheckedImageGroup extends LinearLayout implements View.OnClickListener {
 
     private List<CheckedImageView> imageViews;
-    private int index;
+    private int mIndex;
     private OnCheckedChangeListener mOnCheckedChangeListener;
     private OnDoubleTapListener mOnDoubleTapListener;
+    private boolean initSwitch;
+    private boolean checkable;
 
     public void setOnCheckedChangeListener(OnCheckedChangeListener onCheckedChangeListener) {
         mOnCheckedChangeListener = onCheckedChangeListener;
@@ -47,42 +49,55 @@ public class CheckedImageGroup extends LinearLayout implements View.OnClickListe
     }
 
     public int getCheckedId() {
-        if (index < 0 || index >= imageViews.size()) {
+        if (mIndex < 0 || mIndex >= imageViews.size()) {
             return -1;
         }
-        return imageViews.get(index).getId();
+        return imageViews.get(mIndex).getId();
     }
 
     public int getCheckedIndex() {
-        return index;
+        return mIndex;
     }
 
     public void check(int checkedId) {
-        checkIndex(imageViews.indexOf((CheckedImageView) findViewById(checkedId)));
+        CheckedImageView view = findViewById(checkedId);
+        if (view == null) {
+            checkIndex(-1);
+            return;
+        }
+        checkIndex(imageViews.indexOf(view));
     }
 
     public void checkIndex(int index) {
-        int preIndex = getCheckedIndex();
-        if (preIndex != index) {
-            if (mOnCheckedChangeListener != null) {
-                mOnCheckedChangeListener.onCheckedChanged(this, index, imageViews.get(index).getId());
-            }
+        if (!checkable) {
+            return;
         }
-        else {
-            if (mOnDoubleTapListener != null) {
-                mOnDoubleTapListener.onDoubleTap(this, index, imageViews.get(index).getId());
-            }
-        }
-        this.index = index;
         if (imageViews.isEmpty()) {
             return;
         }
         for (CheckedImageView imageView : imageViews) {
             imageView.setChecked(false);
         }
-        if (index >= 0 && index < imageViews.size()) {
-            imageViews.get(index).setChecked(true);
+        if (index < 0 || index >= imageViews.size()) {
+            return;
         }
+        int preId = getCheckedId();
+        if (preId == -1) {
+            return;
+        }
+        int posId = imageViews.get(index).getId();
+        if (preId != posId) {
+            if (mOnCheckedChangeListener != null) {
+                mOnCheckedChangeListener.onCheckedChanged(this, posId, index);
+            }
+        }
+        else {
+            if (mOnDoubleTapListener != null) {
+                mOnDoubleTapListener.onDoubleTap(this, posId, index);
+            }
+        }
+        mIndex = index;
+        imageViews.get(index).setChecked(true);
     }
 
     public CheckedImageGroup(Context context) {
@@ -96,11 +111,19 @@ public class CheckedImageGroup extends LinearLayout implements View.OnClickListe
     public CheckedImageGroup(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         imageViews = new ArrayList<>();
+        initSwitch = true;
     }
 
     private void init() {
+        if (!initSwitch) {
+            return;
+        }
+        int defaultCheckedIndex = 0;
         for (int i = 0; i < getChildCount(); i ++) {
             imageViews.add((CheckedImageView) getChildAt(i));
+            if (((CheckedImageView) getChildAt(i)).isChecked()) {
+                defaultCheckedIndex = i;
+            }
         }
         if (imageViews.isEmpty()) {
             return;
@@ -108,10 +131,10 @@ public class CheckedImageGroup extends LinearLayout implements View.OnClickListe
         for (CheckedImageView imageView : imageViews) {
             imageView.setOnClickListener(this);
         }
-        if (mOnCheckedChangeListener == null) {
-            return;
-        }
-        checkIndex(0);
+        checkable = false;
+        checkIndex(defaultCheckedIndex);
+        checkable = true;
+        initSwitch = false;
     }
 
 }

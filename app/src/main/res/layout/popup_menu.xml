@@ -11,36 +11,44 @@
         android:orientation="vertical">
 
         <ImageButton
-            android:id="@+id/img_cut"
-            android:layout_width="?attr/actionBarSize"
+            android:id="@+id/img_load"
+            android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/selectableItemBackground"
-            android:contentDescription="@android:string/cut"
-            app:srcCompat="@drawable/ic_baseline_crop_24" />
+            android:contentDescription="@string/load"
+            app:srcCompat="@drawable/ic_baseline_file_add_24" />
 
         <ImageButton
-            android:id="@+id/img_copy"
+            android:id="@+id/img_save"
             android:layout_width="?attr/actionBarSize"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/selectableItemBackground"
-            android:contentDescription="@android:string/copy"
-            app:srcCompat="@drawable/ic_baseline_file_copy_24" />
+            android:contentDescription="@string/save"
+            app:srcCompat="@drawable/ic_baseline_save_24" />
 
         <ImageButton
-            android:id="@+id/img_clear"
+            android:id="@+id/img_help"
             android:layout_width="?attr/actionBarSize"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/selectableItemBackground"
-            android:contentDescription="@string/clear"
-            app:srcCompat="@drawable/ic_baseline_eraser_24" />
+            android:contentDescription="@string/help"
+            app:srcCompat="@drawable/ic_baseline_help_24" />
 
         <ImageButton
-            android:id="@+id/img_none"
+            android:id="@+id/img_info"
             android:layout_width="?attr/actionBarSize"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/selectableItemBackground"
-            android:contentDescription="@string/none"
-            app:srcCompat="@drawable/ic_baseline_none_24" />
+            android:contentDescription="@string/info"
+            app:srcCompat="@drawable/ic_baseline_info_24" />
+
+        <ImageButton
+            android:id="@+id/img_exit"
+            android:layout_width="?attr/actionBarSize"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/exit"
+            app:srcCompat="@drawable/ic_baseline_exit_to_app_24" />
 
     </LinearLayout>
 

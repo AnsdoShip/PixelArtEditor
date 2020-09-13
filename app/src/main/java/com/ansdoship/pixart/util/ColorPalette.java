@@ -1,18 +1,16 @@
-package com.ansdoship.ansdopix.util;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+package com.ansdoship.pixart.util;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-public class ColorPalette {
+public class ColorPalette implements Serializable {
 
     private List<Integer> mColors;
 
@@ -76,24 +74,12 @@ public class ColorPalette {
 
     public static ColorPalette decodeFile (String pathAndName) {
         File file = new File(pathAndName);
-        if (file.exists()) {
+        if (file.exists() && pathAndName.endsWith(".palette")) {
             try {
-                if (file.length() > Integer.MAX_VALUE) {
-                    return null;
-                }
-                int size = (int) file.length();
-                FileInputStream fileIS = new FileInputStream(file);
-                byte[] data = new byte[size];
-                String encoding = "UTF-8";
-                String string = new String(data, 3, fileIS.read(data) - 3, encoding);
-                JSONArray array = new JSONObject(string).getJSONArray("colors");
-                int[] colors = new int[array.length()];
-                for (int i = 0; i < array.length(); i ++) {
-                    Arrays.fill(colors, i, i + 1, array.getInt(i));
-                }
-                return new ColorPalette(colors);
+                ObjectInputStream ObjectIS = new ObjectInputStream(new FileInputStream(file));
+                return (ColorPalette) ObjectIS.readObject();
             }
-            catch (IOException | JSONException e) {
+            catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
                 return null;
             }
@@ -108,15 +94,11 @@ public class ColorPalette {
             try
             {
                 result = file.createNewFile();
-                FileOutputStream fileOS = new FileOutputStream(file);
-                byte[] bom = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
-                String encoding = "UTF-8";
-                fileOS.write(bom);
-                fileOS.write(compressToJSONObject().toString(2).getBytes(encoding));
-                fileOS.flush();
-                fileOS.close();
+                ObjectOutputStream ObjectOS = new ObjectOutputStream(new FileOutputStream(file));
+                ObjectOS.writeObject(this);
+                ObjectOS.close();
             }
-            catch (IOException | JSONException e)
+            catch (IOException e)
             {
                 e.printStackTrace();
                 result = false;
@@ -127,15 +109,11 @@ public class ColorPalette {
                 try
                 {
                     result = file.createNewFile();
-                    FileOutputStream fileOS = new FileOutputStream(file);
-                    byte[] bom = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
-                    String encoding = "UTF-8";
-                    fileOS.write(bom);
-                    fileOS.write(compressToJSONObject().toString(2).getBytes(encoding));
-                    fileOS.flush();
-                    fileOS.close();
+                    ObjectOutputStream ObjectOS = new ObjectOutputStream(new FileOutputStream(file));
+                    ObjectOS.writeObject(this);
+                    ObjectOS.close();
                 }
-                catch (IOException | JSONException e)
+                catch (IOException e)
                 {
                     e.printStackTrace();
                     result = false;
@@ -143,21 +121,6 @@ public class ColorPalette {
             }
         }
         return result;
-    }
-
-    private JSONObject compressToJSONObject () {
-        JSONObject object = new JSONObject();
-        JSONArray array = new JSONArray();
-        for (int color : mColors) {
-            array.put(color);
-        }
-        try {
-            object.put("colors", array);
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return object;
     }
 
 }

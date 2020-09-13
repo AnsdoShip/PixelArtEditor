@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,21 +11,92 @@
         android:layout_height="match_parent">
 
         <LinearLayout
-            android:id="@+id/llayout"
+            android:id="@+id/llayout_topbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:id="@+id/llayout_topbar_menu"
+                    android:layout_width="wrap_content"
+                    android:layout_height="?attr/actionBarSize"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:orientation="horizontal">
+
+                    <ImageButton
+                        android:id="@+id/img_grid"
+                        android:layout_width="?attr/actionBarSize"
+                        android:layout_height="?attr/actionBarSize"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="@string/grid"
+                        app:srcCompat="@drawable/ic_baseline_grid_24" />
+
+                    <ImageButton
+                        android:id="@+id/img_undo"
+                        android:layout_width="?attr/actionBarSize"
+                        android:layout_height="?attr/actionBarSize"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="@string/undo"
+                        app:srcCompat="@drawable/ic_baseline_undo_24" />
+
+                    <ImageButton
+                        android:id="@+id/img_redo"
+                        android:layout_width="?attr/actionBarSize"
+                        android:layout_height="?attr/actionBarSize"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="@string/redo"
+                        app:srcCompat="@drawable/ic_baseline_redo_24" />
+
+                    <ImageButton
+                        android:id="@+id/img_menu"
+                        android:layout_width="?attr/actionBarSize"
+                        android:layout_height="?attr/actionBarSize"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="@string/menu"
+                        app:srcCompat="@drawable/ic_baseline_more_vertical_24" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_image_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="?attr/actionBarSize"
+                    android:layout_alignParentLeft="true"
+                    android:layout_toLeftOf="@id/llayout_topbar_menu"
+                    android:layout_alignParentStart="true"
+                    android:layout_toStartOf="@id/llayout_topbar_menu"
+                    android:background="?attr/selectableItemBackground"
+                    android:drawablePadding="8dp"
+                    android:ellipsize="start"
+                    android:gravity="start|center_vertical"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:singleLine="true"
+                    android:textColor="@android:color/black"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:drawableLeftCompat="@drawable/ic_baseline_image_24" />
+
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llayout_toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:orientation="vertical">
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -36,13 +108,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:background="?attr/selectableItemBackground"
+                    android:drawablePadding="8dp"
                     android:gravity="center"
                     android:paddingLeft="16dp"
                     android:paddingRight="16dp"
-                    android:text="@string/paint_width"
                     android:textColor="@android:color/black"
                     android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    app:drawableLeftCompat="@drawable/ic_baseline_line_width_24" />
 
                 <View
                     android:layout_width="1dp"
@@ -54,56 +127,53 @@
                     android:layout_height="match_parent"
                     android:scrollbars="none">
 
-                    <RadioGroup
+                    <com.ansdoship.pixart.viewgroup.CheckedImageGroup
                         android:id="@+id/group_tools"
                         android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:layout_marginEnd="8dp"
-                        android:layout_marginRight="8dp"
-                        android:orientation="horizontal"
-                        android:paddingLeft="8dp"
-                        android:paddingRight="8dp">
+                        android:layout_height="match_parent">
 
-                        <RadioButton
-                            android:id="@+id/rbtn_paint"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:text="@string/paint" />
+                        <com.ansdoship.pixart.view.CheckedImageView
+                            android:id="@+id/img_paint"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:background="?attr/selectableItemBackground"
+                            app:srcCompat="@drawable/ic_baseline_paint_24" />
 
-                        <RadioButton
-                            android:id="@+id/rbtn_graph"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:text="@string/graph" />
+                        <com.ansdoship.pixart.view.CheckedImageView
+                            android:id="@+id/img_graph"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:background="?attr/selectableItemBackground"
+                            app:srcCompat="@drawable/ic_circle_24" />
 
-                        <RadioButton
-                            android:id="@+id/rbtn_eraser"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:text="@string/eraser" />
+                        <com.ansdoship.pixart.view.CheckedImageView
+                            android:id="@+id/img_eraser"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:background="?attr/selectableItemBackground"
+                            app:srcCompat="@drawable/ic_baseline_eraser_24" />
 
-                        <RadioButton
-                            android:id="@+id/rbtn_fill"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:text="@string/fill" />
+                        <com.ansdoship.pixart.view.CheckedImageView
+                            android:id="@+id/img_fill"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:background="?attr/selectableItemBackground"
+                            app:srcCompat="@drawable/ic_baseline_format_paint_24" />
 
-                        <RadioButton
-                            android:id="@+id/rbtn_selection"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:text="@string/selection" />
+                        <com.ansdoship.pixart.view.CheckedImageView
+                            android:id="@+id/img_selection"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:background="?attr/selectableItemBackground"
+                            app:srcCompat="@drawable/ic_baseline_selection_24" />
 
-                        <RadioButton
-                            android:id="@+id/rbtn_color_picker"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:text="@string/color_picker" />
-                    </RadioGroup>
+                        <com.ansdoship.pixart.view.CheckedImageView
+                            android:id="@+id/img_colorize"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:background="?attr/selectableItemBackground"
+                            app:srcCompat="@drawable/ic_baseline_colorize_24" />
+                    </com.ansdoship.pixart.viewgroup.CheckedImageGroup>
                 </HorizontalScrollView>
 
             </LinearLayout>
@@ -118,17 +188,13 @@
                 android:layout_height="?attr/actionBarSize"
                 android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/tv_palette_name"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
+                <ImageButton
+                    android:id="@+id/img_palette"
+                    android:layout_width="?attr/actionBarSize"
+                    android:layout_height="?attr/actionBarSize"
                     android:background="?attr/selectableItemBackground"
-                    android:gravity="center"
-                    android:paddingLeft="16dp"
-                    android:paddingRight="16dp"
-                    android:text="@string/palette_name"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                    android:contentDescription="@string/palette"
+                    app:srcCompat="@drawable/ic_baseline_palette_24" />
 
                 <View
                     android:layout_width="1dp"
@@ -140,97 +206,30 @@
                     android:layout_height="match_parent"
                     android:scrollbars="none">
 
-                    <com.ansdoship.ansdopix.viewgroup.PaletteGroup
-                        android:id="@+id/group_palettes"
+                    <com.ansdoship.pixart.viewgroup.PaletteList
+                        android:id="@+id/list_palettes"
                         android:layout_width="wrap_content"
-                        android:layout_height="match_parent">
+                        android:layout_height="match_parent"
+                        android:divider="@drawable/divider_horizontal_8dp"
+                        android:paddingLeft="8dp"
+                        android:paddingRight="8dp"
+                        android:showDividers="middle"
+                        app:paletteHeight="?attr/actionBarSize"
+                        app:paletteWidth="?attr/actionBarSize">
 
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette1"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginLeft="8dp"
-                            android:layout_marginEnd="4dp"
-                            android:layout_marginRight="4dp" />
-
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette2"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginLeft="4dp"
-                            android:layout_marginRight="4dp" />
-
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette3"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginLeft="4dp"
-                            android:layout_marginRight="4dp" />
-
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette4"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginLeft="4dp"
-                            android:layout_marginRight="4dp" />
-
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette5"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginLeft="4dp"
-                            android:layout_marginRight="4dp" />
-
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette6"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginLeft="4dp"
-                            android:layout_marginRight="4dp" />
-
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette7"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginLeft="4dp"
-                            android:layout_marginRight="4dp" />
-
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette8"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginLeft="4dp"
-                            android:layout_marginRight="4dp" />
-
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette9"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginLeft="4dp"
-                            android:layout_marginRight="4dp" />
-
-                        <com.ansdoship.ansdopix.view.PaletteView
-                            android:id="@+id/palette10"
-                            android:layout_width="?attr/actionBarSize"
-                            android:layout_height="match_parent"
-                            android:layout_marginStart="4dp"
-                            android:layout_marginLeft="4dp"
-                            android:layout_marginEnd="8dp"
-                            android:layout_marginRight="8dp" />
-                    </com.ansdoship.ansdopix.viewgroup.PaletteGroup>
-
+                    </com.ansdoship.pixart.viewgroup.PaletteList>
                 </HorizontalScrollView>
 
             </LinearLayout>
 
         </LinearLayout>
 
-        <com.ansdoship.ansdopix.view.CanvasView
+        <com.ansdoship.pixart.view.CanvasView
             android:id="@+id/canvas_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_above="@id/llayout" />
+            android:layout_above="@id/llayout_toolbar"
+            android:layout_below="@id/llayout_topbar" />
 
     </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,13 +1,13 @@
-package com.ansdoship.ansdopix.activity;
+package com.ansdoship.pixart.activity;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapShader;
 import android.graphics.Canvas;
@@ -22,69 +22,151 @@ import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.PopupWindow;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TabHost;
 import android.widget.TextView;
 
-import com.ansdoship.ansdopix.R;
-import com.ansdoship.ansdopix.util.ColorUtils;
-import com.ansdoship.ansdopix.util.BitmapUtils;
-import com.ansdoship.ansdopix.util.DrawUtils;
-import com.ansdoship.ansdopix.view.CanvasView;
-import com.ansdoship.ansdopix.view.PaletteView;
-import com.ansdoship.ansdopix.viewgroup.PaletteGroup;
+import com.ansdoship.pixart.R;
+import com.ansdoship.pixart.util.ColorUtils;
+import com.ansdoship.pixart.util.BitmapUtils;
+import com.ansdoship.pixart.util.DrawCache;
+import com.ansdoship.pixart.util.DrawUtils;
+import com.ansdoship.pixart.util.GraphCache;
+import com.ansdoship.pixart.util.PaintCache;
+import com.ansdoship.pixart.util.SelectionCache;
+import com.ansdoship.pixart.view.CanvasView;
+import com.ansdoship.pixart.view.CheckedImageView;
+import com.ansdoship.pixart.view.PaletteView;
+import com.ansdoship.pixart.viewgroup.CheckedImageGroup;
+import com.ansdoship.pixart.viewgroup.PaletteList;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
-    // Data save
     // SharedPreferences
     private SharedPreferences prefData;
     private SharedPreferences.Editor prefEditor;
-    // Data
+    private void saveData() {
+
+        // Clear old data
+        prefEditor.clear();
+
+        // Write new data
+
+        // Image
+        prefEditor.putString("image_name", tvImageName.getText().toString());
+        prefEditor.putInt("image_scale", imageScale);
+        prefEditor.putFloat("image_translation_x", imageTranslationX);
+        prefEditor.putFloat("image_translation_y", imageTranslationY);
+
+        // Flags
+        prefEditor.putInt("draw_flag", drawFlag);
+        prefEditor.putInt("graph_flag", graphFlag);
+        prefEditor.putInt("paint_flag", paintFlag);
+
+        // Paint
+        prefEditor.putInt("paint_width", paintWidth);
+
+        // Grid
+        prefEditor.putBoolean("is_draw_grid", drawGrid);
+        prefEditor.putInt("grid_width", gridWidth);
+        prefEditor.putInt("grid_height", gridHeight);
+        prefEditor.putInt("grid_color", gridColor);
+        // Palette
+
+        // File save & load path
+        prefEditor.putString("CACHE_PATH", CACHE_PATH);
+        prefEditor.putString("IMAGE_PATH", IMAGE_PATH);
+        prefEditor.putString("PALETTE_PATH", PALETTE_PATH);
+        // Bitmap cache
+        BitmapUtils.saveBitmapToBMP(CACHE_PATH + "current_bitmap", currentBitmap, true);
+
+        //Apply data
+        prefEditor.apply();
+
+    }
+    private void loadData() {
+
+        // Image
+        tvImageName.setText(prefData.getString("image_name", "Untitled.png"));
+        imageScale = prefData.getInt("image_scale", 20);
+        imageTranslationX = prefData.getFloat("image_translation_x", 0);
+        imageTranslationY = prefData.getFloat("image_translation_y", 0);
+
+        // Flags
+        drawFlag = prefData.getInt("draw_flag", DrawCache.DrawFlag.PAINT);
+        graphFlag = prefData.getInt("graph_flag", GraphCache.GraphFlag.LINE);
+        paintFlag = prefData.getInt("paint_flag", PaintCache.PaintFlag.REPLACE);
+        selectionFlag = -1;
+
+        // Paint
+        paintWidth = prefData.getInt("paint_width", 1);
+
+        // Grid
+        drawGrid = prefData.getBoolean("is_draw_grid", true);
+        gridWidth = prefData.getInt("grid_width", 1);
+        gridHeight = prefData.getInt("grid_height", 1);
+        gridColor = prefData.getInt("grid_color", Color.BLACK);
+
+        // Palette
+
+        // File save & load path
+        CACHE_PATH = getExternalCacheDir() + "/";
+        IMAGE_PATH = prefData.getString("IMAGE_PATH", getExternalFilesDir("images") + "/");
+        PALETTE_PATH = prefData.getString("PALETTE_PATH", getExternalFilesDir("palettes") + "/");
+
+        // Load bitmap
+        currentBitmap = BitmapUtils.loadBitmapFromFile(CACHE_PATH + "current_bitmap");
+        if(currentBitmap == null) {
+            currentBitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888);
+        }
+        currentCanvas = new Canvas(currentBitmap);
+
+        // Scale mode
+        scaleMode = false;
+
+    }
+
     // Image
-    private String imgName;
-    private int imgScale;
-    private void setImgScale(int scale) {
+    private int imageScale;
+    private void setImageScale(int scale) {
         if(scale >= 1 && scale <= 64) {
-            imgScale = scale;
-            selectionPaint1.setStrokeWidth(imgScale * 0.5f + 0.5f);
-            selectionPaint2.setStrokeWidth(imgScale * 0.25f + 0.25f);
-            flushBgBmp();
-            flushGridBmp();
+            imageScale = scale;
+            selectionPaint1.setStrokeWidth(imageScale * 0.5f + 0.5f);
+            selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
+            flushBackgroundBitmap();
+            flushGridBitmap();
         }
     }
-    private float imgTranslationX;
-    private float imgTranslationY;
-    private int bgImgScale() {
+    private float imageTranslationX;
+    private float imageTranslationY;
+    private int getBackgroundImageScale() {
         int scale = 0;
-        if(imgScale <= 4) {
+        if(imageScale <= 4) {
             scale = 16;
         }
-        if (imgScale > 4 && imgScale <= 8) {
+        if (imageScale > 4 && imageScale <= 8) {
             scale = 8;
         }
-        if (imgScale > 8 && imgScale <= 16) {
+        if (imageScale > 8 && imageScale <= 16) {
             scale = 4;
         }
-        if (imgScale > 16 && imgScale <= 32) {
+        if (imageScale > 16 && imageScale <= 32) {
             scale = 2;
         }
-        if (imgScale > 32) {
+        if (imageScale > 32) {
             scale = 1;
         }
         return scale;
     }
+
     // Paint
     private int paintWidth;
     private void setPaintWidth(int width) {
@@ -92,47 +174,17 @@ public class MainActivity extends AppCompatActivity {
         paint.setStrokeWidth(width);
         eraser.setStrokeWidth(width);
     }
-    private int paintType;
-    private static class PaintType {
-        final static int REPLACE = 0;
-        final static int OVERRIDE = 1;
-    }
 
-    private boolean isPaintRbtnChecked;
-
-    // Draw
+    // Flags
     private int drawFlag;
-    private static class DrawFlag {
-        final static int PAINT = 0;
-        final static int GRAPH = 1;
-        final static int ERASER = 2;
-        final static int FILL = 3;
-        final static int SELECTION = 4;
-        final static int COLOR_PICKER = 5;
-    }
-
-    // Graph
-    private int graphType;
-    private static class GraphType {
-        final static int LINE = 0;
-        final static int CIRCLE = 1;
-        final static int OVAL = 2;
-        final static int SQUARE = 3;
-        final static int RECT = 4;
-    }
-    
-    private boolean isGraphRbtnChecked;
+    private int graphFlag;
+    private int paintFlag;
+    private int selectionFlag;
 
     // Selection
-    private int selectionFlag;
-    private static class SelectionFlag {
-        final static int CUT = 0;
-        final static int COPY = 1;
-        final static int CLEAR = 2;
-    }
     private boolean selected;
-    private int selectionBmpX;
-    private int selectionBmpY;
+    private int selectionBitmapX;
+    private int selectionBitmapY;
     private RectF selectionRectF;
 
     // Grid
@@ -148,46 +200,40 @@ public class MainActivity extends AppCompatActivity {
 
     private void setGridWidth(int gridWidth) {
         this.gridWidth = gridWidth;
-        flushGridBmp();
+        flushGridBitmap();
     }
 
     private void setGridHeight(int gridHeight) {
         this.gridHeight = gridHeight;
-        flushGridBmp();
+        flushGridBitmap();
     }
 
     private void setGridColor(int gridColor) {
         this.gridColor = gridColor;
-        flushGridBmp();
+        flushGridBitmap();
     }
 
-    private void flushGridBmp() {
-        int width = currentBmp.getWidth();
-        int height = currentBmp.getHeight();
-        gridBmp = Bitmap.createBitmap(gridWidth * imgScale, gridHeight * imgScale,
+    private void flushGridBitmap() {
+        int width = currentBitmap.getWidth();
+        int height = currentBitmap.getHeight();
+        gridBitmap = Bitmap.createBitmap(gridWidth * imageScale, gridHeight *imageScale,
                 Bitmap.Config.ARGB_8888);
-        gridCanvas = new Canvas(gridBmp);
+        gridCanvas = new Canvas(gridBitmap);
         gridPaint = new Paint();
         gridPaint.setColor(gridColor);
         gridPaint.setStrokeWidth(1);
         gridPaint.setStyle(Paint.Style.STROKE);
-        gridCanvas.drawRect(0, 0, gridBmp.getWidth(), gridBmp.getHeight(), gridPaint);
-        BitmapShader gridShader = new BitmapShader(gridBmp, BitmapShader.TileMode.REPEAT,
+        gridCanvas.drawRect(0, 0, gridBitmap.getWidth(), gridBitmap.getHeight(), gridPaint);
+        BitmapShader gridShader = new BitmapShader(gridBitmap, BitmapShader.TileMode.REPEAT,
                 BitmapShader.TileMode.REPEAT);
         gridPaint.setShader(gridShader);
-        gridBmp = Bitmap.createBitmap(width * imgScale, height * imgScale,
+        gridBitmap = Bitmap.createBitmap(width * imageScale, height * imageScale,
                 Bitmap.Config.ARGB_8888);
-        gridCanvas = new Canvas(gridBmp);
+        gridCanvas = new Canvas(gridBitmap);
         gridCanvas.drawPaint(gridPaint);
     }
 
     // Palette
-    private String currentPalette;
-    private int currentPalettePage;
-    private List<Integer> currentPaletteColors;
-    private List<Integer> palette1Colors;
-    private List<Integer> palette2Colors;
-    private List<Integer> palette3Colors;
     private int dialogTempColor;
     private int dialogTempColorH;
     private float dialogTempColorS;
@@ -197,136 +243,7 @@ public class MainActivity extends AppCompatActivity {
     private String IMAGE_PATH;
     private String PALETTE_PATH;
 
-    // Save & load methods
-    private void saveData() {
-        // Clear Old Data
-        prefEditor.clear();
-
-        // Write new data
-        // Image
-        prefEditor.putString("img_name", imgName);
-        prefEditor.putInt("img_scale", imgScale);
-        prefEditor.putFloat("img_translation_x", imgTranslationX);
-        prefEditor.putFloat("img_translation_y", imgTranslationY);
-        // Paint
-        prefEditor.putInt("paint_width", paintWidth);
-        prefEditor.putInt("draw_flag", drawFlag);
-        prefEditor.putInt("graph_type", graphType);
-        prefEditor.putInt("paint_type", paintType);
-        // Grid
-        prefEditor.putBoolean("is_draw_grid", drawGrid);
-        prefEditor.putInt("grid_width", gridWidth);
-        prefEditor.putInt("grid_height", gridHeight);
-        prefEditor.putInt("grid_color", gridColor);
-        // Palette
-        prefEditor.putString("current_palette", currentPalette);
-        prefEditor.putInt("current_palette_slot", groupPalettes.getCheckedPalettePosition());
-        for (int slot = 0; slot < 10; slot ++) {
-            prefEditor.putInt("palette_1" + "color_" + slot, palette1Colors.get(slot));
-        }
-        for (int slot = 0; slot < 10; slot ++) {
-            prefEditor.putInt("palette_2" + "color_" + slot, palette2Colors.get(slot));
-        }
-        for (int slot = 0; slot < 10; slot ++) {
-            prefEditor.putInt("palette_3" + "color_" + slot, palette3Colors.get(slot));
-        }
-        prefEditor.putInt("current_palette_page", currentPalettePage);
-        // File save & load path
-        prefEditor.putString("CACHE_PATH", CACHE_PATH);
-        prefEditor.putString("IMAGE_PATH", IMAGE_PATH);
-        prefEditor.putString("PALETTE_PATH", PALETTE_PATH);
-        // Bitmap cache
-        BitmapUtils.saveBitmapToBMP(CACHE_PATH + "current_bitmap", currentBmp, true);
-
-        //Apply data
-        prefEditor.apply();
-    }
-
-    private void loadData() {
-        // Image
-        imgName = prefData.getString("img_name", "Untitled.png");
-        imgScale = prefData.getInt("img_scale", 20);
-        imgTranslationX = prefData.getFloat("img_translation_x", 0);
-        imgTranslationY = prefData.getFloat("img_translation_y", 0);
-        // Paint
-        paintWidth = prefData.getInt("paint_width", 1);
-        drawFlag = prefData.getInt("draw_flag", DrawFlag.PAINT);
-        graphType = prefData.getInt("graph_type", GraphType.LINE);
-        paintType = prefData.getInt("paint_type", PaintType.REPLACE);
-        // Grid
-        drawGrid = prefData.getBoolean("is_draw_grid", true);
-        gridWidth = prefData.getInt("grid_width", 1);
-        gridHeight = prefData.getInt("grid_height", 1);
-        gridColor = prefData.getInt("grid_color", Color.BLACK);
-        // Palette
-        groupPalettes.checkPosition(prefData.getInt("current_palette_slot", 0));
-        currentPaletteColors = new ArrayList<>();
-        palette1Colors = new ArrayList<>();
-        palette2Colors = new ArrayList<>();
-        palette3Colors = new ArrayList<>();
-        for (int slot = 0; slot < 10; slot ++) {
-            palette1Colors.add(prefData.getInt("palette_1" + "color_" + slot, Color.TRANSPARENT));
-        }
-        for (int slot = 0; slot < 10; slot ++) {
-            palette2Colors.add(prefData.getInt("palette_2" + "color_" + slot, Color.TRANSPARENT));
-        }
-        for (int slot = 0; slot < 10; slot ++) {
-            palette3Colors.add(prefData.getInt("palette_3" + "color_" + slot, Color.TRANSPARENT));
-        }
-        currentPalettePage = prefData.getInt("current_palette_page", 1);
-        switch (currentPalettePage) {
-            case 1:
-                currentPalette = getString(R.string.palette_1);
-                currentPaletteColors = palette1Colors;
-                break;
-            case 2:
-                currentPalette = getString(R.string.palette_2);
-                currentPaletteColors = palette2Colors;
-                break;
-            case 3:
-                currentPalette = getString(R.string.palette_3);
-                currentPaletteColors = palette3Colors;
-                break;
-            default:
-                break;
-        }
-        // Save & load path
-        CACHE_PATH = getExternalCacheDir() + "/";
-        IMAGE_PATH = prefData.getString("IMAGE_PATH", getExternalFilesDir("images") + "/");
-        PALETTE_PATH = prefData.getString("PALETTE_PATH", getExternalFilesDir("palettes") + "/");
-        // Load bitmap
-        currentBmp = BitmapUtils.loadBitmapFromFile(CACHE_PATH + "current_bitmap");
-        if(currentBmp == null) {
-            currentBmp = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888);
-        }
-        currentCanvas = new Canvas(currentBmp);
-        // Scale mode
-        scaleMode = false;
-        // Is RadioButton checked
-        isGraphRbtnChecked = false;
-        // Selection flag
-        selectionFlag = -1;
-    }
-
-    // Widgets
-    // ActionBar
-    private ActionBar actionBar;
-    // ToolBar
-    private TextView tvPaintWidth;
-    private RadioGroup groupTools;
-    private RadioButton rbtnPaint;
-    private RadioButton rbtnGraph;
-    private RadioButton rbtnEraser;
-    private RadioButton rbtnFill;
-    private RadioButton rbtnSelection;
-    private RadioButton rbtnColorPicker;
-    // PaletteBar
-    private TextView tvPaletteName;
-    private PaletteGroup groupPalettes;
-    // CanvasView
-    private CanvasView canvasView;
-
-    // TouchEvent positions
+    // TouchEvent
     private int downX;
     private int downY;
     private int moveX;
@@ -337,39 +254,44 @@ public class MainActivity extends AppCompatActivity {
     private boolean readOnlyMode;
 
     // Bitmaps & canvas
+
     // Background
-    private Bitmap bgBmp;
-    private Canvas bgCanvas;
+    private Bitmap backgroundBitmap;
+    private Canvas backgroundCanvas;
+
     // Current
-    private Bitmap currentBmp;
+    private Bitmap currentBitmap;
     private Canvas currentCanvas;
+
     // Cache
-    private Bitmap cacheBmp;
+    private Bitmap cacheBitmap;
+
     // Selection
-    private Bitmap selectionBmp;
+    private Bitmap selectionBitmap;
+
     // Grid
-    private Bitmap gridBmp;
+    private Bitmap gridBitmap;
     private Canvas gridCanvas;
 
 
     // Paints
-    private Paint bgPaint;
-    private void flushBgBmp() {
-        bgBmp = Bitmap.createBitmap(new int[] {Color.LTGRAY, Color.GRAY, Color.GRAY, Color.LTGRAY},
+    private Paint backgroundPaint;
+    private void flushBackgroundBitmap() {
+        backgroundBitmap = Bitmap.createBitmap(new int[] {Color.LTGRAY, Color.GRAY, Color.GRAY, Color.LTGRAY},
                 2, 2, Bitmap.Config.ARGB_8888);
-        bgBmp = Bitmap.createScaledBitmap(bgBmp, imgScale * bgImgScale(),
-                imgScale * bgImgScale(), false);
-        BitmapShader bgShader = new BitmapShader(bgBmp, BitmapShader.TileMode.REPEAT,
+        backgroundBitmap = Bitmap.createScaledBitmap(backgroundBitmap, imageScale * getBackgroundImageScale(),
+                imageScale * getBackgroundImageScale(), false);
+        BitmapShader bgShader = new BitmapShader(backgroundBitmap, BitmapShader.TileMode.REPEAT,
                 BitmapShader.TileMode.REPEAT);
-        bgPaint = new Paint();
-        bgPaint.setShader(bgShader);
-        bgBmp = Bitmap.createBitmap(currentBmp.getWidth() * imgScale,
-                currentBmp.getHeight() * imgScale, Bitmap.Config.ARGB_8888);
-        bgCanvas = new Canvas(bgBmp);
-        bgCanvas.drawPaint(bgPaint);
+        backgroundPaint = new Paint();
+        backgroundPaint.setShader(bgShader);
+        backgroundBitmap = Bitmap.createBitmap(currentBitmap.getWidth() * imageScale,
+                currentBitmap.getHeight() * imageScale, Bitmap.Config.ARGB_8888);
+        backgroundCanvas = new Canvas(backgroundBitmap);
+        backgroundCanvas.drawPaint(backgroundPaint);
     }
     private Paint gridPaint;
-    private Paint bmpPaint;
+    private Paint bitmapPaint;
     private Paint paint;
     private Paint eraser;
     private Paint selectionPaint1;
@@ -381,6 +303,32 @@ public class MainActivity extends AppCompatActivity {
     // Path
     private Path path;
 
+    // Widgets
+
+    // TopBar
+    private TextView tvImageName;
+    private ImageButton imgGrid;
+    private ImageButton imgUndo;
+    private ImageButton imgRedo;
+    private ImageButton imgMenu;
+
+    // ToolBar
+    private TextView tvPaintWidth;
+    private CheckedImageGroup groupTools;
+    private CheckedImageView imgPaint;
+    private CheckedImageView imgGraph;
+    private CheckedImageView imgEraser;
+    private CheckedImageView imgFill;
+    private CheckedImageView imgSelection;
+    private CheckedImageView imgColorize;
+
+    // PaletteBar
+    private ImageButton imgPalette;
+    private PaletteList listPalettes;
+
+    // CanvasView
+    private CanvasView canvasView;
+
     // Dialogs
     private void buildPaintDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -389,11 +337,11 @@ public class MainActivity extends AppCompatActivity {
                 getString(R.string.override)
         };
         int checkedItem = -1;
-        switch (paintType) {
-            case PaintType.REPLACE:
+        switch (paintFlag) {
+            case PaintCache.PaintFlag.REPLACE:
                 checkedItem = 0;
                 break;
-            case PaintType.OVERRIDE:
+            case PaintCache.PaintFlag.OVERRIDE:
                 checkedItem = 1;
                 break;
         }
@@ -402,10 +350,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
-                        paintType = PaintType.REPLACE;
+                        paintFlag = PaintCache.PaintFlag.REPLACE;
                         break;
                     case 1:
-                        paintType = PaintType.OVERRIDE;
+                        paintFlag = PaintCache.PaintFlag.OVERRIDE;
                         break;
                 }
                 dialog.dismiss();
@@ -460,20 +408,20 @@ public class MainActivity extends AppCompatActivity {
                 getString(R.string.rect)
         };
         int checkedItem = -1;
-        switch (graphType) {
-            case GraphType.LINE:
+        switch (graphFlag) {
+            case GraphCache.GraphFlag.LINE:
                 checkedItem = 0;
                 break;
-            case GraphType.CIRCLE:
+            case GraphCache.GraphFlag.CIRCLE:
                 checkedItem = 1;
                 break;
-            case GraphType.OVAL:
+            case GraphCache.GraphFlag.OVAL:
                 checkedItem = 2;
                 break;
-            case GraphType.SQUARE:
+            case GraphCache.GraphFlag.SQUARE:
                 checkedItem = 3;
                 break;
-            case GraphType.RECT:
+            case GraphCache.GraphFlag.RECTANGLE:
                 checkedItem = 4;
                 break;
         }
@@ -482,27 +430,26 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
-                        graphType = GraphType.LINE;
-                        rbtnGraph.setText(R.string.line);
+                        graphFlag = GraphCache.GraphFlag.LINE;
+                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_line_24, getTheme()));
                         break;
                     case 1:
-                        graphType = GraphType.CIRCLE;
-                        rbtnGraph.setText(R.string.circle);
+                        graphFlag = GraphCache.GraphFlag.CIRCLE;
+                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_circle_24, getTheme()));
                         break;
                     case 2:
-                        graphType = GraphType.OVAL;
-                        rbtnGraph.setText(R.string.oval);
+                        graphFlag = GraphCache.GraphFlag.OVAL;
+                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_oval_24, getTheme()));
                         break;
                     case 3:
-                        graphType = GraphType.SQUARE;
-                        rbtnGraph.setText(R.string.square);
+                        graphFlag = GraphCache.GraphFlag.SQUARE;
+                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_square_24, getTheme()));
                         break;
                     case 4:
-                        graphType = GraphType.RECT;
-                        rbtnGraph.setText(R.string.rect);
+                        graphFlag = GraphCache.GraphFlag.RECTANGLE;
+                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_rectangle_24, getTheme()));
                         break;
                 }
-                rbtnGraph.requestLayout();
                 dialog.dismiss();
             }
         });
@@ -517,8 +464,8 @@ public class MainActivity extends AppCompatActivity {
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         window.setOutsideTouchable(true);
         window.setTouchable(true);
-        int xOffset = upX * imgScale;
-        int yOffset = upY * imgScale;
+        int xOffset = upX * imageScale;
+        int yOffset = upY * imageScale;
         int gravity;
         if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
             gravity = Gravity.START;
@@ -526,7 +473,7 @@ public class MainActivity extends AppCompatActivity {
         else {
             gravity = Gravity.END;
             yOffset -= view.getMeasuredHeight();
-            yOffset += imgScale;
+            yOffset += imageScale;
         }
         if (xOffset + view.getMeasuredWidth() < canvasView.getWidth()) {
             gravity = gravity | Gravity.TOP;
@@ -534,7 +481,7 @@ public class MainActivity extends AppCompatActivity {
         else {
             gravity = gravity | Gravity.BOTTOM;
             xOffset -= view.getMeasuredWidth();
-            xOffset += imgScale;
+            xOffset += imageScale;
         }
         switch (gravity) {
             case Gravity.START | Gravity.TOP:
@@ -550,26 +497,28 @@ public class MainActivity extends AppCompatActivity {
                 window.setAnimationStyle(R.style.animTranslateInRightBottom);
                 break;
         }
-        yOffset += actionBar.getHeight();
+        TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
+        yOffset += typedArray.getDimension(0, 0);
+        typedArray.recycle();
         yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
                 "dimen", "android"));
         window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
-        TextView tvCut = view.findViewById(R.id.tv_cut);
-        TextView tvCopy = view.findViewById(R.id.tv_copy);
-        TextView tvClear = view.findViewById(R.id.tv_clear);
-        TextView tvNone = view.findViewById(R.id.tv_none);
-        tvCut.setOnClickListener(new View.OnClickListener() {
+        ImageButton imgCut = view.findViewById(R.id.img_cut);
+        ImageButton imgCopy = view.findViewById(R.id.img_copy);
+        ImageButton imgClear = view.findViewById(R.id.img_clear);
+        ImageButton imgNone = view.findViewById(R.id.img_none);
+        imgCut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 int selectionX = Math.min(downX, moveX);
                 int selectionY = Math.min(downY, moveY);
-                selectionBmpX = selectionX;
-                selectionBmpY = selectionY;
+                selectionBitmapX = selectionX;
+                selectionBitmapY = selectionY;
                 int selectionWidth = Math.abs(downX - moveX) + 1;
                 int selectionHeight = Math.abs(downY - moveY) + 1;
                 selectionRectF = new RectF(selectionX, selectionY, Math.max(downX, moveX), Math.max(downY, moveY));
-                selectionFlag = SelectionFlag.CUT;
-                selectionBmp = Bitmap.createBitmap(currentBmp, selectionX, selectionY, selectionWidth, selectionHeight);
+                selectionFlag = SelectionCache.SelectionFlag.CUT;
+                selectionBitmap = Bitmap.createBitmap(currentBitmap, selectionX, selectionY, selectionWidth, selectionHeight);
                 eraser.setStyle(Paint.Style.FILL_AND_STROKE);
                 eraser.setStrokeJoin(Paint.Join.MITER);
                 currentCanvas.drawRect(selectionRectF, eraser);
@@ -581,31 +530,31 @@ public class MainActivity extends AppCompatActivity {
                 buildSelectionPopup2();
             }
         });
-        tvCopy.setOnClickListener(new View.OnClickListener() {
+        imgCopy.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 int selectionX = Math.min(downX, moveX);
                 int selectionY = Math.min(downY, moveY);
-                selectionBmpX = selectionX;
-                selectionBmpY = selectionY;
+                selectionBitmapX = selectionX;
+                selectionBitmapY = selectionY;
                 int selectionWidth = Math.abs(downX - moveX) + 1;
                 int selectionHeight = Math.abs(downY - moveY) + 1;
                 selectionRectF = new RectF(selectionX, selectionY, Math.max(downX, moveX), Math.max(downY, moveY));
-                selectionFlag = SelectionFlag.COPY;
-                selectionBmp = Bitmap.createBitmap(currentBmp, selectionX, selectionY, selectionWidth, selectionHeight);
+                selectionFlag = SelectionCache.SelectionFlag.COPY;
+                selectionBitmap = Bitmap.createBitmap(currentBitmap, selectionX, selectionY, selectionWidth, selectionHeight);
                 window.dismiss();
                 buildSelectionPopup2();
             }
         });
-        tvClear.setOnClickListener(new View.OnClickListener() {
+        imgClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 int selectionX = Math.min(downX, moveX);
                 int selectionY = Math.min(downY, moveY);
-                selectionBmpX = selectionX;
-                selectionBmpY = selectionY;
+                selectionBitmapX = selectionX;
+                selectionBitmapY = selectionY;
                 selectionRectF = new RectF(selectionX, selectionY, Math.max(downX, moveX), Math.max(downY, moveY));
-                selectionFlag = SelectionFlag.CLEAR;
+                selectionFlag = SelectionCache.SelectionFlag.CLEAR;
                 selected = false;
                 eraser.setStyle(Paint.Style.FILL_AND_STROKE);
                 eraser.setStrokeJoin(Paint.Join.MITER);
@@ -618,7 +567,7 @@ public class MainActivity extends AppCompatActivity {
                 window.dismiss();
             }
         });
-        tvNone.setOnClickListener(new View.OnClickListener() {
+        imgNone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 selected = false;
@@ -635,8 +584,8 @@ public class MainActivity extends AppCompatActivity {
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         window.setOutsideTouchable(true);
         window.setTouchable(true);
-        int xOffset = upX * imgScale;
-        int yOffset = upY * imgScale;
+        int xOffset = upX * imageScale;
+        int yOffset = upY * imageScale;
         int gravity;
         if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
             gravity = Gravity.START;
@@ -644,7 +593,7 @@ public class MainActivity extends AppCompatActivity {
         else {
             gravity = Gravity.END;
             yOffset -= view.getMeasuredHeight();
-            yOffset += imgScale;
+            yOffset += imageScale;
         }
         if (xOffset + view.getMeasuredWidth() < canvasView.getWidth()) {
             gravity = gravity | Gravity.TOP;
@@ -652,7 +601,7 @@ public class MainActivity extends AppCompatActivity {
         else {
             gravity = gravity | Gravity.BOTTOM;
             xOffset -= view.getMeasuredWidth();
-            xOffset += imgScale;
+            xOffset += imageScale;
         }
         switch (gravity) {
             case Gravity.START | Gravity.TOP:
@@ -668,63 +617,101 @@ public class MainActivity extends AppCompatActivity {
                 window.setAnimationStyle(R.style.animTranslateInRightBottom);
                 break;
         }
-        yOffset += actionBar.getHeight();
+        TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
+        yOffset += typedArray.getDimension(0, 0);
+        typedArray.recycle();
         yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
                 "dimen", "android"));
         window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
-        TextView tvRotate = view.findViewById(R.id.tv_rotate);
-        TextView tvFlip = view.findViewById(R.id.tv_flip);
-        TextView tvDone = view.findViewById(R.id.tv_done);
-        TextView tvNone = view.findViewById(R.id.tv_none);
-        tvRotate.setOnClickListener(new View.OnClickListener() {
+        ImageButton imgRotateLeft = view.findViewById(R.id.img_rotate_left);
+        ImageButton imgRotateRight = view.findViewById(R.id.img_rotate_right);
+        ImageButton imgFlipHorizontal = view.findViewById(R.id.img_flip_horizontal);
+        ImageButton imgFlipVertical = view.findViewById(R.id.img_flip_vertical);
+        ImageButton imgDone = view.findViewById(R.id.img_done);
+        ImageButton imgNone = view.findViewById(R.id.img_none);
+        imgRotateLeft.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cacheBmp = Bitmap.createBitmap(currentBmp);
-                selectionBmp = BitmapUtils.rotateBitmap(selectionBmp, 90);
-                currentCanvas.drawBitmap(selectionBmp, selectionBmpX, selectionBmpY, bmpPaint);
+                cacheBitmap = Bitmap.createBitmap(currentBitmap);
+                BitmapUtils.rotateBitmap(selectionBitmap, -90);
+                currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
                 currentCanvas.save();
                 currentCanvas.restore();
                 canvasView.invalidate();
                 // Clear canvas
                 currentCanvas.drawPaint(eraser);
                 // Draw cache bitmap
-                currentCanvas.drawBitmap(cacheBmp, 0, 0, bmpPaint);
+                currentCanvas.drawBitmap(cacheBitmap, 0, 0, bitmapPaint);
                 currentCanvas.save();
                 currentCanvas.restore();
             }
         });
-        tvFlip.setOnClickListener(new View.OnClickListener() {
+        imgRotateRight.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cacheBmp = Bitmap.createBitmap(currentBmp);
-                selectionBmp = BitmapUtils.flipBitmapHorizontally(selectionBmp);
-                currentCanvas.drawBitmap(selectionBmp, selectionBmpX, selectionBmpY, bmpPaint);
+                cacheBitmap = Bitmap.createBitmap(currentBitmap);
+                BitmapUtils.rotateBitmap(selectionBitmap, 90);
+                currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
                 currentCanvas.save();
                 currentCanvas.restore();
                 canvasView.invalidate();
                 // Clear canvas
                 currentCanvas.drawPaint(eraser);
                 // Draw cache bitmap
-                currentCanvas.drawBitmap(cacheBmp, 0, 0, bmpPaint);
+                currentCanvas.drawBitmap(cacheBitmap, 0, 0, bitmapPaint);
                 currentCanvas.save();
                 currentCanvas.restore();
             }
         });
-        tvDone.setOnClickListener(new View.OnClickListener() {
+        imgFlipHorizontal.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cacheBitmap = Bitmap.createBitmap(currentBitmap);
+                BitmapUtils.flipBitmapHorizontally(selectionBitmap);
+                currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
+                currentCanvas.save();
+                currentCanvas.restore();
+                canvasView.invalidate();
+                // Clear canvas
+                currentCanvas.drawPaint(eraser);
+                // Draw cache bitmap
+                currentCanvas.drawBitmap(cacheBitmap, 0, 0, bitmapPaint);
+                currentCanvas.save();
+                currentCanvas.restore();
+            }
+        });
+        imgFlipVertical.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cacheBitmap = Bitmap.createBitmap(currentBitmap);
+                BitmapUtils.flipBitmapVertically(selectionBitmap);
+                currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
+                currentCanvas.save();
+                currentCanvas.restore();
+                canvasView.invalidate();
+                // Clear canvas
+                currentCanvas.drawPaint(eraser);
+                // Draw cache bitmap
+                currentCanvas.drawBitmap(cacheBitmap, 0, 0, bitmapPaint);
+                currentCanvas.save();
+                currentCanvas.restore();
+            }
+        });
+        imgDone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 selectionFlag = -1;
                 selected = false;
-                selectionBmpX = moveX - (int)(selectionBmp.getWidth() * 0.5f);
-                selectionBmpY = moveY - (int)(selectionBmp.getHeight() * 0.5f);
-                currentCanvas.drawBitmap(selectionBmp, selectionBmpX, selectionBmpY, bmpPaint);
+                selectionBitmapX = moveX - (int)(selectionBitmap.getWidth() * 0.5f);
+                selectionBitmapY = moveY - (int)(selectionBitmap.getHeight() * 0.5f);
+                currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
                 currentCanvas.save();
                 currentCanvas.restore();
                 canvasView.invalidate();
                 window.dismiss();
             }
         });
-        tvNone.setOnClickListener(new View.OnClickListener() {
+        imgNone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 selectionFlag = -1;
@@ -765,7 +752,7 @@ public class MainActivity extends AppCompatActivity {
         final SeekBar barColorH = view.findViewById(R.id.bar_color_h);
         final SeekBar barColorS = view.findViewById(R.id.bar_color_s);
         final SeekBar barColorV = view.findViewById(R.id.bar_color_v);
-        dialogTempColor = currentPaletteColors.get(groupPalettes.getCheckedPalettePosition());
+        // dialogTempColor = currentPaletteColors.get(groupPalettes.getCheckedPalettePosition());
         dialogTempColorH = (int) ColorUtils.hue(dialogTempColor);
         dialogTempColorS = ColorUtils.saturation(dialogTempColor);
 
@@ -928,9 +915,8 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), dialogTempColor);
+                //currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), dialogTempColor);
                 paint.setColor(dialogTempColor);
-                flushPaletteColors();
             }
         });
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -941,33 +927,80 @@ public class MainActivity extends AppCompatActivity {
         builder.create().show();
     }
 
-    @SuppressLint({"ClickableViewAccessibility", "CommitPrefEdits"})
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.tv_image_name:
+
+                break;
+            case R.id.img_grid:
+
+                break;
+            case R.id.img_undo:
+
+                break;
+            case R.id.img_redo:
+
+                break;
+            case R.id.img_menu:
+
+                break;
+            case R.id.tv_paint_width:
+                buildPaintWidthDialog();
+                break;
+            case R.id.img_palette:
+
+                break;
+        }
+    }
+
+    @SuppressLint({"ClickableViewAccessibility", "CommitPrefEdits", "SetTextI18n"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Window format
         getWindow().setFormat(PixelFormat.RGBA_8888);
 
         // Init SharedPreferences
-        prefData = getSharedPreferences("data", MODE_PRIVATE);
+        prefData = getSharedPreferences("app_data", MODE_PRIVATE);
         prefEditor = prefData.edit();
 
         // Get widgets
-        // ActionBar
-        actionBar = getSupportActionBar();
+
+        // TopBar
+        tvImageName = findViewById(R.id.tv_image_name);
+        imgGrid = findViewById(R.id.img_grid);
+        imgUndo = findViewById(R.id.img_undo);
+        imgRedo = findViewById(R.id.img_redo);
+        imgMenu = findViewById(R.id.img_menu);
+
+        tvImageName.setOnClickListener(this);
+        imgGrid.setOnClickListener(this);
+        imgUndo.setOnClickListener(this);
+        imgRedo.setOnClickListener(this);
+        imgMenu.setOnClickListener(this);
+
         // ToolBar
         tvPaintWidth = findViewById(R.id.tv_paint_width);
         groupTools = findViewById(R.id.group_tools);
-        rbtnPaint = findViewById(R.id.rbtn_paint);
-        rbtnGraph = findViewById(R.id.rbtn_graph);
-        rbtnEraser = findViewById(R.id.rbtn_eraser);
-        rbtnFill = findViewById(R.id.rbtn_fill);
-        rbtnSelection = findViewById(R.id.rbtn_selection);
-        rbtnColorPicker = findViewById(R.id.rbtn_color_picker);
+        imgPaint = findViewById(R.id.img_paint);
+        imgGraph = findViewById(R.id.img_graph);
+        imgEraser = findViewById(R.id.img_eraser);
+        imgFill = findViewById(R.id.img_fill);
+        imgSelection = findViewById(R.id.img_selection);
+        imgColorize = findViewById(R.id.img_colorize);
+
+        tvPaintWidth.setOnClickListener(this);
+
         // PaletteBar
-        tvPaletteName = findViewById(R.id.tv_palette_name);
-        groupPalettes = findViewById(R.id.group_palettes);
+        imgPalette = findViewById(R.id.img_palette);
+        listPalettes = findViewById(R.id.list_palettes);
+
+        imgPalette.setOnClickListener(this);
+
         // CanvasView
         canvasView = findViewById(R.id.canvas_view);
 
@@ -975,10 +1008,10 @@ public class MainActivity extends AppCompatActivity {
         loadData();
 
         // Init paints
-        bgPaint = new Paint();
-        bmpPaint = new Paint();
-        bmpPaint.setAntiAlias(false);
-        bmpPaint.setFilterBitmap(false);
+        backgroundPaint = new Paint();
+        bitmapPaint = new Paint();
+        bitmapPaint.setAntiAlias(false);
+        bitmapPaint.setFilterBitmap(false);
         paint = new Paint();
         paint.setStyle(Paint.Style.STROKE);
         paint.setDither(false);
@@ -995,127 +1028,72 @@ public class MainActivity extends AppCompatActivity {
         selectionPaint1.setDither(false);
         selectionPaint1.setAntiAlias(false);
         selectionPaint1.setColor(Color.WHITE);
-        selectionPaint1.setStrokeWidth(imgScale * 0.5f + 0.5f);
+        selectionPaint1.setStrokeWidth(imageScale * 0.5f + 0.5f);
         selectionPaint2 = new Paint();
         selectionPaint2.setStyle(Paint.Style.STROKE);
         selectionPaint2.setStrokeCap(Paint.Cap.SQUARE);
         selectionPaint2.setDither(false);
         selectionPaint2.setAntiAlias(false);
         selectionPaint2.setColor(Color.BLACK);
-        selectionPaint2.setStrokeWidth(imgScale * 0.25f + 0.25f);
+        selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
 
         // Init path
         path = new Path();
 
         // Init bmp
-        flushBgBmp();
-        flushGridBmp();
+        flushBackgroundBitmap();
+        flushGridBitmap();
 
         // Init matrix
         matrix = new Matrix();
 
         // Paint width text
-        tvPaintWidth.append(": " + paintWidth);
+        tvPaintWidth.setText(Integer.toString(paintWidth));
 
-        // Graph text
-        switch (graphType) {
-            case GraphType.LINE:
-                rbtnGraph.setText(R.string.line);
+        // Graph ImageButton image
+        switch (graphFlag) {
+            case GraphCache.GraphFlag.LINE:
+                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_line_24, getTheme()));
                 break;
-            case GraphType.CIRCLE:
-                rbtnGraph.setText(R.string.circle);
+            case GraphCache.GraphFlag.CIRCLE:
+                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_circle_24, getTheme()));
                 break;
-            case GraphType.OVAL:
-                rbtnGraph.setText(R.string.oval);
+            case GraphCache.GraphFlag.OVAL:
+                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_oval_24, getTheme()));
                 break;
-            case GraphType.SQUARE:
-                rbtnGraph.setText(R.string.square);
+            case GraphCache.GraphFlag.SQUARE:
+                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_square_24, getTheme()));
                 break;
-            case GraphType.RECT:
-                rbtnGraph.setText(R.string.rect);
-                break;
-        }
-
-        // Paint width TextView onClickListener
-        tvPaintWidth.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                buildPaintWidthDialog();
-            }
-        });
-
-        // Default checked RatioButton
-        switch (drawFlag) {
-            case DrawFlag.PAINT:
-                groupTools.check(R.id.rbtn_paint);
-                paint.setStrokeCap(Paint.Cap.SQUARE);
-                eraser.setStrokeCap(Paint.Cap.SQUARE);
-                paint.setStrokeJoin(Paint.Join.ROUND);
-                eraser.setStrokeJoin(Paint.Join.ROUND);
-                isPaintRbtnChecked = true;
-                break;
-            case DrawFlag.GRAPH:
-                groupTools.check(R.id.rbtn_graph);
-                switch (graphType) {
-                    case GraphType.CIRCLE:
-                    case GraphType.OVAL:
-                        paint.setStrokeCap(Paint.Cap.ROUND);
-                        eraser.setStrokeCap(Paint.Cap.ROUND);
-                        paint.setStrokeJoin(Paint.Join.ROUND);
-                        eraser.setStrokeJoin(Paint.Join.ROUND);
-                        break;
-                    case GraphType.LINE:
-                    case GraphType.SQUARE:
-                    case GraphType.RECT:
-                        paint.setStrokeCap(Paint.Cap.SQUARE);
-                        eraser.setStrokeCap(Paint.Cap.SQUARE);
-                        paint.setStrokeJoin(Paint.Join.MITER);
-                        eraser.setStrokeJoin(Paint.Join.MITER);
-                        break;
-                }
-                isGraphRbtnChecked = true;
-                break;
-            case DrawFlag.ERASER:
-                groupTools.check(R.id.rbtn_eraser);
-                eraser.setStrokeCap(Paint.Cap.SQUARE);
-                eraser.setStrokeJoin(Paint.Join.ROUND);
-                break;
-            case DrawFlag.FILL:
-                groupTools.check(R.id.rbtn_fill);
-                break;
-            case DrawFlag.SELECTION:
-                groupTools.check(R.id.rbtn_selection);
-                break;
-            case DrawFlag.COLOR_PICKER:
-                groupTools.check(R.id.rbtn_color_picker);
+            case GraphCache.GraphFlag.RECTANGLE:
+                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_rectangle_24, getTheme()));
                 break;
         }
 
         // Select tool
-        groupTools.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+        groupTools.setOnCheckedChangeListener(new CheckedImageGroup.OnCheckedChangeListener() {
             @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
+            public void onCheckedChanged(CheckedImageGroup group, int checkedId, int checkedIndex) {
                 switch (checkedId) {
-                    case R.id.rbtn_paint:
-                        drawFlag = DrawFlag.PAINT;
+                    case R.id.img_paint:
+                        drawFlag = DrawCache.DrawFlag.PAINT;
                         paint.setStrokeCap(Paint.Cap.SQUARE);
                         eraser.setStrokeCap(Paint.Cap.SQUARE);
                         paint.setStrokeJoin(Paint.Join.ROUND);
                         eraser.setStrokeJoin(Paint.Join.ROUND);
                         break;
-                    case R.id.rbtn_graph:
-                        drawFlag = DrawFlag.GRAPH;
-                        switch (graphType) {
-                            case GraphType.CIRCLE:
-                            case GraphType.OVAL:
+                    case R.id.img_graph:
+                        drawFlag = DrawCache.DrawFlag.GRAPH;
+                        switch (graphFlag) {
+                            case GraphCache.GraphFlag.CIRCLE:
+                            case GraphCache.GraphFlag.OVAL:
                                 paint.setStrokeCap(Paint.Cap.ROUND);
                                 eraser.setStrokeCap(Paint.Cap.ROUND);
                                 paint.setStrokeJoin(Paint.Join.ROUND);
                                 eraser.setStrokeJoin(Paint.Join.ROUND);
                                 break;
-                            case GraphType.LINE:
-                            case GraphType.SQUARE:
-                            case GraphType.RECT:
+                            case GraphCache.GraphFlag.LINE:
+                            case GraphCache.GraphFlag.SQUARE:
+                            case GraphCache.GraphFlag.RECTANGLE:
                                 paint.setStrokeCap(Paint.Cap.SQUARE);
                                 eraser.setStrokeCap(Paint.Cap.SQUARE);
                                 paint.setStrokeJoin(Paint.Join.MITER);
@@ -1123,78 +1101,74 @@ public class MainActivity extends AppCompatActivity {
                                 break;
                         }
                         break;
-                    case R.id.rbtn_eraser:
-                        drawFlag = DrawFlag.ERASER;
+                    case R.id.img_eraser:
+                        drawFlag = DrawCache.DrawFlag.ERASER;
                         eraser.setStrokeCap(Paint.Cap.SQUARE);
                         eraser.setStrokeJoin(Paint.Join.ROUND);
                         break;
-                    case R.id.rbtn_fill:
-                        drawFlag = DrawFlag.FILL;
+                    case R.id.img_fill:
+                        drawFlag = DrawCache.DrawFlag.FILL;
                         break;
-                    case R.id.rbtn_selection:
-                        drawFlag = DrawFlag.SELECTION;
+                    case R.id.img_selection:
+                        drawFlag = DrawCache.DrawFlag.SELECTION;
                         break;
-                    case R.id.rbtn_color_picker:
-                        drawFlag = DrawFlag.COLOR_PICKER;
+                    case R.id.img_colorize:
+                        drawFlag = DrawCache.DrawFlag.COLORIZE;
                         break;
                 }
-                if (drawFlag != DrawFlag.PAINT) {
-                    isPaintRbtnChecked = false;
-                }
-                if (drawFlag != DrawFlag.GRAPH) {
-                    isGraphRbtnChecked = false;
-                }
-                if (drawFlag != DrawFlag.SELECTION) {
+                if (drawFlag != DrawCache.DrawFlag.SELECTION) {
                     selected = false;
                     selectionFlag = -1;
                 }
                 canvasView.invalidate();
             }
         });
-
-        rbtnPaint.setOnClickListener(new View.OnClickListener() {
+        groupTools.setOnDoubleTapListener(new CheckedImageGroup.OnDoubleTapListener() {
             @Override
-            public void onClick(View v) {
-                if (isPaintRbtnChecked) {
-                    buildPaintDialog();
-                }
-                else {
-                    isPaintRbtnChecked = true;
-                }
-            }
-        });
-
-        rbtnGraph.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isGraphRbtnChecked) {
-                    buildGraphDialog();
-                }
-                else {
-                    isGraphRbtnChecked = true;
+            public void onDoubleTap(CheckedImageGroup group, int checkedId, int checkedIndex) {
+                switch (checkedId) {
+                    case R.id.img_paint:
+                        buildPaintDialog();
+                        break;
+                    case R.id.img_graph:
+                        buildGraphDialog();
+                        break;
                 }
             }
         });
 
-        // Palette name
-        tvPaletteName.setText(currentPalette);
-        tvPaletteName.requestLayout();
+        // CheckedImageGroup initial check
+        switch (drawFlag) {
+            case DrawCache.DrawFlag.PAINT:
+                groupTools.check(R.id.img_paint);
+                break;
+            case DrawCache.DrawFlag.GRAPH:
+                groupTools.check(R.id.img_graph);
+                break;
+            case DrawCache.DrawFlag.ERASER:
+                groupTools.check(R.id.img_eraser);
+                break;
+            case DrawCache.DrawFlag.FILL:
+                groupTools.check(R.id.img_fill);
+                break;
+            case DrawCache.DrawFlag.SELECTION:
+                groupTools.check(R.id.img_selection);
+                break;
+            case DrawCache.DrawFlag.COLORIZE:
+                groupTools.check(R.id.img_colorize);
+                break;
+        }
 
-        // Select Palette
-        groupPalettes.setOnCheckedChangeListener(new PaletteGroup.OnCheckedChangeListener() {
+        // Select palette
+        listPalettes.setOnCheckedChangeListener(new PaletteList.OnCheckedChangeListener() {
             @Override
-            public void onInitialCheck(PaletteGroup group, int checkedId, int checkedPosition) {
-                paint.setColor(currentPaletteColors.get(checkedPosition));
-                flushPaletteColors();
-            }
-            @Override
-            public void onCheckedChanged(PaletteGroup group, int checkedId, int checkedPosition) {
-                paint.setColor(currentPaletteColors.get(checkedPosition));
+            public void onCheckedChanged(PaletteList list, int checkedIndex) {
+                paint.setColor(listPalettes.getPaletteColor(checkedIndex));
             }
         });
-        groupPalettes.setOnDoubleTapListener(new PaletteGroup.OnDoubleTapListener() {
+        listPalettes.setOnDoubleTapListener(new PaletteList.OnDoubleTapListener() {
             @Override
-            public void onDoubleTap(PaletteGroup group, int checkedId, int checkedPosition) {
+            public void onDoubleTap(PaletteList list, int checkedIndex) {
                 buildPaletteDialog();
             }
         });
@@ -1208,45 +1182,45 @@ public class MainActivity extends AppCompatActivity {
                 canvas.save();
                 canvas.restore();
                 // Set matrix
-                matrix.setTranslate(imgTranslationX / imgScale, imgTranslationY / imgScale);
-                matrix.postScale(imgScale, imgScale);
+                matrix.setTranslate(imageTranslationX / imageScale, imageTranslationY / imageScale);
+                matrix.postScale(imageScale, imageScale);
                 // Draw background
-                canvas.drawBitmap(bgBmp, imgTranslationX, imgTranslationY, bgPaint);
+                canvas.drawBitmap(backgroundBitmap, imageTranslationX, imageTranslationY, backgroundPaint);
                 canvas.save();
                 canvas.restore();
                 // Draw scaled bitmap
-                canvas.drawBitmap(currentBmp, matrix, bmpPaint);
+                canvas.drawBitmap(currentBitmap, matrix, bitmapPaint);
                 canvas.save();
                 canvas.restore();
                 // Draw grid
                 if(drawGrid) {
-                    if(imgScale >= 4) {
-                        canvas.drawBitmap(gridBmp, imgTranslationX, imgTranslationY, bmpPaint);
+                    if(imageScale >= 4) {
+                        canvas.drawBitmap(gridBitmap, imageTranslationX, imageTranslationY, bitmapPaint);
                         canvas.save();
                         canvas.restore();
                     }
                 }
                 // Draw selection board
-                if (drawFlag == DrawFlag.SELECTION && selected) {
+                if (drawFlag == DrawCache.DrawFlag.SELECTION && selected) {
                     int selectionLeft;
                     int selectionTop;
                     int selectionRight;
                     int selectionBottom;
                     RectF selectionRectF;
                     switch (selectionFlag) {
-                        case SelectionFlag.CUT:
-                        case SelectionFlag.COPY:
-                            selectionLeft = selectionBmpX * imgScale + imgScale / 2;
-                            selectionTop = selectionBmpY * imgScale + imgScale / 2;
-                            selectionRight = selectionLeft + (selectionBmp.getWidth() - 1) * imgScale;
-                            selectionBottom = selectionTop + (selectionBmp.getHeight() - 1) * imgScale;
+                        case SelectionCache.SelectionFlag.CUT:
+                        case SelectionCache.SelectionFlag.COPY:
+                            selectionLeft = selectionBitmapX * imageScale + imageScale / 2;
+                            selectionTop = selectionBitmapY * imageScale + imageScale / 2;
+                            selectionRight = selectionLeft + (selectionBitmap.getWidth() - 1) * imageScale;
+                            selectionBottom = selectionTop + (selectionBitmap.getHeight() - 1) * imageScale;
                             break;
-                        case SelectionFlag.CLEAR:
+                        case SelectionCache.SelectionFlag.CLEAR:
                         default:
-                            selectionLeft = Math.min(downX, moveX) * imgScale + imgScale / 2;
-                            selectionTop = Math.min(downY, moveY) * imgScale + imgScale / 2;
-                            selectionRight = Math.max(downX, moveX) * imgScale + imgScale / 2;
-                            selectionBottom = Math.max(downY, moveY) * imgScale + imgScale / 2;
+                            selectionLeft = Math.min(downX, moveX) * imageScale + imageScale / 2;
+                            selectionTop = Math.min(downY, moveY) * imageScale + imageScale / 2;
+                            selectionRight = Math.max(downX, moveX) * imageScale + imageScale / 2;
+                            selectionBottom = Math.max(downY, moveY) * imageScale + imageScale / 2;
                             break;
                     }
                     selectionRectF = new RectF(selectionLeft, selectionTop, selectionRight, selectionBottom);
@@ -1256,9 +1230,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Set OnTouchListener
         canvasView.setOnTouchListener(new View.OnTouchListener() {
-            // Scale parameters: distance of two fingers
+            // Scale params: distance of two fingers
             double oldDist = 0;
             double newDist = 0;
             float x;
@@ -1269,55 +1242,54 @@ public class MainActivity extends AppCompatActivity {
                     case MotionEvent.ACTION_DOWN:
                         x = event.getX(0);
                         y = event.getY(0);
-                        cacheBmp = Bitmap.createBitmap(currentBmp);
+                        cacheBitmap = Bitmap.createBitmap(currentBitmap);
                         selected = false;
                         // Draw current bitmap
-                        downX = (int) Math.floor((event.getX(0) - imgTranslationX) / imgScale);
-                        downY = (int) Math.floor((event.getY(0) - imgTranslationY) / imgScale);
+                        downX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
+                        downY = (int) Math.floor((event.getY(0) - imageTranslationY) / imageScale);
                         moveX = downX;
                         moveY = downY;
                         path.moveTo(downX, downY);
                         switch (drawFlag) {
-                            case DrawFlag.PAINT:
-                                if (paintType == PaintType.REPLACE) {
+                            case DrawCache.DrawFlag.PAINT:
+                                if (paintFlag == PaintCache.PaintFlag.REPLACE) {
                                     currentCanvas.drawPoint(downX, downY, eraser);
                                 }
                                 currentCanvas.drawPoint(downX, downY, paint);
                                 break;
-                            case DrawFlag.ERASER:
+                            case DrawCache.DrawFlag.ERASER:
                                 currentCanvas.drawPoint(downX, downY, eraser);
                                 break;
-                            case DrawFlag.SELECTION:
+                            case DrawCache.DrawFlag.SELECTION:
                                 switch (selectionFlag) {
-                                    case SelectionFlag.CUT:
-                                    case SelectionFlag.COPY:
-                                        selectionBmpX = downX - (int)(selectionBmp.getWidth() * 0.5f);
-                                        selectionBmpY = downY - (int)(selectionBmp.getHeight() * 0.5f);
-                                        currentCanvas.drawBitmap(selectionBmp, selectionBmpX, selectionBmpY, bmpPaint);
+                                    case SelectionCache.SelectionFlag.CUT:
+                                    case SelectionCache.SelectionFlag.COPY:
+                                        selectionBitmapX = downX - (int)(selectionBitmap.getWidth() * 0.5f);
+                                        selectionBitmapY = downY - (int)(selectionBitmap.getHeight() * 0.5f);
+                                        currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
                                         selected = true;
                                         break;
-                                    case SelectionFlag.CLEAR:
+                                    case SelectionCache.SelectionFlag.CLEAR:
                                     default:
                                         if (downX < 0) {
                                             downX = 0;
                                         }
-                                        if (downX >= currentBmp.getWidth()) {
-                                            downX = currentBmp.getWidth() - 1;
+                                        if (downX >= currentBitmap.getWidth()) {
+                                            downX = currentBitmap.getWidth() - 1;
                                         }
                                         if (downY < 0) {
                                             downY = 0;
                                         }
-                                        if (downY >= currentBmp.getHeight()) {
-                                            downY = currentBmp.getHeight() - 1;
+                                        if (downY >= currentBitmap.getHeight()) {
+                                            downY = currentBitmap.getHeight() - 1;
                                         }
                                         break;
                                 }
                                 break;
-                            case DrawFlag.COLOR_PICKER:
-                                if (downX >=0 && downY >= 0 && downX < currentBmp.getWidth() && downY < currentBmp.getHeight()) {
-                                    currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), currentBmp.getPixel(downX, downY));
-                                    paint.setColor(currentBmp.getPixel(downX, downY));
-                                    flushPaletteColors();
+                            case DrawCache.DrawFlag.COLORIZE:
+                                if (downX >=0 && downY >= 0 && downX < currentBitmap.getWidth() && downY < currentBitmap.getHeight()) {
+                                    //currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), currentBmp.getPixel(downX, downY));
+                                    paint.setColor(currentBitmap.getPixel(downX, downY));
                                 }
                                 break;
                         }
@@ -1336,7 +1308,7 @@ public class MainActivity extends AppCompatActivity {
                         selected = false;
 
                         currentCanvas.drawPaint(eraser);
-                        currentCanvas.drawBitmap(cacheBmp, 0, 0, bmpPaint);
+                        currentCanvas.drawBitmap(cacheBitmap, 0, 0, bitmapPaint);
                         currentCanvas.save();
                         currentCanvas.restore();
                         break;
@@ -1347,36 +1319,36 @@ public class MainActivity extends AppCompatActivity {
                             // Replace 256 with other value to control sensitivity
                             if(newDist != 0) {
                                 if(newDist >= oldDist + 256) {
-                                    setImgScale(imgScale * 2);
+                                    setImageScale(imageScale * 2);
                                     oldDist = newDist;
                                 }
                                 if(newDist <= oldDist - 256) {
-                                    setImgScale(imgScale / 2);
+                                    setImageScale(imageScale / 2);
                                     oldDist = newDist;
                                 }
                             }
-                            imgTranslationX += event.getX(0) - x;
-                            imgTranslationY += event.getY(0) - y;
+                            imageTranslationX += event.getX(0) - x;
+                            imageTranslationY += event.getY(0) - y;
                             x = event.getX(0);
                             y = event.getY(0);
                         }
                         else if (!readOnlyMode) {
                             // Current path
-                            moveX = (int) Math.floor((event.getX(0) - imgTranslationX) / imgScale);
-                            moveY = (int) Math.floor((event.getY(0) - imgTranslationY) / imgScale);
+                            moveX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
+                            moveY = (int) Math.floor((event.getY(0) - imageTranslationY) / imageScale);
                             switch (drawFlag) {
-                                case DrawFlag.PAINT:
-                                case DrawFlag.ERASER:
+                                case DrawCache.DrawFlag.PAINT:
+                                case DrawCache.DrawFlag.ERASER:
                                     path.lineTo(moveX, moveY);
                                     break;
-                                case DrawFlag.GRAPH:
+                                case DrawCache.DrawFlag.GRAPH:
                                     path.reset();
-                                    switch (graphType) {
-                                        case GraphType.LINE:
+                                    switch (graphFlag) {
+                                        case GraphCache.GraphFlag.LINE:
                                             path.moveTo(downX, downY);
                                             path.lineTo(moveX, moveY);
                                             break;
-                                        case GraphType.CIRCLE:
+                                        case GraphCache.GraphFlag.CIRCLE:
                                             int circleLeft = Math.min(downX, moveX);
                                             int circleTop = Math.min(downY, moveY);
                                             int circleRight = Math.max(downX, moveX);
@@ -1398,7 +1370,7 @@ public class MainActivity extends AppCompatActivity {
                                             float circleY = (circleTop + circleBottom) * 0.5f;
                                             path.addCircle(circleX, circleY, circleDiameter * 0.5f, Path.Direction.CW);
                                             break;
-                                        case GraphType.OVAL:
+                                        case GraphCache.GraphFlag.OVAL:
                                             int ovalLeft = Math.min(downX, moveX);
                                             int ovalTop = Math.min(downY, moveY);
                                             int ovalRight = Math.max(downX, moveX);
@@ -1406,7 +1378,7 @@ public class MainActivity extends AppCompatActivity {
                                             RectF ovalRectF = new RectF(ovalLeft, ovalTop, ovalRight, ovalBottom);
                                             path.addOval(ovalRectF, Path.Direction.CW);
                                             break;
-                                        case GraphType.SQUARE:
+                                        case GraphCache.GraphFlag.SQUARE:
                                             int squareLeft = Math.min(downX, moveX);
                                             int squareTop = Math.min(downY, moveY);
                                             int squareRight = Math.max(downX, moveX);
@@ -1427,7 +1399,7 @@ public class MainActivity extends AppCompatActivity {
                                             RectF squareRectF = new RectF(squareLeft, squareTop, squareRight, squareBottom);
                                             path.addRect(squareRectF, Path.Direction.CW);
                                             break;
-                                        case GraphType.RECT:
+                                        case GraphCache.GraphFlag.RECTANGLE:
                                             int rectLeft = Math.min(downX, moveX);
                                             int rectTop = Math.min(downY, moveY);
                                             int rectRight = Math.max(downX, moveX);
@@ -1437,48 +1409,45 @@ public class MainActivity extends AppCompatActivity {
                                             break;
                                     }
                                     break;
-                                case DrawFlag.FILL:
-                                    break;
-                                case DrawFlag.SELECTION:
+                                case DrawCache.DrawFlag.SELECTION:
                                     switch (selectionFlag) {
-                                        case SelectionFlag.CUT:
-                                        case SelectionFlag.COPY:
+                                        case SelectionCache.SelectionFlag.CUT:
+                                        case SelectionCache.SelectionFlag.COPY:
                                             break;
-                                        case SelectionFlag.CLEAR:
+                                        case SelectionCache.SelectionFlag.CLEAR:
                                         default:
                                             if (moveX < 0) {
                                                 moveX = 0;
                                             }
-                                            if (moveX >= currentBmp.getWidth()) {
-                                                moveX = currentBmp.getWidth() - 1;
+                                            if (moveX >= currentBitmap.getWidth()) {
+                                                moveX = currentBitmap.getWidth() - 1;
                                             }
                                             if (moveY < 0) {
                                                 moveY = 0;
                                             }
-                                            if (moveY >= currentBmp.getHeight()) {
-                                                moveY = currentBmp.getHeight() - 1;
+                                            if (moveY >= currentBitmap.getHeight()) {
+                                                moveY = currentBitmap.getHeight() - 1;
                                             }
                                             break;
                                     }
                                     selected = true;
                                     break;
-                                case DrawFlag.COLOR_PICKER:
-                                    if (downX >=0 && downY >= 0 && downX < currentBmp.getWidth() && downY < currentBmp.getHeight()) {
-                                        currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), currentBmp.getPixel(moveX, moveY));
-                                        paint.setColor(currentBmp.getPixel(moveX, moveY));
-                                        flushPaletteColors();
+                                case DrawCache.DrawFlag.COLORIZE:
+                                    if (downX >=0 && downY >= 0 && downX < currentBitmap.getWidth() && downY < currentBitmap.getHeight()) {
+                                        //currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), currentBmp.getPixel(moveX, moveY));
+                                        paint.setColor(currentBitmap.getPixel(moveX, moveY));
                                     }
                                     break;
                             }
                             // Clear canvas
                             currentCanvas.drawPaint(eraser);
                             // Draw cache bitmap
-                            currentCanvas.drawBitmap(cacheBmp, 0, 0, bmpPaint);
+                            currentCanvas.drawBitmap(cacheBitmap, 0, 0, bitmapPaint);
                             currentCanvas.save();
                             currentCanvas.restore();
                             // Draw path
-                            if (drawFlag != DrawFlag.ERASER) {
-                                if (paintType == PaintType.REPLACE) {
+                            if (drawFlag != DrawCache.DrawFlag.ERASER) {
+                                if (paintFlag == PaintCache.PaintFlag.REPLACE) {
                                     currentCanvas.drawPath(path, eraser);
                                 }
                                 currentCanvas.drawPath(path, paint);
@@ -1488,23 +1457,23 @@ public class MainActivity extends AppCompatActivity {
                             }
                             switch (drawFlag) {
                                 // Draw down point
-                                case DrawFlag.PAINT:
-                                    if (paintType == PaintType.REPLACE) {
+                                case DrawCache.DrawFlag.PAINT:
+                                    if (paintFlag == PaintCache.PaintFlag.REPLACE) {
                                         currentCanvas.drawPoint(downX, downY, eraser);
                                     }
                                     currentCanvas.drawPoint(downX, downY, paint);
                                     break;
-                                case DrawFlag.ERASER:
+                                case DrawCache.DrawFlag.ERASER:
                                     currentCanvas.drawPoint(downX, downY, eraser);
                                     break;
                                 // Draw selection bmp
-                                case DrawFlag.SELECTION:
+                                case DrawCache.DrawFlag.SELECTION:
                                     switch (selectionFlag) {
-                                        case SelectionFlag.CUT:
-                                        case SelectionFlag.COPY:
-                                            selectionBmpX = moveX - (int)(selectionBmp.getWidth() * 0.5f);
-                                            selectionBmpY = moveY - (int)(selectionBmp.getHeight() * 0.5f);
-                                            currentCanvas.drawBitmap(selectionBmp, selectionBmpX, selectionBmpY, bmpPaint);
+                                        case SelectionCache.SelectionFlag.CUT:
+                                        case SelectionCache.SelectionFlag.COPY:
+                                            selectionBitmapX = moveX - (int)(selectionBitmap.getWidth() * 0.5f);
+                                            selectionBitmapY = moveY - (int)(selectionBitmap.getHeight() * 0.5f);
+                                            currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
                                             break;
                                     }
                                     break;
@@ -1515,39 +1484,39 @@ public class MainActivity extends AppCompatActivity {
                         canvasView.invalidate();
                         break;
                     case MotionEvent.ACTION_UP:
-                        upX = (int) Math.floor((event.getX(0) - imgTranslationX) / imgScale);
-                        upY = (int) Math.floor((event.getY(0) - imgTranslationY) / imgScale);
+                        upX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
+                        upY = (int) Math.floor((event.getY(0) - imageTranslationY) / imageScale);
                         if (readOnlyMode) {
                             readOnlyMode = false;
                         }
                         else {
                             // Draw current bitmap
                             switch (drawFlag) {
-                                case DrawFlag.FILL:
-                                    if (downX >=0 && downY >= 0 && downX < currentBmp.getWidth() && downY < currentBmp.getHeight()) {
-                                        DrawUtils.fill(currentBmp, downX, downY, paint.getColor());
+                                case DrawCache.DrawFlag.FILL:
+                                    if (downX >=0 && downY >= 0 && downX < currentBitmap.getWidth() && downY < currentBitmap.getHeight()) {
+                                        DrawUtils.fill(currentBitmap, downX, downY, paint.getColor());
                                     }
                                     break;
-                                case DrawFlag.SELECTION:
+                                case DrawCache.DrawFlag.SELECTION:
                                     switch (selectionFlag) {
-                                        case SelectionFlag.CUT:
-                                        case SelectionFlag.COPY:
+                                        case SelectionCache.SelectionFlag.CUT:
+                                        case SelectionCache.SelectionFlag.COPY:
                                             // Clear canvas
                                             currentCanvas.drawPaint(eraser);
                                             // Draw cache bitmap
-                                            currentCanvas.drawBitmap(cacheBmp, 0, 0, bmpPaint);
+                                            currentCanvas.drawBitmap(cacheBitmap, 0, 0, bitmapPaint);
                                             currentCanvas.save();
                                             currentCanvas.restore();
                                             buildSelectionPopup2();
                                             break;
-                                        case SelectionFlag.CLEAR:
+                                        case SelectionCache.SelectionFlag.CLEAR:
                                         default:
                                             buildSelectionPopup1();
                                             break;
                                     }
                                     break;
                             }
-                            if (drawFlag != DrawFlag.SELECTION) {
+                            if (drawFlag != DrawCache.DrawFlag.SELECTION) {
                                 currentCanvas.save();
                                 currentCanvas.restore();
                                 canvasView.invalidate();
@@ -1568,12 +1537,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void flushPaletteColors() {
-        for (int i = 0; i < currentPaletteColors.size(); i ++) {
-            groupPalettes.getPalettes().get(i).setPaletteColor(currentPaletteColors.get(i));
-        }
-    }
-
     // Calculate linear distance of two fingers
     private double spacing(MotionEvent event) {
         if(event.getPointerCount() >= 2) {
@@ -1584,79 +1547,4 @@ public class MainActivity extends AppCompatActivity {
         return 0;
     }
 
-    // Set ActionBar menu
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu, menu);
-        MenuItem itemGrid = menu.findItem(R.id.item_grid);
-        if (drawGrid) {
-            itemGrid.setTitle(getString(R.string.hide_grid));
-        }
-        else {
-            itemGrid.setTitle(getString(R.string.show_grid));
-        }
-        return true;
-    }
-
-    // ActionBar menu listener
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.item_undo:
-                return true;
-            case R.id.item_redo:
-                return true;
-            case R.id.item_load:
-                return true;
-            case R.id.item_save:
-                return true;
-            case R.id.item_grid:
-                setDrawGrid(!drawGrid);
-                if (drawGrid) {
-                    item.setTitle(getString(R.string.hide_grid));
-                }
-                else {
-                    item.setTitle(getString(R.string.show_grid));
-                }
-                return true;
-            case R.id.item_settings:
-                return true;
-            case R.id.item_exit:
-                finish();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // Recycle bitmaps
-        if (currentBmp != null) {
-            if(!currentBmp.isRecycled()) {
-                currentBmp.recycle();
-            }
-        }
-        if (cacheBmp != null) {
-            if(!cacheBmp.isRecycled()) {
-                cacheBmp.recycle();
-            }
-        }
-        if (gridBmp != null) {
-            if(!gridBmp.isRecycled()) {
-                gridBmp.recycle();
-            }
-        }
-        if (bgBmp != null) {
-            if(!bgBmp.isRecycled()) {
-                bgBmp.recycle();
-            }
-        }
-        if (selectionBmp != null) {
-            if(!selectionBmp.isRecycled()) {
-                selectionBmp.recycle();
-            }
-        }
-    }
 }

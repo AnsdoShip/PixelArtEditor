@@ -1,4 +1,4 @@
-package com.ansdoship.ansdopix.viewgroup;
+package com.ansdoship.pixart.viewgroup;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -8,16 +8,16 @@ import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
 
-import com.ansdoship.ansdopix.R;
-import com.ansdoship.ansdopix.util.ColorPalette;
-import com.ansdoship.ansdopix.view.PaletteView;
+import com.ansdoship.pixart.R;
+import com.ansdoship.pixart.util.ColorPalette;
+import com.ansdoship.pixart.view.PaletteView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PaletteList extends LinearLayout implements View.OnClickListener{
     private List<PaletteView> palettes;
-    private int index;
+    private int mIndex;
     private OnCheckedChangeListener mOnCheckedChangeListener;
     private OnDoubleTapListener mOnDoubleTapListener;
     private Context mContext;
@@ -56,7 +56,7 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
                 mOnDoubleTapListener.onDoubleTap(this, index);
             }
         }
-        this.index = index;
+        mIndex = index;
         for (PaletteView palette : palettes) {
             palette.setChecked(false);
         }
@@ -66,7 +66,7 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
     }
 
     public int getCheckedIndex() {
-        return index;
+        return mIndex;
     }
 
     public PaletteList(Context context) {
@@ -83,18 +83,10 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.PaletteList, defStyleAttr, 0);
         int size = typedArray.getInt(R.styleable.PaletteList_size, 1);
         palettes = new ArrayList<>(size);
-        int paletteViewSize = 0;
-        measure(View.MeasureSpec.makeMeasureSpec(0, MeasureSpec.AT_MOST),
-                View.MeasureSpec.makeMeasureSpec(0, MeasureSpec.AT_MOST));
-        if (getOrientation() == VERTICAL) {
-            paletteViewSize = getMeasuredWidth();
-        }
-        else if (getOrientation() == HORIZONTAL) {
-            paletteViewSize = getMeasuredHeight();
-        }
         for (int i = 0; i < size; i ++) {
             PaletteView paletteView = new PaletteView(context);
-            paletteView.setLayoutParams(new LinearLayout.LayoutParams(paletteViewSize, paletteViewSize));
+            paletteView.setLayoutParams(new LinearLayout.LayoutParams(typedArray.getDimensionPixelSize(R.styleable.PaletteList_paletteWidth, 0),
+                    typedArray.getDimensionPixelSize(R.styleable.PaletteList_paletteHeight, 0)));
             palettes.add(paletteView);
         }
         for (PaletteView palette : palettes) {

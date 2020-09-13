@@ -1,5 +1,6 @@
-package com.ansdoship.ansdopix.util;
+package com.ansdoship.pixart.util;
 
+import android.os.Build;
 import android.os.Environment;
 
 import java.io.BufferedReader;
@@ -136,8 +137,13 @@ public final class FileUtils {
         return paths;
     }
 
-    public static String getExternalSDCardPath () {
-        return getExternalSDCardPathList().get(0);
+    public static String getStorageDirectory () {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            return Environment.getDataDirectory().getAbsolutePath();
+        }
+        else {
+            return getExternalSDCardPathList().get(0);
+        }
     }
 
 }

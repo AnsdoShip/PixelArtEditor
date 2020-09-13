@@ -1,4 +1,4 @@
-package com.ansdoship.ansdopix.util;
+package com.ansdoship.pixart.util;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -164,7 +164,8 @@ public final class BitmapUtils {
 		if (src != null) {
 			Matrix matrix = new Matrix();
 			matrix.setRotate(degrees, src.getWidth() * 0.5f, src.getHeight() * 0.5f);
-			return Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, false);
+			src = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, false);
+			return src;
 		}
 		return null;
 	}
@@ -173,7 +174,8 @@ public final class BitmapUtils {
 		if (src != null) {
 			Matrix matrix = new Matrix();
 			matrix.postScale(-1, 1);
-			return Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, false);
+			src = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, false);
+			return src;
 		}
 		return null;
 	}
@@ -182,7 +184,8 @@ public final class BitmapUtils {
 		if (src != null) {
 			Matrix matrix = new Matrix();
 			matrix.postScale(1, -1);
-			return Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, false);
+			src = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, false);
+			return src;
 		}
 		return null;
 	}
