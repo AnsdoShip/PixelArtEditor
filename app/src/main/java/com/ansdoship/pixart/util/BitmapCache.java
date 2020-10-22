@@ -206,6 +206,9 @@ public class BitmapCache {
         if (file.exists() && pathAndName.endsWith(".cache")) {
             try {
                 ObjectInputStream ObjectIS = new ObjectInputStream(new FileInputStream(file));
+                if (!(ObjectIS.readObject() instanceof BitmapCache)) {
+                    return null;
+                }
                 return (BitmapCache) ObjectIS.readObject();
             }
             catch (IOException | ClassNotFoundException e) {

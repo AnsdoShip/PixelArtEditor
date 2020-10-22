@@ -1,12 +1,21 @@
 package com.ansdoship.pixart.activity;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.res.ResourcesCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapShader;
@@ -20,31 +29,47 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.InputFilter;
+import android.text.Spanned;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.ansdoship.pixart.R;
+import com.ansdoship.pixart.util.ColorPalette;
 import com.ansdoship.pixart.util.ColorUtils;
 import com.ansdoship.pixart.util.BitmapUtils;
 import com.ansdoship.pixart.util.DrawCache;
 import com.ansdoship.pixart.util.DrawUtils;
+import com.ansdoship.pixart.util.FileUtils;
 import com.ansdoship.pixart.util.GraphCache;
+import com.ansdoship.pixart.util.MotionUtils;
 import com.ansdoship.pixart.util.PaintCache;
 import com.ansdoship.pixart.util.SelectionCache;
 import com.ansdoship.pixart.view.CanvasView;
 import com.ansdoship.pixart.view.CheckedImageView;
 import com.ansdoship.pixart.view.PaletteView;
+import com.ansdoship.pixart.viewAdapter.FileListAdapter;
+import com.ansdoship.pixart.viewAdapter.ImageViewListAdapter;
+import com.ansdoship.pixart.viewAdapter.PaletteListAdapter;
+import com.ansdoship.pixart.viewAdapter.TextViewListAdapter;
 import com.ansdoship.pixart.viewgroup.CheckedImageGroup;
 import com.ansdoship.pixart.viewgroup.PaletteList;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // SharedPreferences
     private SharedPreferences prefData;
     private SharedPreferences.Editor prefEditor;
+    private boolean dataSaved;
     private void saveData() {
 
         // Clear old data
@@ -75,21 +101,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         prefEditor.putInt("paint_width", paintWidth);
 
         // Grid
-        prefEditor.putBoolean("is_draw_grid", drawGrid);
+        prefEditor.putBoolean("draw_grid", drawGrid);
         prefEditor.putInt("grid_width", gridWidth);
         prefEditor.putInt("grid_height", gridHeight);
-        prefEditor.putInt("grid_color", gridColor);
-        // Palette
 
         // File save & load path
-        prefEditor.putString("CACHE_PATH", CACHE_PATH);
         prefEditor.putString("IMAGE_PATH", IMAGE_PATH);
-        prefEditor.putString("PALETTE_PATH", PALETTE_PATH);
-        // Bitmap cache
-        BitmapUtils.saveBitmapToBMP(CACHE_PATH + "current_bitmap", currentBitmap, true);
+
+        // Palette
+        prefEditor.putInt("canvas_view_background_color", backgroundPalette.get(0));
+        prefEditor.putInt("canvas_background_color_1", backgroundPalette.get(1));
+        prefEditor.putInt("canvas_background_color_2", backgroundPalette.get(2));
+        prefEditor.putInt("grid_color", gridPalette.get(0));
+        for (int i = 1; i <= builtinPalette.size(); i ++) {
+            prefEditor.putInt("builtin_palette_color_" + i, builtinPalette.get(i - 1));
+        }
+        prefEditor.putInt("palette_id", paletteId);
+        if (paletteId == EXTERNAL_PALETTE) {
+            prefEditor.putString("palette_name", paletteName);
+            externalPalette.saveToFile(PALETTE_PATH + "/" + paletteName, true);
+        }
+        prefEditor.putInt("palette_checked_index", listPalettes.getCheckedIndex());
 
         //Apply data
         prefEditor.apply();
+
+        // Bitmap cache
+        BitmapUtils.saveBitmapToBMP(CACHE_PATH + "/current_bitmap", currentBitmap, true);
 
     }
     private void loadData() {
@@ -110,22 +148,68 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         paintWidth = prefData.getInt("paint_width", 1);
 
         // Grid
-        drawGrid = prefData.getBoolean("is_draw_grid", true);
+        drawGrid = prefData.getBoolean("draw_grid", true);
         gridWidth = prefData.getInt("grid_width", 1);
         gridHeight = prefData.getInt("grid_height", 1);
-        gridColor = prefData.getInt("grid_color", Color.BLACK);
-
-        // Palette
 
         // File save & load path
-        CACHE_PATH = getExternalCacheDir() + "/";
-        IMAGE_PATH = prefData.getString("IMAGE_PATH", getExternalFilesDir("images") + "/");
-        PALETTE_PATH = prefData.getString("PALETTE_PATH", getExternalFilesDir("palettes") + "/");
+        CACHE_PATH = FileUtils.getContextCachePath(this);
+        IMAGE_PATH = prefData.getString("IMAGE_PATH", FileUtils.getContextFilesPath(this, "images"));
+        PALETTE_PATH = FileUtils.getContextFilesPath(this, "palettes");
+
+        // Palette
+        backgroundPalette = ColorPalette.createColorPalette(new int[] {
+                prefData.getInt("canvas_view_background_color", Color.DKGRAY),
+                prefData.getInt("canvas_background_color_1", Color.LTGRAY),
+                prefData.getInt("canvas_background_color_2", Color.GRAY)
+        });
+        gridPalette = ColorPalette.createColorPalette(1, prefData.getInt("grid_color", Color.BLACK));
+        builtinPalette = ColorPalette.createColorPalette(new int[] {
+                prefData.getInt("builtin_palette_color_1", Color.RED),
+                prefData.getInt("builtin_palette_color_2", Color.YELLOW),
+                prefData.getInt("builtin_palette_color_3", Color.GREEN),
+                prefData.getInt("builtin_palette_color_4", Color.CYAN),
+                prefData.getInt("builtin_palette_color_5", Color.BLUE),
+                prefData.getInt("builtin_palette_color_6", Color.MAGENTA),
+                prefData.getInt("builtin_palette_color_7", Color.WHITE),
+                prefData.getInt("builtin_palette_color_8", Color.LTGRAY),
+                prefData.getInt("builtin_palette_color_9", Color.GRAY),
+                prefData.getInt("builtin_palette_color_10", Color.DKGRAY),
+                prefData.getInt("builtin_palette_color_11", Color.BLACK),
+                prefData.getInt("builtin_palette_color_12", Color.TRANSPARENT)
+        });
+        paletteId = prefData.getInt("palette_id", BUILTIN_PALETTE);
+        switch (paletteId) {
+            case BACKGROUND_PALETTE:
+                paletteName = getString(R.string.background_palette);
+                listPalettes.setColorPalette(backgroundPalette, Math.min(prefData.getInt("palette_checked_index", 0), 2));
+                break;
+            case GRID_PALETTE:
+                paletteName = getString(R.string.grid_palette);
+                listPalettes.setColorPalette(gridPalette);
+                break;
+            case BUILTIN_PALETTE:
+                paletteName = getString(R.string.builtin_palette);
+                listPalettes.setColorPalette(builtinPalette, prefData.getInt("palette_checked_index", 0));
+                break;
+            case EXTERNAL_PALETTE:
+                paletteName = prefData.getString("palette_name", null);
+                externalPalette = ColorPalette.decodeFile(PALETTE_PATH + "/" + paletteName + ".palette");
+                if (externalPalette == null) {
+                    paletteId = BUILTIN_PALETTE;
+                    listPalettes.setColorPalette(builtinPalette, prefData.getInt("palette_checked_index", 0));
+                }
+                else {
+                    listPalettes.setColorPalette(externalPalette, prefData.getInt("palette_checked_index", 0));
+                }
+                break;
+        }
 
         // Load bitmap
-        currentBitmap = BitmapUtils.loadBitmapFromFile(CACHE_PATH + "current_bitmap");
+        currentBitmap = BitmapUtils.loadBitmapFromFile(CACHE_PATH + "/current_bitmap.bmp");
+
         if(currentBitmap == null) {
-            currentBitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888);
+            currentBitmap = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888);
         }
         currentCanvas = new Canvas(currentBitmap);
 
@@ -174,6 +258,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         paint.setStrokeWidth(width);
         eraser.setStrokeWidth(width);
     }
+    private int dialogTempPaintWidth;
+    private void setPaintFlag (int paintFlag) {
+        if (paint == null) {
+            return;
+        }
+        this.paintFlag = paintFlag;
+        switch (paintFlag) {
+            case PaintCache.PaintFlag.REPLACE:
+                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
+                break;
+            case PaintCache.PaintFlag.OVERRIDE:
+                paint.setXfermode(null);
+                break;
+        }
+    }
 
     // Flags
     private int drawFlag;
@@ -191,7 +290,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean drawGrid;
     private int gridWidth;
     private int gridHeight;
-    private int gridColor;
 
     private void setDrawGrid(boolean isDrawGrid) {
         drawGrid = isDrawGrid;
@@ -209,8 +307,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void setGridColor(int gridColor) {
-        this.gridColor = gridColor;
+        gridPalette.set(0, gridColor);
         flushGridBitmap();
+        canvasView.invalidate();
+    }
+
+    private int getGridColor() {
+        return gridPalette.get(0);
     }
 
     private void flushGridBitmap() {
@@ -220,7 +323,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Bitmap.Config.ARGB_8888);
         gridCanvas = new Canvas(gridBitmap);
         gridPaint = new Paint();
-        gridPaint.setColor(gridColor);
+        gridPaint.setColor(getGridColor());
         gridPaint.setStrokeWidth(1);
         gridPaint.setStyle(Paint.Style.STROKE);
         gridCanvas.drawRect(0, 0, gridBitmap.getWidth(), gridBitmap.getHeight(), gridPaint);
@@ -233,10 +336,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         gridCanvas.drawPaint(gridPaint);
     }
 
-    // Palette
+    // Palettes
+    private static final int EXTERNAL_PALETTE = -1;
+    private static final int BACKGROUND_PALETTE = 0;
+    private static final int GRID_PALETTE = 1;
+    private static final int BUILTIN_PALETTE = 2;
+    private int paletteId;
+    private String paletteName;
+    private ColorPalette backgroundPalette;
+    private ColorPalette gridPalette;
+    private ColorPalette builtinPalette;
+    private ColorPalette externalPalette;
+    private ColorPalette tempPalette;
+    private String dialogTempPaletteName;
     private int dialogTempColor;
     private int dialogTempColorH;
     private float dialogTempColorS;
+    private float dialogTempColorV;
 
     // File save & load path
     private String CACHE_PATH;
@@ -258,6 +374,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Background
     private Bitmap backgroundBitmap;
     private Canvas backgroundCanvas;
+    private void setCanvasViewBackgroundColor (int backgroundColor) {
+        backgroundPalette.set(0, backgroundColor);
+        canvasView.invalidate();
+    }
+    private int getCanvasViewBackgroundColor () {
+        return backgroundPalette.get(0);
+    }
+    private int getCanvasBackgroundColor1() {
+        return backgroundPalette.get(1);
+    }
+    private int getCanvasBackgroundColor2() {
+        return backgroundPalette.get(2);
+    }
+    private void flushBackgroundBitmap() {
+        backgroundBitmap = Bitmap.createBitmap(new int[] {getCanvasBackgroundColor1(),
+                        getCanvasBackgroundColor2(),
+                        getCanvasBackgroundColor2(),
+                        getCanvasBackgroundColor1()},
+                2, 2, Bitmap.Config.ARGB_8888);
+        backgroundBitmap = Bitmap.createScaledBitmap(backgroundBitmap, imageScale * getBackgroundImageScale(),
+                imageScale * getBackgroundImageScale(), false);
+        BitmapShader bgShader = new BitmapShader(backgroundBitmap, BitmapShader.TileMode.REPEAT,
+                BitmapShader.TileMode.REPEAT);
+        backgroundPaint = new Paint();
+        backgroundPaint.setShader(bgShader);
+        backgroundBitmap = Bitmap.createBitmap(currentBitmap.getWidth() * imageScale,
+                currentBitmap.getHeight() * imageScale, Bitmap.Config.ARGB_8888);
+        backgroundCanvas = new Canvas(backgroundBitmap);
+        backgroundCanvas.drawPaint(backgroundPaint);
+    }
 
     // Current
     private Bitmap currentBitmap;
@@ -273,23 +419,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Bitmap gridBitmap;
     private Canvas gridCanvas;
 
-
     // Paints
     private Paint backgroundPaint;
-    private void flushBackgroundBitmap() {
-        backgroundBitmap = Bitmap.createBitmap(new int[] {Color.LTGRAY, Color.GRAY, Color.GRAY, Color.LTGRAY},
-                2, 2, Bitmap.Config.ARGB_8888);
-        backgroundBitmap = Bitmap.createScaledBitmap(backgroundBitmap, imageScale * getBackgroundImageScale(),
-                imageScale * getBackgroundImageScale(), false);
-        BitmapShader bgShader = new BitmapShader(backgroundBitmap, BitmapShader.TileMode.REPEAT,
-                BitmapShader.TileMode.REPEAT);
-        backgroundPaint = new Paint();
-        backgroundPaint.setShader(bgShader);
-        backgroundBitmap = Bitmap.createBitmap(currentBitmap.getWidth() * imageScale,
-                currentBitmap.getHeight() * imageScale, Bitmap.Config.ARGB_8888);
-        backgroundCanvas = new Canvas(backgroundBitmap);
-        backgroundCanvas.drawPaint(backgroundPaint);
-    }
     private Paint gridPaint;
     private Paint bitmapPaint;
     private Paint paint;
@@ -339,21 +470,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int checkedItem = -1;
         switch (paintFlag) {
             case PaintCache.PaintFlag.REPLACE:
+                setPaintFlag(PaintCache.PaintFlag.REPLACE);
                 checkedItem = 0;
                 break;
             case PaintCache.PaintFlag.OVERRIDE:
+                setPaintFlag(PaintCache.PaintFlag.OVERRIDE);
                 checkedItem = 1;
                 break;
         }
         builder.setSingleChoiceItems(items, checkedItem, new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onClick(final DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
-                        paintFlag = PaintCache.PaintFlag.REPLACE;
+                        setPaintFlag(PaintCache.PaintFlag.REPLACE);
                         break;
                     case 1:
-                        paintFlag = PaintCache.PaintFlag.OVERRIDE;
+                        setPaintFlag(PaintCache.PaintFlag.OVERRIDE);
                         break;
                 }
                 dialog.dismiss();
@@ -372,8 +505,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         barPaintWidthValue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                setPaintWidth(progress + 1);
-                tvPaintWidthValue.setText(Integer.toString(paintWidth));
+                dialogTempPaintWidth = progress + 1;
+                tvPaintWidthValue.setText(Integer.toString(dialogTempPaintWidth));
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
@@ -386,74 +519,80 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                setPaintWidth(dialogTempPaintWidth);
+                tvPaintWidth.setText(Integer.toString(paintWidth));
+                tvPaintWidth.requestLayout();
             }
         });
-        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
             @Override
-            public void onDismiss(DialogInterface dialog) {
-                tvPaintWidth.setText(R.string.paint_width);
-                tvPaintWidth.append(": " + paintWidth);
-                tvPaintWidth.requestLayout();
+            public void onClick(DialogInterface dialogInterface, int i) {
             }
         });
         builder.create().show();
     }
     private void buildGraphDialog () {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        String [] items = {
-                getString(R.string.line),
-                getString(R.string.circle),
-                getString(R.string.oval),
-                getString(R.string.square),
-                getString(R.string.rect)
-        };
-        int checkedItem = -1;
+        View view = View.inflate(this, R.layout.dialog_recycler_view, null);
+        builder.setView(view);
+        final AlertDialog alertDialog = builder.create();
+        RecyclerView recyclerView = (RecyclerView) view;
+        List<Drawable> images = new ArrayList<>();
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_line_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_circle_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_oval_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_square_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_rectangle_24, getTheme()));
+        int checkedPosition = -1;
         switch (graphFlag) {
             case GraphCache.GraphFlag.LINE:
-                checkedItem = 0;
+                checkedPosition = 0;
                 break;
             case GraphCache.GraphFlag.CIRCLE:
-                checkedItem = 1;
+                checkedPosition = 1;
                 break;
             case GraphCache.GraphFlag.OVAL:
-                checkedItem = 2;
+                checkedPosition = 2;
                 break;
             case GraphCache.GraphFlag.SQUARE:
-                checkedItem = 3;
+                checkedPosition = 3;
                 break;
             case GraphCache.GraphFlag.RECTANGLE:
-                checkedItem = 4;
+                checkedPosition = 4;
                 break;
         }
-        builder.setSingleChoiceItems(items, checkedItem, new DialogInterface.OnClickListener() {
+        ImageViewListAdapter adapter = new ImageViewListAdapter(this, images, checkedPosition);
+        adapter.setOnItemClickListener(new ImageViewListAdapter.OnItemClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which) {
+            public void onClick(int position) {
+                switch (position) {
                     case 0:
                         graphFlag = GraphCache.GraphFlag.LINE;
-                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_line_24, getTheme()));
+                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_line_24, getTheme()));
                         break;
                     case 1:
                         graphFlag = GraphCache.GraphFlag.CIRCLE;
-                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_circle_24, getTheme()));
+                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_circle_24, getTheme()));
                         break;
                     case 2:
                         graphFlag = GraphCache.GraphFlag.OVAL;
-                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_oval_24, getTheme()));
+                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_oval_24, getTheme()));
                         break;
                     case 3:
                         graphFlag = GraphCache.GraphFlag.SQUARE;
-                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_square_24, getTheme()));
+                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_square_24, getTheme()));
                         break;
                     case 4:
                         graphFlag = GraphCache.GraphFlag.RECTANGLE;
-                        imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_rectangle_24, getTheme()));
+                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_rectangle_24, getTheme()));
                         break;
                 }
-                dialog.dismiss();
+                alertDialog.dismiss();
             }
         });
-        builder.create().show();
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 5, RecyclerView.VERTICAL, false));
+        recyclerView.setAdapter(adapter);
+        alertDialog.show();
     }
     private void buildSelectionPopup1() {
         selectionFlag = -1;
@@ -633,7 +772,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View v) {
                 cacheBitmap = Bitmap.createBitmap(currentBitmap);
-                BitmapUtils.rotateBitmap(selectionBitmap, -90);
+                selectionBitmap = BitmapUtils.rotateBitmap(selectionBitmap, -90);
                 currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
                 currentCanvas.save();
                 currentCanvas.restore();
@@ -650,7 +789,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View v) {
                 cacheBitmap = Bitmap.createBitmap(currentBitmap);
-                BitmapUtils.rotateBitmap(selectionBitmap, 90);
+                selectionBitmap = BitmapUtils.rotateBitmap(selectionBitmap, 90);
                 currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
                 currentCanvas.save();
                 currentCanvas.restore();
@@ -667,7 +806,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View v) {
                 cacheBitmap = Bitmap.createBitmap(currentBitmap);
-                BitmapUtils.flipBitmapHorizontally(selectionBitmap);
+                selectionBitmap = BitmapUtils.flipBitmapHorizontally(selectionBitmap);
                 currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
                 currentCanvas.save();
                 currentCanvas.restore();
@@ -684,7 +823,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View v) {
                 cacheBitmap = Bitmap.createBitmap(currentBitmap);
-                BitmapUtils.flipBitmapVertically(selectionBitmap);
+                selectionBitmap = BitmapUtils.flipBitmapVertically(selectionBitmap);
                 currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
                 currentCanvas.save();
                 currentCanvas.restore();
@@ -721,8 +860,57 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
     }
+    private void buildMenuPopup() {
+        View view = View.inflate(this, R.layout.popup_menu, null);
+        view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        final PopupWindow window = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        window.setOutsideTouchable(true);
+        window.setTouchable(true);
+        window.setAnimationStyle(R.style.animTranslateInLeftBottom);
+        window.showAsDropDown(imgMenu);
+        ImageButton imgLoad = view.findViewById(R.id.img_load);
+        ImageButton imgSave = view.findViewById(R.id.img_save);
+        ImageButton imgHelp = view.findViewById(R.id.img_help);
+        ImageButton imgInfo = view.findViewById(R.id.img_info);
+        ImageButton imgExit = view.findViewById(R.id.img_exit);
+        imgLoad.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                buildLoadDialog();
+                window.dismiss();
+            }
+        });
+        imgSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                buildSaveImageDialog();
+                window.dismiss();
+            }
+        });
+        imgHelp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
+        imgInfo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
+        imgExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                window.dismiss();
+                finish();
+            }
+        });
+    }
     @SuppressLint("SetTextI18n")
-    private void buildPaletteDialog() {
+    private void buildPaletteColorDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = View.inflate(this, R.layout.dialog_palette, null);
         TabHost tabHost = view.findViewById(R.id.tabhost_palette);
@@ -737,6 +925,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tabHost.addTab(hsv);
         builder.setView(view);
         final PaletteView palette = view.findViewById(R.id.palette_dialog);
+        palette.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
+                getCanvasBackgroundColor2());
         final TextView tvPaletteColorValue = view.findViewById(R.id.tv_palette_color_value);
         final TextView tvColorA = view.findViewById(R.id.tv_color_a);
         final TextView tvColorR = view.findViewById(R.id.tv_color_r);
@@ -752,10 +942,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         final SeekBar barColorH = view.findViewById(R.id.bar_color_h);
         final SeekBar barColorS = view.findViewById(R.id.bar_color_s);
         final SeekBar barColorV = view.findViewById(R.id.bar_color_v);
-        // dialogTempColor = currentPaletteColors.get(groupPalettes.getCheckedPalettePosition());
+        dialogTempColor = listPalettes.getPaletteColor(listPalettes.getCheckedIndex());
         dialogTempColorH = (int) ColorUtils.hue(dialogTempColor);
         dialogTempColorS = ColorUtils.saturation(dialogTempColor);
-
+        dialogTempColorV = ColorUtils.value(dialogTempColor);
         tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
         tvColorA.setText("A: " + Color.alpha(dialogTempColor));
         tvColorR.setText("R: " + Color.red(dialogTempColor));
@@ -770,8 +960,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         barColorG.setProgress(Color.green(dialogTempColor));
         barColorB.setProgress(Color.blue(dialogTempColor));
         barColorH.setProgress((int) ColorUtils.hue(dialogTempColor));
-        barColorS.setProgress((int) ColorUtils.saturation(dialogTempColor) * 100);
-        barColorV.setProgress((int) ColorUtils.value(dialogTempColor) * 100);
+        barColorS.setProgress((int) (ColorUtils.saturation(dialogTempColor) * 100));
+        barColorV.setProgress((int) (ColorUtils.value(dialogTempColor) * 100));
         barColorA.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -853,7 +1043,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 tvColorH.setText("H: " + progress);
                 if (fromUser) {
                     dialogTempColorH = progress;
-                    dialogTempColor = ColorUtils.setHue(dialogTempColor, progress);
+                    dialogTempColor = ColorUtils.setValue(dialogTempColor, dialogTempColorV);
+                    dialogTempColor = ColorUtils.setSaturation(dialogTempColor, dialogTempColorS);
+                    dialogTempColor = ColorUtils.setHue(dialogTempColor, dialogTempColorH);
                     tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
                     barColorR.setProgress(Color.red(dialogTempColor));
                     barColorG.setProgress(Color.green(dialogTempColor));
@@ -874,7 +1066,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 tvColorS.setText("S: " + progress);
                 if (fromUser) {
                     dialogTempColorS = progress * 0.01f;
-                    dialogTempColor = ColorUtils.setSaturation(dialogTempColor, progress * 0.01f);
+                    dialogTempColor = ColorUtils.setValue(dialogTempColor, dialogTempColorV);
+                    dialogTempColor = ColorUtils.setSaturation(dialogTempColor, dialogTempColorS);
                     dialogTempColor = ColorUtils.setHue(dialogTempColor, dialogTempColorH);
                     tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
                     barColorR.setProgress(Color.red(dialogTempColor));
@@ -895,7 +1088,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 tvColorV.setText("V: " + progress);
                 if (fromUser) {
-                    dialogTempColor = ColorUtils.setValue(dialogTempColor, progress * 0.01f);
+                    dialogTempColorV = progress * 0.01f;
+                    dialogTempColor = ColorUtils.setValue(dialogTempColor, dialogTempColorV);
                     dialogTempColor = ColorUtils.setSaturation(dialogTempColor, dialogTempColorS);
                     dialogTempColor = ColorUtils.setHue(dialogTempColor, dialogTempColorH);
                     tvPaletteColorValue.setText(ColorUtils.colorToHexString(dialogTempColor));
@@ -915,13 +1109,774 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                //currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), dialogTempColor);
+                listPalettes.setPaletteColor(listPalettes.getCheckedIndex(), dialogTempColor);
                 paint.setColor(dialogTempColor);
+                switch (paletteId) {
+                    case BACKGROUND_PALETTE:
+                        if (listPalettes.getCheckedIndex() == 0) {
+                            setCanvasViewBackgroundColor(dialogTempColor);
+                        } else {
+                            flushBackgroundBitmap();
+                            listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
+                                    getCanvasBackgroundColor2());
+                            canvasView.invalidate();
+                        }
+                        break;
+                    case GRID_PALETTE:
+                        setGridColor(dialogTempColor);
+                        break;
+                }
             }
         });
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+            }
+        });
+        builder.create().show();
+    }
+    private void buildSelectPaletteDialog () {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_recycler_view, null);
+        builder.setView(view);
+        builder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                buildAddPaletteDialog();
+            }
+        });
+        final AlertDialog alertDialog = builder.create();
+        RecyclerView recyclerView = (RecyclerView) view;
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        List<String> internalPaletteNames = new ArrayList<>();
+        internalPaletteNames.add(getString(R.string.background_palette));
+        internalPaletteNames.add(getString(R.string.grid_palette));
+        internalPaletteNames.add(getString(R.string.builtin_palette));
+        final List<String> externalPalettePaths = FileUtils.getAllFilePaths(PALETTE_PATH, new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.getAbsolutePath().toLowerCase().endsWith(".palette");
+            }
+        });
+        final List<String> externalPaletteNames = new ArrayList<>();
+        for (int i = 0; i < externalPalettePaths.size(); i ++) {
+            externalPaletteNames.add(FileUtils.getFileNameNoExtension(externalPalettePaths.get(i)));
+        }
+        int checkedPosition = -1;
+        switch (paletteId) {
+            case BACKGROUND_PALETTE:
+                checkedPosition = 0;
+                break;
+            case GRID_PALETTE:
+                checkedPosition = 1;
+                break;
+            case BUILTIN_PALETTE:
+                checkedPosition = 2;
+                break;
+            case EXTERNAL_PALETTE:
+                checkedPosition = 3;
+                checkedPosition += externalPaletteNames.indexOf(paletteName);
+                break;
+        }
+        final PaletteListAdapter adapter = new PaletteListAdapter(this, internalPaletteNames, externalPaletteNames, checkedPosition);
+        adapter.setOnItemClickListener(new PaletteListAdapter.OnItemClickListener() {
+            @Override
+            public void onInternalPaletteClick(int position) {
+                if (paletteId == EXTERNAL_PALETTE) {
+                    externalPalette.saveToFile(PALETTE_PATH + "/" + paletteName, true);
+                }
+                int paletteCheckedIndex = listPalettes.getCheckedIndex();
+                switch (position) {
+                    case 0:
+                        paletteId = BACKGROUND_PALETTE;
+                        listPalettes.setColorPalette(backgroundPalette, Math.min(paletteCheckedIndex, 2));
+                        break;
+                    case 1:
+                        paletteId = GRID_PALETTE;
+                        listPalettes.setColorPalette(gridPalette);
+                        break;
+                    case 2:
+                        paletteId = BUILTIN_PALETTE;
+                        listPalettes.setColorPalette(builtinPalette, paletteCheckedIndex);
+                        break;
+                }
+                paint.setColor(listPalettes.getPaletteColor(listPalettes.getCheckedIndex()));
+                alertDialog.dismiss();
+            }
+            @Override
+            public void onExternalPaletteClick(int position) {
+                if (paletteId == EXTERNAL_PALETTE) {
+                    externalPalette.saveToFile(PALETTE_PATH + "/" + paletteName, true);
+                }
+                externalPalette = ColorPalette.decodeFile(externalPalettePaths.get(position));
+                if (externalPalette == null) {
+                    alertDialog.dismiss();
+                    buildSelectPaletteDialog();
+                }
+                paletteId = EXTERNAL_PALETTE;
+                paletteName = externalPaletteNames.get(position);
+                int paletteCheckedIndex = listPalettes.getCheckedIndex();
+                listPalettes.setColorPalette(externalPalette, paletteCheckedIndex);
+                paint.setColor(listPalettes.getPaletteColor(listPalettes.getCheckedIndex()));
+                alertDialog.dismiss();
+            }
+            @Override
+            public void onResetClick(int position) {
+                final int mPosition = position;
+                buildResetPaletteDialog(new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (mPosition) {
+                            case 0:
+                                backgroundPalette = ColorPalette.createColorPalette(new int[]{
+                                        Color.DKGRAY,
+                                        Color.LTGRAY,
+                                        Color.GRAY
+                                });
+                                break;
+                            case 1:
+                                gridPalette = ColorPalette.createColorPalette(1, Color.BLACK);
+                                break;
+                            case 2:
+                                builtinPalette = ColorPalette.createColorPalette(new int[]{
+                                        Color.RED,
+                                        Color.YELLOW,
+                                        Color.GREEN,
+                                        Color.CYAN,
+                                        Color.BLUE,
+                                        Color.MAGENTA,
+                                        Color.WHITE,
+                                        Color.LTGRAY,
+                                        Color.GRAY,
+                                        Color.DKGRAY,
+                                        Color.BLACK,
+                                        Color.TRANSPARENT
+                                });
+                                break;
+                        }
+                        switch (paletteId) {
+                            case BACKGROUND_PALETTE:
+                                listPalettes.setColorPalette(backgroundPalette, listPalettes.getCheckedIndex());
+                                if (listPalettes.getCheckedIndex() == 0) {
+                                    setCanvasViewBackgroundColor(getCanvasViewBackgroundColor());
+                                } else {
+                                    flushBackgroundBitmap();
+                                    listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
+                                            getCanvasBackgroundColor2());
+                                    canvasView.invalidate();
+                                }
+                                break;
+                            case GRID_PALETTE:
+                                listPalettes.setColorPalette(gridPalette, listPalettes.getCheckedIndex());
+                                setGridColor(getGridColor());
+                                break;
+                            case BUILTIN_PALETTE:
+                                listPalettes.setColorPalette(builtinPalette, listPalettes.getCheckedIndex());
+                                break;
+                        }
+                        paint.setColor(listPalettes.getPaletteColor(listPalettes.getCheckedIndex()));
+                    }
+                }, null);
+            }
+            @Override
+            public void onRenameClick(int position) {
+                buildRenamePaletteDialog(externalPaletteNames.get(position));
+                alertDialog.dismiss();
+            }
+            @Override
+            public void onDeleteClick(final int position) {
+                buildDeleteFileDialog(new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        FileUtils.deleteFile(externalPalettePaths.get(position));
+                        if (externalPaletteNames.get(position).equals(paletteName)) {
+                            paletteId = BUILTIN_PALETTE;
+                            listPalettes.setColorPalette(builtinPalette, listPalettes.getCheckedIndex());
+                        }
+                        alertDialog.dismiss();
+                        buildSelectPaletteDialog();
+                    }
+                }, null);
+            }
+        });
+        recyclerView.setAdapter(adapter);
+        alertDialog.show();
+    }
+    private void buildSavePaletteDialog (String etText) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_save_palette, null);
+        final EditText etPaletteName = view.findViewById(R.id.et_palette_name);
+        etPaletteName.setFilters(new InputFilter[] {
+                new InputFilter() {
+                    @Override
+                    public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+                        for (int i = start; i < end; i ++) {
+                            if (Character.toString(source.charAt(i)).equals("/")) {
+                                return "";
+                            }
+                        }
+                        return null;
+                    }
+                }
+        });
+        if (etText != null) {
+            etPaletteName.setText(etText);
+        }
+        RecyclerView recyclerPalettes = view.findViewById(R.id.recycler_palettes);
+        recyclerPalettes.setLayoutManager(new LinearLayoutManager(this));
+        List<String> externalPalettePaths = FileUtils.getAllFilePaths(PALETTE_PATH, new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.getAbsolutePath().toLowerCase().endsWith(".palette");
+            }
+        });
+        final List<String> externalPaletteNames = new ArrayList<>();
+        for (int i = 0; i < externalPalettePaths.size(); i ++) {
+            externalPaletteNames.add(FileUtils.getFileNameNoExtension(externalPalettePaths.get(i)));
+        }
+        TextViewListAdapter adapter = new TextViewListAdapter(this, externalPaletteNames,
+                VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_palette_24, getTheme()));
+        adapter.setOnItemClickListener(new TextViewListAdapter.OnItemClickListener() {
+            @Override
+            public void onClick(int position) {
+                etPaletteName.setText(externalPaletteNames.get(position));
+            }
+        });
+        recyclerPalettes.setAdapter(adapter);
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialogTempPaletteName = etPaletteName.getText().toString();
+                if (!tempPalette.saveToFile(PALETTE_PATH + "/" + dialogTempPaletteName, false)) {
+                    ((InputMethodManager) (getSystemService(Context.INPUT_METHOD_SERVICE)))
+                            .hideSoftInputFromWindow(etPaletteName.getWindowToken(),
+                                    InputMethodManager.HIDE_NOT_ALWAYS);
+                    buildSameNameFileDialog(new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            tempPalette.saveToFile(PALETTE_PATH + "/" + dialogTempPaletteName, true);
+                            buildSelectPaletteDialog();
+                        }
+                    }, new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            buildAddPaletteDialog();
+                        }
+                    });
+                    return;
+                }
+                ((InputMethodManager) (getSystemService(Context.INPUT_METHOD_SERVICE)))
+                        .hideSoftInputFromWindow(etPaletteName.getWindowToken(),
+                                InputMethodManager.HIDE_NOT_ALWAYS);
+                buildSelectPaletteDialog();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                tempPalette = null;
+                ((InputMethodManager) (getSystemService(Context.INPUT_METHOD_SERVICE)))
+                        .hideSoftInputFromWindow(etPaletteName.getWindowToken(),
+                                InputMethodManager.HIDE_NOT_ALWAYS);
+                buildAddPaletteDialog();
+            }
+        });
+        builder.create().show();
+    }
+    private void buildRenamePaletteDialog (@NonNull final String oldName) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_save_palette, null);
+        final EditText etPaletteName = view.findViewById(R.id.et_palette_name);
+        etPaletteName.setFilters(new InputFilter[] {
+                new InputFilter() {
+                    @Override
+                    public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+                        for (int i = start; i < end; i ++) {
+                            if (Character.toString(source.charAt(i)).equals("/")) {
+                                return "";
+                            }
+                        }
+                        return null;
+                    }
+                }
+        });
+        etPaletteName.setText(oldName);
+        RecyclerView recyclerPalettes = view.findViewById(R.id.recycler_palettes);
+        recyclerPalettes.setLayoutManager(new LinearLayoutManager(this));
+        final List<String> externalPalettePaths = FileUtils.getAllFilePaths(PALETTE_PATH, new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.getAbsolutePath().toLowerCase().endsWith(".palette");
+            }
+        });
+        final List<String> externalPaletteNames = new ArrayList<>();
+        for (int i = 0; i < externalPalettePaths.size(); i ++) {
+            externalPaletteNames.add(FileUtils.getFileNameNoExtension(externalPalettePaths.get(i)));
+        }
+        TextViewListAdapter adapter = new TextViewListAdapter(this, externalPaletteNames,
+                VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_palette_24, getTheme()));
+        adapter.setOnItemClickListener(new TextViewListAdapter.OnItemClickListener() {
+            @Override
+            public void onClick(int position) {
+                etPaletteName.setText(externalPaletteNames.get(position));
+            }
+        });
+        recyclerPalettes.setAdapter(adapter);
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialogTempPaletteName = etPaletteName.getText().toString();
+                if (dialogTempPaletteName.equals(oldName)) {
+                    dialog.cancel();
+                    return;
+                }
+                if (!FileUtils.renameFile(PALETTE_PATH + "/" + oldName + ".palette",
+                        dialogTempPaletteName + ".palette", false)) {
+                    ((InputMethodManager) (getSystemService(Context.INPUT_METHOD_SERVICE)))
+                            .hideSoftInputFromWindow(etPaletteName.getWindowToken(),
+                                    InputMethodManager.HIDE_NOT_ALWAYS);
+                    buildSameNameFileDialog(new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            FileUtils.renameFile(PALETTE_PATH + "/" + oldName + ".palette",
+                                    dialogTempPaletteName + ".palette", true);
+                            buildSelectPaletteDialog();
+                        }
+                    }, new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            buildSelectPaletteDialog();
+                        }
+                    });
+                    return;
+                }
+                ((InputMethodManager) (getSystemService(Context.INPUT_METHOD_SERVICE)))
+                        .hideSoftInputFromWindow(etPaletteName.getWindowToken(),
+                                InputMethodManager.HIDE_NOT_ALWAYS);
+                buildAddPaletteDialog();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                ((InputMethodManager) (getSystemService(Context.INPUT_METHOD_SERVICE)))
+                        .hideSoftInputFromWindow(etPaletteName.getWindowToken(),
+                                InputMethodManager.HIDE_NOT_ALWAYS);
+                buildSelectPaletteDialog();
+            }
+        });
+        builder.create().show();
+    }
+    private void buildAddPaletteDialog () {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        String [] items = {
+                getString(R.string.empty_palette),
+                getString(R.string.copy_current_palette),
+                getString(R.string.automatic_gradient)
+        };
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        tempPalette = ColorPalette.createColorPalette(12);
+                        break;
+                    case 1:
+                        switch (paletteId) {
+                            case BACKGROUND_PALETTE:
+                                tempPalette  = ColorPalette.createColorPalette(backgroundPalette, 12);
+                                break;
+                            case GRID_PALETTE:
+                                tempPalette  = ColorPalette.createColorPalette(gridPalette, 12);
+                                break;
+                            case BUILTIN_PALETTE:
+                                tempPalette  = ColorPalette.createColorPalette(builtinPalette);
+                                break;
+                            case EXTERNAL_PALETTE:
+                                tempPalette  = ColorPalette.createColorPalette(externalPalette);
+                                break;
+                        }
+                        break;
+                    case 2:
+                        tempPalette = ColorPalette.createColorPalette(12);
+                        break;
+                }
+                buildSavePaletteDialog(null);
+                dialog.dismiss();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                buildSelectPaletteDialog();
+            }
+        });
+        builder.create().show();
+    }
+    private void buildResetPaletteDialog(DialogInterface.OnClickListener positiveListener,
+                                         DialogInterface.OnCancelListener cancelListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.warning_reset_palette);
+        builder.setPositiveButton(android.R.string.ok, positiveListener);
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(cancelListener);
+        builder.create().show();
+    }
+    private void buildLoadDialog () {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        String[] items = {
+                getString(R.string.load_image),
+                getString(R.string.new_image),
+                getString(R.string.paste_image)
+        };
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        buildLoadImageDialog();
+                        break;
+                    case 1:
+
+                        break;
+                    case 2:
+
+                        break;
+                }
+            }
+        });
+        builder.create().show();
+    }
+    private RecyclerView dialogTempRecyclerImageList;
+    private TextView dialogTempTvCurrentPath;
+    private String dialogTempImageName;
+    private void buildLoadImageDialog () {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_load_image, null);
+        builder.setView(view);
+        final AlertDialog dialog = builder.create();
+        dialogTempRecyclerImageList = view.findViewById(R.id.recycler_images);
+        dialogTempRecyclerImageList.setLayoutManager(new LinearLayoutManager(this));
+        dialogTempTvCurrentPath = view.findViewById(R.id.tv_current_path);
+        dialogTempTvCurrentPath.setText(IMAGE_PATH);
+        FileListAdapter adapter = flushImageListAdapter(IMAGE_PATH);
+        adapter.setOnItemClickListener(new FileListAdapter.OnItemClickListener() {
+            @Override
+            public void onDirectoryClick(String name, int position) {
+                IMAGE_PATH = IMAGE_PATH + "/" + name;
+                dialogTempTvCurrentPath.setText(IMAGE_PATH);
+                dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(IMAGE_PATH));
+            }
+            @Override
+            public void onFileClick(String name, int position) {
+                currentBitmap = BitmapUtils.loadBitmapFromFile(IMAGE_PATH + "/" + name);
+                currentCanvas.setBitmap(currentBitmap);
+                canvasView.invalidate();
+                dialog.dismiss();
+            }
+        });
+        dialogTempRecyclerImageList.setAdapter(adapter);
+        ImageView imgBack = view.findViewById(R.id.img_back);
+        imgBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                IMAGE_PATH = FileUtils.getParentDirectoryPath(IMAGE_PATH);
+                dialogTempTvCurrentPath.setText(IMAGE_PATH);
+                dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(IMAGE_PATH));
+            }
+        });
+        dialog.show();
+    }
+    private void buildSaveImageDialog () {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_save_image, null);
+        final TextView tvFormatImage = view.findViewById(R.id.tv_format_image);
+        tvFormatImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                buildFormatImageDialog(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        tvFormatImage.setText(imageFormat);
+                    }
+                });
+            }
+        });
+        final EditText etImageName = view.findViewById(R.id.et_image_name);
+        etImageName.setFilters(new InputFilter[] {
+                new InputFilter() {
+                    @Override
+                    public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+                        for (int i = start; i < end; i ++) {
+                            if (Character.toString(source.charAt(i)).equals("/")) {
+                                return "";
+                            }
+                        }
+                        return null;
+                    }
+                }
+        });
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                boolean saved = false;
+                dialogTempImageName = etImageName.getText().toString();
+                if (imageFormat.equals(".png")) {
+                    saved = BitmapUtils.saveBitmapToPNG(IMAGE_PATH + "/" + dialogTempImageName,
+                            currentBitmap, false);
+                }
+                if (imageFormat.equals(".jpeg")) {
+                    saved = BitmapUtils.saveBitmapToJPEG(IMAGE_PATH + "/" + dialogTempImageName,
+                            currentBitmap, false, jpegQuality);
+                }
+                if (imageFormat.equals(".bmp")) {
+                    saved = BitmapUtils.saveBitmapToBMP(IMAGE_PATH + "/" + dialogTempImageName,
+                            currentBitmap, false);
+                }
+                if (!saved) {
+                    ((InputMethodManager) (getSystemService(Context.INPUT_METHOD_SERVICE)))
+                            .hideSoftInputFromWindow(etImageName.getWindowToken(),
+                                    InputMethodManager.HIDE_NOT_ALWAYS);
+                    buildSameNameFileDialog(new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if (imageFormat.equals(".png")) {
+                                BitmapUtils.saveBitmapToPNG(IMAGE_PATH + "/" + dialogTempImageName,
+                                        currentBitmap, true);
+                            }
+                            if (imageFormat.equals(".jpeg")) {
+                                BitmapUtils.saveBitmapToJPEG(IMAGE_PATH + "/" + dialogTempImageName,
+                                        currentBitmap, true, jpegQuality);
+                            }
+                            if (imageFormat.equals(".bmp")) {
+                                BitmapUtils.saveBitmapToBMP(IMAGE_PATH + "/" + dialogTempImageName,
+                                        currentBitmap, true);
+                            }
+                        }
+                    }, new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                        }
+                    });
+                    return;
+                }
+                ((InputMethodManager) (getSystemService(Context.INPUT_METHOD_SERVICE)))
+                        .hideSoftInputFromWindow(etImageName.getWindowToken(),
+                                InputMethodManager.HIDE_NOT_ALWAYS);
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                ((InputMethodManager) (getSystemService(Context.INPUT_METHOD_SERVICE)))
+                        .hideSoftInputFromWindow(etImageName.getWindowToken(),
+                                InputMethodManager.HIDE_NOT_ALWAYS);
+            }
+        });
+        dialogTempRecyclerImageList = view.findViewById(R.id.recycler_images);
+        dialogTempRecyclerImageList.setLayoutManager(new LinearLayoutManager(this));
+        dialogTempTvCurrentPath = view.findViewById(R.id.tv_current_path);
+        dialogTempTvCurrentPath.setText(IMAGE_PATH);
+        FileListAdapter adapter = flushImageListAdapter(IMAGE_PATH);
+        adapter.setOnItemClickListener(new FileListAdapter.OnItemClickListener() {
+            @Override
+            public void onDirectoryClick(String name, int position) {
+                IMAGE_PATH = IMAGE_PATH + "/" + name;
+                dialogTempTvCurrentPath.setText(IMAGE_PATH);
+                dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(IMAGE_PATH));
+            }
+            @Override
+            public void onFileClick(String name, int position) {
+                dialogTempImageName = FileUtils.getFileNameNoExtension(name);
+                etImageName.setText(dialogTempImageName);
+            }
+        });
+        dialogTempRecyclerImageList.setAdapter(adapter);
+        ImageView imgBack = view.findViewById(R.id.img_back);
+        imgBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                IMAGE_PATH = FileUtils.getParentDirectoryPath(IMAGE_PATH);
+                dialogTempTvCurrentPath.setText(IMAGE_PATH);
+                dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(IMAGE_PATH));
+            }
+        });
+        builder.setView(view);
+        builder.create().show();
+    }
+    private FileListAdapter flushImageListAdapter (String newPath) {
+        List<String> dirs = FileUtils.getAllDirectoryPaths(newPath);
+        List<String> files = FileUtils.getAllFilePaths(newPath, new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                String fileName = file.getName().toLowerCase();
+                return fileName.endsWith(".png") ||
+                        fileName.endsWith(".jpg") ||
+                        fileName.endsWith(".jpeg") ||
+                        fileName.endsWith(".bmp");
+            }
+        });
+        List<String> dirNames = new ArrayList<>();
+        for (String dir : dirs) {
+            dirNames.add(FileUtils.getFileName(dir));
+        }
+        List<String> fileNames = new ArrayList<>();
+        for (String file : files) {
+            fileNames.add(FileUtils.getFileName(file));
+        }
+        FileListAdapter adapter = new FileListAdapter(MainActivity.this, dirNames, fileNames,
+                VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_file_24, getTheme()));
+        adapter.setOnItemClickListener(new FileListAdapter.OnItemClickListener() {
+            @Override
+            public void onDirectoryClick(String name, int position) {
+                IMAGE_PATH = IMAGE_PATH + "/" + name;
+                dialogTempTvCurrentPath.setText(IMAGE_PATH);
+                dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(IMAGE_PATH));
+            }
+
+            @Override
+            public void onFileClick(String name, int position) {
+
+            }
+        });
+        return adapter;
+    }
+    private int jpegQuality = 30;
+    private String imageFormat = ".png";
+    private void buildFormatImageDialog (DialogInterface.OnCancelListener listener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_format_image, null);
+        final TabHost tabHost = view.findViewById(R.id.tabhost_format_image);
+        tabHost.setup();
+        TabHost.TabSpec png = tabHost.newTabSpec("png");
+        png.setIndicator("PNG");
+        png.setContent(R.id.ll_empty);
+        tabHost.addTab(png);
+        TabHost.TabSpec jpeg = tabHost.newTabSpec("jpeg");
+        jpeg.setIndicator("JPEG");
+        jpeg.setContent(R.id.ll_jpeg_quality);
+        tabHost.addTab(jpeg);
+        TabHost.TabSpec bmp = tabHost.newTabSpec("bmp");
+        bmp.setIndicator("BMP");
+        bmp.setContent(R.id.ll_empty);
+        tabHost.addTab(bmp);
+        if (imageFormat.equals(".png")) {
+            tabHost.setCurrentTabByTag("png");
+        }
+        if (imageFormat.equals(".jpeg")) {
+            tabHost.setCurrentTabByTag("jpeg");
+        }
+        if (imageFormat.equals(".bmp")) {
+            tabHost.setCurrentTabByTag("bmp");
+        }
+        final TextView tvJpegQuality = view.findViewById(R.id.tv_jpeg_quality);
+        SeekBar barJpegQuality = view.findViewById(R.id.bar_jpeg_quality);
+        tvJpegQuality.setText(R.string.quality);
+        tvJpegQuality.append(": ");
+        tvJpegQuality.append(Integer.toString(jpegQuality));
+        barJpegQuality.setProgress(jpegQuality - 30);
+        barJpegQuality.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                jpegQuality = progress + 30;
+                tvJpegQuality.setText(R.string.quality);
+                tvJpegQuality.append(": ");
+                tvJpegQuality.append(Integer.toString(jpegQuality));
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (tabHost.getCurrentTab()) {
+                    case 0:
+                        imageFormat = ".png";
+                        break;
+                    case 1:
+                        imageFormat = ".jpeg";
+                        break;
+                    case 2:
+                        imageFormat = ".bmp";
+                        break;
+                }
+                dialog.cancel();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.setOnCancelListener(listener);
+        builder.create().show();
+    }
+    private void buildDeleteFileDialog(DialogInterface.OnClickListener positiveListener,
+                                       DialogInterface.OnCancelListener cancelListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.warning_delete_file);
+        builder.setPositiveButton(android.R.string.ok, positiveListener);
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(cancelListener);
+        builder.create().show();
+    }
+    private void buildSameNameFileDialog(DialogInterface.OnClickListener positiveListener,
+                                         DialogInterface.OnCancelListener cancelListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.warning_same_name_file);
+        builder.setPositiveButton(android.R.string.ok, positiveListener);
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(cancelListener);
+        builder.create().show();
+    }
+    private void buildPermissionDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.permission_denied);
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                finish();
             }
         });
         builder.create().show();
@@ -943,14 +1898,79 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 break;
             case R.id.img_menu:
-
+                buildMenuPopup();
                 break;
             case R.id.tv_paint_width:
                 buildPaintWidthDialog();
                 break;
             case R.id.img_palette:
-
+                buildSelectPaletteDialog();
                 break;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1) {
+            dataSaved = true;
+            if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                buildPermissionDialog();
+            }
+            else {
+                recreate();
+            }
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (isFinishing() && (!dataSaved)) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    saveData();
+                    dataSaved = true;
+                }
+            });
+            thread.start();
+            try {
+                thread.join();
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            finally {
+                super.onPause();
+            }
+        }
+        else {
+            super.onPause();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        if (!dataSaved) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    saveData();
+                }
+            });
+            thread.start();
+            try {
+                thread.join();
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            finally {
+                super.onSaveInstanceState(outState);
+            }
+        }
+        else {
+            super.onSaveInstanceState(outState);
         }
     }
 
@@ -959,6 +1979,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
+
+        // Get permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                ActivityCompat.requestPermissions(this, new String[] {
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                }, 1);
+                return;
+            }
+        }
+
+        // Set content view
         setContentView(R.layout.activity_main);
 
         // Window format
@@ -967,6 +2001,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Init SharedPreferences
         prefData = getSharedPreferences("app_data", MODE_PRIVATE);
         prefEditor = prefData.edit();
+        dataSaved = false;
 
         // Get widgets
 
@@ -1016,6 +2051,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         paint.setStyle(Paint.Style.STROKE);
         paint.setDither(false);
         paint.setAntiAlias(false);
+        paint.setColor(listPalettes.getPaletteColor(listPalettes.getCheckedIndex()));
+        setPaintFlag(paintFlag);
         eraser = new Paint();
         eraser.setStyle(Paint.Style.STROKE);
         eraser.setDither(false);
@@ -1040,7 +2077,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Init path
         path = new Path();
 
-        // Init bmp
+        // Init bitmap
         flushBackgroundBitmap();
         flushGridBitmap();
 
@@ -1053,19 +2090,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Graph ImageButton image
         switch (graphFlag) {
             case GraphCache.GraphFlag.LINE:
-                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_line_24, getTheme()));
+                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_line_24, getTheme()));
                 break;
             case GraphCache.GraphFlag.CIRCLE:
-                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_circle_24, getTheme()));
+                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_circle_24, getTheme()));
                 break;
             case GraphCache.GraphFlag.OVAL:
-                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_oval_24, getTheme()));
+                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_oval_24, getTheme()));
                 break;
             case GraphCache.GraphFlag.SQUARE:
-                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_square_24, getTheme()));
+                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_square_24, getTheme()));
                 break;
             case GraphCache.GraphFlag.RECTANGLE:
-                //imgGraph.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_rectangle_24, getTheme()));
+                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_rectangle_24, getTheme()));
                 break;
         }
 
@@ -1073,6 +2110,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         groupTools.setOnCheckedChangeListener(new CheckedImageGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CheckedImageGroup group, int checkedId, int checkedIndex) {
+                for (int i = 0; i < group.getChildCount(); i ++) {
+                    ((CheckedImageView)group.getChildAt(i)).setColorFilter(null);
+                }
                 switch (checkedId) {
                     case R.id.img_paint:
                         drawFlag = DrawCache.DrawFlag.PAINT;
@@ -1080,6 +2120,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         eraser.setStrokeCap(Paint.Cap.SQUARE);
                         paint.setStrokeJoin(Paint.Join.ROUND);
                         eraser.setStrokeJoin(Paint.Join.ROUND);
+                        imgPaint.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_graph:
                         drawFlag = DrawCache.DrawFlag.GRAPH;
@@ -1100,20 +2141,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 eraser.setStrokeJoin(Paint.Join.MITER);
                                 break;
                         }
+                        imgGraph.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_eraser:
                         drawFlag = DrawCache.DrawFlag.ERASER;
                         eraser.setStrokeCap(Paint.Cap.SQUARE);
                         eraser.setStrokeJoin(Paint.Join.ROUND);
+                        imgEraser.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_fill:
                         drawFlag = DrawCache.DrawFlag.FILL;
+                        imgFill.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_selection:
                         drawFlag = DrawCache.DrawFlag.SELECTION;
+                        imgSelection.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_colorize:
                         drawFlag = DrawCache.DrawFlag.COLORIZE;
+                        imgColorize.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                 }
                 if (drawFlag != DrawCache.DrawFlag.SELECTION) {
@@ -1123,6 +2169,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 canvasView.invalidate();
             }
         });
+        // Initial check
+        switch (drawFlag) {
+            case DrawCache.DrawFlag.PAINT:
+                groupTools.check(R.id.img_paint);
+                imgPaint.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
+                break;
+            case DrawCache.DrawFlag.GRAPH:
+                groupTools.check(R.id.img_graph);
+                imgGraph.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
+                break;
+            case DrawCache.DrawFlag.ERASER:
+                groupTools.check(R.id.img_eraser);
+                imgEraser.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
+                break;
+            case DrawCache.DrawFlag.FILL:
+                groupTools.check(R.id.img_fill);
+                imgFill.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
+                break;
+            case DrawCache.DrawFlag.SELECTION:
+                groupTools.check(R.id.img_selection);
+                imgSelection.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
+                break;
+            case DrawCache.DrawFlag.COLORIZE:
+                groupTools.check(R.id.img_colorize);
+                imgColorize.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
+                break;
+        }
+        // Double tap
         groupTools.setOnDoubleTapListener(new CheckedImageGroup.OnDoubleTapListener() {
             @Override
             public void onDoubleTap(CheckedImageGroup group, int checkedId, int checkedIndex) {
@@ -1137,28 +2211,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
-        // CheckedImageGroup initial check
-        switch (drawFlag) {
-            case DrawCache.DrawFlag.PAINT:
-                groupTools.check(R.id.img_paint);
-                break;
-            case DrawCache.DrawFlag.GRAPH:
-                groupTools.check(R.id.img_graph);
-                break;
-            case DrawCache.DrawFlag.ERASER:
-                groupTools.check(R.id.img_eraser);
-                break;
-            case DrawCache.DrawFlag.FILL:
-                groupTools.check(R.id.img_fill);
-                break;
-            case DrawCache.DrawFlag.SELECTION:
-                groupTools.check(R.id.img_selection);
-                break;
-            case DrawCache.DrawFlag.COLORIZE:
-                groupTools.check(R.id.img_colorize);
-                break;
-        }
-
         // Select palette
         listPalettes.setOnCheckedChangeListener(new PaletteList.OnCheckedChangeListener() {
             @Override
@@ -1169,7 +2221,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         listPalettes.setOnDoubleTapListener(new PaletteList.OnDoubleTapListener() {
             @Override
             public void onDoubleTap(PaletteList list, int checkedIndex) {
-                buildPaletteDialog();
+                buildPaletteColorDialog();
             }
         });
 
@@ -1185,6 +2237,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 matrix.setTranslate(imageTranslationX / imageScale, imageTranslationY / imageScale);
                 matrix.postScale(imageScale, imageScale);
                 // Draw background
+                canvas.drawColor(getCanvasViewBackgroundColor());
                 canvas.drawBitmap(backgroundBitmap, imageTranslationX, imageTranslationY, backgroundPaint);
                 canvas.save();
                 canvas.restore();
@@ -1252,9 +2305,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         path.moveTo(downX, downY);
                         switch (drawFlag) {
                             case DrawCache.DrawFlag.PAINT:
-                                if (paintFlag == PaintCache.PaintFlag.REPLACE) {
-                                    currentCanvas.drawPoint(downX, downY, eraser);
-                                }
                                 currentCanvas.drawPoint(downX, downY, paint);
                                 break;
                             case DrawCache.DrawFlag.ERASER:
@@ -1288,8 +2338,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 break;
                             case DrawCache.DrawFlag.COLORIZE:
                                 if (downX >=0 && downY >= 0 && downX < currentBitmap.getWidth() && downY < currentBitmap.getHeight()) {
-                                    //currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), currentBmp.getPixel(downX, downY));
+                                    listPalettes.setPaletteColor(listPalettes.getCheckedIndex(), currentBitmap.getPixel(downX, downY));
                                     paint.setColor(currentBitmap.getPixel(downX, downY));
+                                    switch (paletteId) {
+                                        case BACKGROUND_PALETTE:
+                                            if (listPalettes.getCheckedIndex() == 0) {
+                                                setCanvasViewBackgroundColor(currentBitmap.getPixel(downX, downY));
+                                            } else {
+                                                flushBackgroundBitmap();
+                                                listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
+                                                        getCanvasBackgroundColor2());
+                                                canvasView.invalidate();
+                                            }
+                                            break;
+                                        case GRID_PALETTE:
+                                            setGridColor(currentBitmap.getPixel(downX, downY));
+                                            break;
+                                    }
                                 }
                                 break;
                         }
@@ -1299,7 +2364,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case MotionEvent.ACTION_POINTER_DOWN:
                         // Record initial distance
-                        oldDist = spacing(event);
+                        oldDist = MotionUtils.spacing(event);
                         newDist = oldDist;
                         scaleMode = true;
                         readOnlyMode = true;
@@ -1314,7 +2379,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case MotionEvent.ACTION_MOVE:
                         if(scaleMode) {
-                            newDist = spacing(event);
+                            newDist = MotionUtils.spacing(event);
                             // If distance of two fingers > 256
                             // Replace 256 with other value to control sensitivity
                             if(newDist != 0) {
@@ -1433,9 +2498,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     selected = true;
                                     break;
                                 case DrawCache.DrawFlag.COLORIZE:
-                                    if (downX >=0 && downY >= 0 && downX < currentBitmap.getWidth() && downY < currentBitmap.getHeight()) {
-                                        //currentPaletteColors.set(groupPalettes.getCheckedPalettePosition(), currentBmp.getPixel(moveX, moveY));
+                                    if (moveX >=0 && moveY >= 0 && moveX < currentBitmap.getWidth() && moveY < currentBitmap.getHeight()) {
+                                        listPalettes.setPaletteColor(listPalettes.getCheckedIndex(), currentBitmap.getPixel(moveX, moveY));
                                         paint.setColor(currentBitmap.getPixel(moveX, moveY));
+                                        switch (paletteId) {
+                                            case BACKGROUND_PALETTE:
+                                                if (listPalettes.getCheckedIndex() == 0) {
+                                                    setCanvasViewBackgroundColor(currentBitmap.getPixel(moveX, moveY));
+                                                } else {
+                                                    flushBackgroundBitmap();
+                                                    listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
+                                                            getCanvasBackgroundColor2());
+                                                    canvasView.invalidate();
+                                                }
+                                                break;
+                                            case GRID_PALETTE:
+                                                setGridColor(currentBitmap.getPixel(moveX, moveY));
+                                                break;
+                                        }
                                     }
                                     break;
                             }
@@ -1447,9 +2527,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             currentCanvas.restore();
                             // Draw path
                             if (drawFlag != DrawCache.DrawFlag.ERASER) {
-                                if (paintFlag == PaintCache.PaintFlag.REPLACE) {
-                                    currentCanvas.drawPath(path, eraser);
-                                }
                                 currentCanvas.drawPath(path, paint);
                             }
                             else {
@@ -1458,9 +2535,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             switch (drawFlag) {
                                 // Draw down point
                                 case DrawCache.DrawFlag.PAINT:
-                                    if (paintFlag == PaintCache.PaintFlag.REPLACE) {
-                                        currentCanvas.drawPoint(downX, downY, eraser);
-                                    }
                                     currentCanvas.drawPoint(downX, downY, paint);
                                     break;
                                 case DrawCache.DrawFlag.ERASER:
@@ -1535,16 +2609,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 return true;
             }
         });
-    }
-
-    // Calculate linear distance of two fingers
-    private double spacing(MotionEvent event) {
-        if(event.getPointerCount() >= 2) {
-            float x = event.getX(0) - event.getX(1);
-            float y = event.getY(0) - event.getY(1);
-            return Math.pow(x * x + y * y, 0.5);
-        }
-        return 0;
     }
 
 }

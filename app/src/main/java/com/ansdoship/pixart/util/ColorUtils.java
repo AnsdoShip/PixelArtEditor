@@ -2,7 +2,7 @@ package com.ansdoship.pixart.util;
 
 import android.graphics.Color;
 
-public class ColorUtils {
+public final class ColorUtils {
     public static float hue (int color) {
         float[] hsv = new float[3];
         Color.colorToHSV(color, hsv);

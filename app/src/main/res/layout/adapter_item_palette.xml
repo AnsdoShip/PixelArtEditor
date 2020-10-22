@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:id="@+id/llayout_adapter_palette"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/img_adapter_reset"
+            android:layout_width="?attr/actionBarSize"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/reset"
+            app:srcCompat="@drawable/ic_baseline_reset_24" />
+
+        <ImageButton
+            android:id="@+id/img_adapter_rename"
+            android:layout_width="?attr/actionBarSize"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/rename"
+            app:srcCompat="@drawable/ic_baseline_paint_24" />
+
+        <ImageButton
+            android:id="@+id/img_adapter_delete"
+            android:layout_width="?attr/actionBarSize"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/delete"
+            app:srcCompat="@drawable/ic_baseline_delete_24" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_adapter_palette"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_toStartOf="@id/llayout_adapter_palette"
+        android:layout_toLeftOf="@id/llayout_adapter_palette"
+        android:background="?attr/selectableItemBackground"
+        android:drawablePadding="8dp"
+        android:ellipsize="start"
+        android:gravity="start|center_vertical"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:singleLine="true"
+        android:textColor="@android:color/black"
+        android:textSize="14sp"
+        app:drawableLeftCompat="@drawable/ic_baseline_palette_24" />
+
+</RelativeLayout>

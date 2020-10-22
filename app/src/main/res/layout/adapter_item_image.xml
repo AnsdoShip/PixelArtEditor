@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.ansdoship.pixart.view.CheckedImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/img_adapter_item"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:minWidth="?attr/actionBarSize"
+    android:minHeight="?attr/actionBarSize"
+    android:background="?attr/selectableItemBackground"
+    android:contentDescription="@string/adapter_item">
+
+</com.ansdoship.pixart.view.CheckedImageView>

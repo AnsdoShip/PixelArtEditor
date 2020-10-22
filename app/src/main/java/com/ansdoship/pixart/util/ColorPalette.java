@@ -1,5 +1,7 @@
 package com.ansdoship.pixart.util;
 
+import androidx.annotation.NonNull;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -23,23 +25,39 @@ public class ColorPalette implements Serializable {
 
     private ColorPalette (int size, int color) {
         mColors = new ArrayList<>(size);
-        for (int i = 0; i < mColors.size(); i++) {
-            mColors.set(i, color);
+        for (int i = 0; i < size; i++) {
+            mColors.add(i, color);
         }
     }
 
-    public ColorPalette createColorPalette (int size) {
+    public static ColorPalette createColorPalette (int size) {
         return createColorPalette (size, 0);
     }
 
-    public ColorPalette createColorPalette (int size, int color) {
+    public static ColorPalette createColorPalette (int size, int color) {
         if (size < 1) {
             return null;
         }
         return new ColorPalette (size, color);
     }
 
-    public ColorPalette createColorPalette (int[] colors) {
+    public static ColorPalette createColorPalette (@NonNull ColorPalette src) {
+        int[] colors = new int[src.size()];
+        for (int i = 0; i < src.size(); i ++) {
+            colors[i] = src.get(i);
+        }
+        return createColorPalette(colors);
+    }
+
+    public static ColorPalette createColorPalette (@NonNull ColorPalette src, int size) {
+        int[] colors = new int[size];
+        for (int i = 0; i < Math.min(size, src.size()); i ++) {
+            colors[i] = src.get(i);
+        }
+        return createColorPalette(colors);
+    }
+
+    public static ColorPalette createColorPalette (int[] colors) {
         if (colors.length < 1) {
             return null;
         }
@@ -74,9 +92,12 @@ public class ColorPalette implements Serializable {
 
     public static ColorPalette decodeFile (String pathAndName) {
         File file = new File(pathAndName);
-        if (file.exists() && pathAndName.endsWith(".palette")) {
+        if (file.exists() && pathAndName.toLowerCase().endsWith(".palette")) {
             try {
                 ObjectInputStream ObjectIS = new ObjectInputStream(new FileInputStream(file));
+                if (!(ObjectIS.readObject() instanceof ColorPalette)) {
+                    return null;
+                }
                 return (ColorPalette) ObjectIS.readObject();
             }
             catch (IOException | ClassNotFoundException e) {

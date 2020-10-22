@@ -97,12 +97,12 @@
                         android:layout_height="wrap_content">
 
                         <include
-                            layout="@layout/dialog_palette_tab_rgb"
+                            layout="@layout/tab_rgb"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent" />
 
                         <include
-                            layout="@layout/dialog_palette_tab_hsv"
+                            layout="@layout/tab_hsv"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent" />
 

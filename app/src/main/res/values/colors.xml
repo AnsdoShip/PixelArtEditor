@@ -1,7 +1,5 @@
 <resources>
 
-    <color name="colorPrimary">@android:color/holo_blue_light</color>
-    <color name="colorPrimaryDark">@android:color/black</color>
-    <color name="colorAccent">@android:color/holo_blue_light</color>
+    <color name="colorTheme">@android:color/holo_blue_light</color>
 
 </resources>

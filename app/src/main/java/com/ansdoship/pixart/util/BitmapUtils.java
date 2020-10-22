@@ -2,12 +2,14 @@ package com.ansdoship.pixart.util;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Matrix;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 
 public final class BitmapUtils {
@@ -95,18 +97,7 @@ public final class BitmapUtils {
 			{
 				result = file.createNewFile();
 				FileOutputStream fileOS = new FileOutputStream(file);
-				ByteBuffer byteBuffer = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
-				bitmap.copyPixelsToBuffer(byteBuffer);
-				byte[] DIBPixels = new byte[byteBuffer.remaining()];
-				byteBuffer.get(DIBPixels);
-				byteBuffer.clear();
-				byte[] buffer = new byte[54 + DIBPixels.length];
-				byte[] header = addBMPHeader(DIBPixels.length);
-				byte[] info = addBMPInfo(bitmap.getWidth(), bitmap.getHeight());
-				System.arraycopy(header, 0, buffer, 0, header.length);
-				System.arraycopy(info, 0, buffer, 14, info.length);
-				System.arraycopy(DIBPixels, 0, buffer, 54, DIBPixels.length);
-				fileOS.write(buffer);
+				compressBitmapToBMP(bitmap, fileOS);
 				fileOS.flush();
 				fileOS.close();
 			}
@@ -122,18 +113,7 @@ public final class BitmapUtils {
 				{
 					result = file.createNewFile();
 					FileOutputStream fileOS = new FileOutputStream(file);
-					ByteBuffer byteBuffer = ByteBuffer.allocate(bitmap.getRowBytes() * bitmap.getHeight());
-					bitmap.copyPixelsToBuffer(byteBuffer);
-					byte[] DIBPixels = new byte[byteBuffer.remaining()];
-					byteBuffer.get(DIBPixels);
-					byteBuffer.clear();
-					byte[] buffer = new byte[54 + DIBPixels.length];
-					byte[] header = addBMPHeader(DIBPixels.length);
-					byte[] info = addBMPInfo(bitmap.getWidth(), bitmap.getHeight());
-					System.arraycopy(header, 0, buffer, 0, header.length);
-					System.arraycopy(info, 0, buffer, 14, info.length);
-					System.arraycopy(DIBPixels, 0, buffer, 54, DIBPixels.length);
-					fileOS.write(buffer);
+					compressBitmapToBMP(bitmap, fileOS);
 					fileOS.flush();
 					fileOS.close();
 				}
@@ -149,12 +129,29 @@ public final class BitmapUtils {
 	
 	public static Bitmap loadBitmapFromFile(String pathAndName){
 		File file = new File(pathAndName);
+		Bitmap bitmap = null;
 		if (file.exists()) {
-			if (pathAndName.endsWith(".bmp") ||
-					pathAndName.endsWith(".png") ||
-					pathAndName.endsWith(".jpg") ||
-					pathAndName.endsWith(".jpeg")) {
-				return BitmapFactory.decodeFile(file.getAbsolutePath());
+			if (pathAndName.toLowerCase().endsWith(".png") ||
+					pathAndName.toLowerCase().endsWith(".jpg") ||
+					pathAndName.toLowerCase().endsWith(".jpeg")) {
+				try {
+					FileInputStream fileInputStream = new FileInputStream(file);
+					bitmap = BitmapFactory.decodeFileDescriptor(fileInputStream.getFD());
+					fileInputStream.close();
+				}
+				catch (IOException e) {
+					e.printStackTrace();
+				}
+				if (bitmap != null) {
+					return bitmap.copy(Bitmap.Config.ARGB_8888, true);
+				}
+			}
+			else if (pathAndName.toLowerCase().endsWith(".bmp")) {
+				bitmap = decodeBMPFromFile(file).copy(Bitmap.Config.ARGB_8888, true);
+				if (!bitmap.hasAlpha()) {
+					bitmap.setHasAlpha(true);
+				}
+				return bitmap;
 			}
 		}
 		return null;
@@ -190,14 +187,14 @@ public final class BitmapUtils {
 		return null;
 	}
 
-	private static byte[] addBMPHeader(int size) {
+	private static byte[] addBMPFileHeader(int size) {
 		byte[] buffer = new byte[14];
 		buffer[0] = 0x42;
 		buffer[1] = 0x4D;
-		buffer[2] = (byte) (size);
-		buffer[3] = (byte) (size >> 8);
-		buffer[4] = (byte) (size >> 16);
-		buffer[5] = (byte) (size >> 24);
+		buffer[2] = (byte) (size + 54);
+		buffer[3] = (byte) ((size + 54) >> 8);
+		buffer[4] = (byte) ((size + 54) >> 16);
+		buffer[5] = (byte) ((size + 54) >> 24);
 		buffer[6] = 0x00;
 		buffer[7] = 0x00;
 		buffer[8] = 0x00;
@@ -209,7 +206,7 @@ public final class BitmapUtils {
 		return buffer;
 	}
 
-	private static byte[] addBMPInfo(int width, int height) {
+	private static byte[] addBMPInfomation(int size, int width, int height) {
 		byte[] buffer = new byte[40];
 		buffer[0] = 0x28;
 		buffer[1] = 0x00;
@@ -231,16 +228,16 @@ public final class BitmapUtils {
 		buffer[17] = 0x00;
 		buffer[18] = 0x00;
 		buffer[19] = 0x00;
-		buffer[20] = 0x00;
-		buffer[21] = 0x00;
-		buffer[22] = 0x00;
-		buffer[23] = 0x00;
-		buffer[24] = (byte) 0xE0;
-		buffer[25] = 0x01;
+		buffer[20] = (byte) (size);
+		buffer[21] = (byte) (size >> 8);
+		buffer[22] = (byte) (size >> 16);
+		buffer[23] = (byte) (size >> 24);
+		buffer[24] = (byte) 0xC4;
+		buffer[25] = 0x0E;
 		buffer[26] = 0x00;
 		buffer[27] = 0x00;
-		buffer[28] = 0x02;
-		buffer[29] = 0x03;
+		buffer[28] = (byte) 0xC4;
+		buffer[29] = 0x0E;
 		buffer[30] = 0x00;
 		buffer[31] = 0x00;
 		buffer[32] = 0x00;
@@ -252,6 +249,101 @@ public final class BitmapUtils {
 		buffer[38] = 0x00;
 		buffer[39] = 0x00;
 		return buffer;
+	}
+
+	private static byte[] addDIBPixels (Bitmap bitmap) {
+	 	int width = bitmap.getWidth();
+	 	int height = bitmap.getHeight();
+	 	byte[] buffer = new byte[width * height * 4];
+	 	int[] pixels = new int[width * height];
+	 	bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+	 	int offset = 0;
+	 	for (int i = pixels.length - 1; i >= 0; i -= width) {
+	 		for (int j = i - width + 1; j <= i; j ++) {
+				buffer[offset] = (byte) (Color.blue(pixels[j]));
+				buffer[offset + 1] = (byte) (Color.green(pixels[j]));
+				buffer[offset + 2] = (byte) (Color.red(pixels[j]));
+				buffer[offset + 3] = (byte) (Color.alpha(pixels[j]));
+				offset += 4;
+			}
+		}
+		return buffer;
+	}
+
+	private static void compressBitmapToBMP (final Bitmap bitmap, final FileOutputStream fileOS) {
+		byte[] DIBPixels = addDIBPixels(bitmap);
+		byte[] header = addBMPFileHeader(DIBPixels.length);
+		byte[] info = addBMPInfomation(DIBPixels.length, bitmap.getWidth(), bitmap.getHeight());
+		byte[] buffer = new byte[DIBPixels.length + header.length + info.length];
+		System.arraycopy(header, 0, buffer, 0, header.length);
+		System.arraycopy(info, 0, buffer, header.length, info.length);
+		System.arraycopy(DIBPixels, 0, buffer, header.length + info.length, DIBPixels.length);
+		try {
+			fileOS.write(buffer);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static Bitmap decodeBMPFromFile (String pathAndName) {
+	 	File file = new File(pathAndName);
+	 	return decodeBMPFromFile(file);
+	}
+
+	private static Bitmap decodeBMPFromFile (File file) {
+	 	Bitmap bitmap = null;
+	 	if (file.exists()) {
+			try {
+				FileInputStream fileIS = new FileInputStream(file);
+				ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
+				byte[] buffer = new byte[1024];
+				int length;
+				while ((length = fileIS.read(buffer)) != -1) {
+					byteArrayOS.write(buffer, 0, length);
+				}
+				byte[] data = byteArrayOS.toByteArray();
+				if (data[28] == 0x20 && data[29] == 0x00) {
+					byte[] DIBPixels = new byte[data.length - 54];
+					System.arraycopy(data, 54, DIBPixels, 0, data.length - 54);
+					int width;
+					width = data[21] & 0xff;
+					width = width << 8 | data[20] & 0xff;
+					width = width << 8 | data[19] & 0xff;
+					width = width << 8 | data[18] & 0xff;
+					int height;
+					height = data[25] & 0xff;
+					height = height << 8 | data[24] & 0xff;
+					height = height << 8 | data[23] & 0xff;
+					height = height << 8 | data[22] & 0xff;
+					int[] pixels = new int[width * height];
+					int y;
+					int index;
+					for (int i = 0; i < height; i ++) {
+						y = height - i - 1;
+						for (int x = 0; x < width; x ++) {
+							index = i * width * 4 + x * 4;
+							pixels[y * width + x] = Color.argb(
+									DIBPixels[index + 3] & 0xff,
+									DIBPixels[index + 2] & 0xff,
+									DIBPixels[index + 1] & 0xff,
+									DIBPixels[index] & 0xff
+							);
+						}
+					}
+					bitmap = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888);
+				}
+				else {
+					bitmap = BitmapFactory.decodeFileDescriptor(fileIS.getFD());
+				}
+				fileIS.close();
+				byteArrayOS.close();
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	 	return bitmap;
 	}
 
 }

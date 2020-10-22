@@ -11,13 +11,13 @@ import android.graphics.Paint;
 import android.graphics.Color;
 import android.widget.Checkable;
 
-import androidx.annotation.RequiresApi;
-
 import com.ansdoship.pixart.R;
 
 public class PaletteView extends View implements Checkable {
 	private Paint paint;
 	private int paletteColor;
+	private int paletteBackgroundColor1;
+	private int paletteBackgroundColor2;
 	private boolean mChecked;
 	private boolean mTouched;
 
@@ -32,10 +32,28 @@ public class PaletteView extends View implements Checkable {
 		paletteColor = Color.TRANSPARENT;
 		TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.PaletteView, defStyleAttr, 0);
 		mChecked = typedArray.getBoolean(R.styleable.PaletteView_android_checked, false);
+		paletteBackgroundColor1 = typedArray.getInt(R.styleable.PaletteView_paletteBackgroundColor1, Color.LTGRAY);
+		paletteBackgroundColor2 = typedArray.getInt(R.styleable.PaletteView_paletteBackgroundColor2, Color.GRAY);
 		typedArray.recycle();
     }
 
-    @Override
+	public void setPaletteBackgroundColor1(int paletteBackgroundColor1) {
+		this.paletteBackgroundColor1 = paletteBackgroundColor1;
+		invalidate();
+	}
+
+	public void setPaletteBackgroundColor2(int paletteBackgroundColor2) {
+		this.paletteBackgroundColor2 = paletteBackgroundColor2;
+		invalidate();
+	}
+
+	public void setPaletteBackgroundColors(int paletteBackgroundColor1, int paletteBackgroundColor2) {
+		this.paletteBackgroundColor1 = paletteBackgroundColor1;
+		this.paletteBackgroundColor2 = paletteBackgroundColor2;
+		invalidate();
+	}
+
+	@Override
 	public boolean isChecked() {
 		return mChecked;
 	}
@@ -96,10 +114,10 @@ public class PaletteView extends View implements Checkable {
 			invalidate();
 		}
 		else {
-			paint.setColor(Color.LTGRAY);
+			paint.setColor(paletteBackgroundColor1);
 			canvas.drawRect(0, 0, getWidth() * 0.5f, getHeight() * 0.5f, paint);
 			canvas.drawRect(getWidth() * 0.5f, getHeight() * 0.5f, getWidth(), getHeight(), paint);
-			paint.setColor(Color.GRAY);
+			paint.setColor(paletteBackgroundColor2);
 			canvas.drawRect(getWidth() * 0.5f, 0, getWidth(), getHeight() * 0.5f, paint);
 			canvas.drawRect(0, getHeight() * 0.5f, getWidth() * 0.5f, getHeight(), paint);
 			paint.setColor(paletteColor);
@@ -125,15 +143,16 @@ public class PaletteView extends View implements Checkable {
 		}
 	}
 
-	@RequiresApi(api = Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (!isClickable()) {
 			return false;
 		}
-		if (hasOnClickListeners()) {
-			return super.onTouchEvent(event);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+			if (hasOnClickListeners()) {
+				return super.onTouchEvent(event);
+			}
 		}
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:

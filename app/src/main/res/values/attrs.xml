@@ -3,6 +3,8 @@
 
     <declare-styleable name="PaletteView">
         <attr name="android:checked"/>
+        <attr name="paletteBackgroundColor1" format="integer"/>
+        <attr name="paletteBackgroundColor2" format="integer"/>
     </declare-styleable>
 
     <declare-styleable name="PaletteList">
@@ -10,6 +12,8 @@
         <attr name="checkedIndex" format="integer" />
         <attr name="paletteWidth" format="dimension" />
         <attr name="paletteHeight" format="dimension" />
+        <attr name="paletteBackgroundColor1"/>
+        <attr name="paletteBackgroundColor2"/>
     </declare-styleable>
 
     <declare-styleable name="CheckedImageView">

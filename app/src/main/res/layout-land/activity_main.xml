@@ -15,6 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
+            android:background="@color/colorTheme"
             android:orientation="vertical">
 
             <RelativeLayout
@@ -25,8 +26,8 @@
                     android:id="@+id/llayout_topbar_menu"
                     android:layout_width="wrap_content"
                     android:layout_height="?attr/actionBarSize"
-                    android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
                     android:orientation="horizontal">
 
                     <ImageButton
@@ -35,6 +36,7 @@
                         android:layout_height="?attr/actionBarSize"
                         android:background="?attr/selectableItemBackground"
                         android:contentDescription="@string/grid"
+                        android:tint="@android:color/white"
                         app:srcCompat="@drawable/ic_baseline_grid_24" />
 
                     <ImageButton
@@ -43,6 +45,7 @@
                         android:layout_height="?attr/actionBarSize"
                         android:background="?attr/selectableItemBackground"
                         android:contentDescription="@string/undo"
+                        android:tint="@android:color/white"
                         app:srcCompat="@drawable/ic_baseline_undo_24" />
 
                     <ImageButton
@@ -51,6 +54,7 @@
                         android:layout_height="?attr/actionBarSize"
                         android:background="?attr/selectableItemBackground"
                         android:contentDescription="@string/redo"
+                        android:tint="@android:color/white"
                         app:srcCompat="@drawable/ic_baseline_redo_24" />
 
                     <ImageButton
@@ -59,6 +63,7 @@
                         android:layout_height="?attr/actionBarSize"
                         android:background="?attr/selectableItemBackground"
                         android:contentDescription="@string/menu"
+                        android:tint="@android:color/white"
                         app:srcCompat="@drawable/ic_baseline_more_vertical_24" />
                 </LinearLayout>
 
@@ -66,10 +71,10 @@
                     android:id="@+id/tv_image_name"
                     android:layout_width="match_parent"
                     android:layout_height="?attr/actionBarSize"
-                    android:layout_alignParentLeft="true"
-                    android:layout_toLeftOf="@id/llayout_topbar_menu"
                     android:layout_alignParentStart="true"
+                    android:layout_alignParentLeft="true"
                     android:layout_toStartOf="@id/llayout_topbar_menu"
+                    android:layout_toLeftOf="@id/llayout_topbar_menu"
                     android:background="?attr/selectableItemBackground"
                     android:drawablePadding="8dp"
                     android:ellipsize="start"
@@ -77,10 +82,11 @@
                     android:paddingLeft="16dp"
                     android:paddingRight="16dp"
                     android:singleLine="true"
-                    android:textColor="@android:color/black"
+                    android:textColor="@android:color/white"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:drawableLeftCompat="@drawable/ic_baseline_image_24" />
+                    app:drawableLeftCompat="@drawable/ic_baseline_image_24"
+                    app:drawableTint="@android:color/white" />
 
             </RelativeLayout>
 
@@ -98,6 +104,7 @@
             android:layout_below="@id/llayout_topbar"
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
+            android:background="@android:color/white"
             android:orientation="horizontal">
 
             <LinearLayout
@@ -219,8 +226,7 @@
                         android:paddingBottom="8dp"
                         android:showDividers="middle"
                         app:paletteHeight="?attr/actionBarSize"
-                        app:paletteWidth="?attr/actionBarSize"
-                        app:size="12">
+                        app:paletteWidth="?attr/actionBarSize">
 
                     </com.ansdoship.pixart.viewgroup.PaletteList>
                 </ScrollView>

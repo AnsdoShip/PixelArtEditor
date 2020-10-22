@@ -9,17 +9,12 @@ import androidx.annotation.Nullable;
 
 import com.ansdoship.pixart.view.CheckedImageView;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class CheckedImageGroup extends LinearLayout implements View.OnClickListener {
 
-    private List<CheckedImageView> imageViews;
     private int mIndex;
     private OnCheckedChangeListener mOnCheckedChangeListener;
     private OnDoubleTapListener mOnDoubleTapListener;
     private boolean initSwitch;
-    private boolean checkable;
 
     public void setOnCheckedChangeListener(OnCheckedChangeListener onCheckedChangeListener) {
         mOnCheckedChangeListener = onCheckedChangeListener;
@@ -49,10 +44,10 @@ public class CheckedImageGroup extends LinearLayout implements View.OnClickListe
     }
 
     public int getCheckedId() {
-        if (mIndex < 0 || mIndex >= imageViews.size()) {
+        if (mIndex < 0 || mIndex >= getChildCount()) {
             return -1;
         }
-        return imageViews.get(mIndex).getId();
+        return getChildAt(mIndex).getId();
     }
 
     public int getCheckedIndex() {
@@ -65,27 +60,24 @@ public class CheckedImageGroup extends LinearLayout implements View.OnClickListe
             checkIndex(-1);
             return;
         }
-        checkIndex(imageViews.indexOf(view));
+        checkIndex(indexOfChild(view));
     }
 
     public void checkIndex(int index) {
-        if (!checkable) {
+        if (getChildCount() < 1) {
             return;
         }
-        if (imageViews.isEmpty()) {
-            return;
+        for (int i = 0; i < getChildCount(); i ++) {
+            ((CheckedImageView) getChildAt(i)).setChecked(false);
         }
-        for (CheckedImageView imageView : imageViews) {
-            imageView.setChecked(false);
-        }
-        if (index < 0 || index >= imageViews.size()) {
+        if (index < 0 || index >= getChildCount()) {
             return;
         }
         int preId = getCheckedId();
         if (preId == -1) {
             return;
         }
-        int posId = imageViews.get(index).getId();
+        int posId = getChildAt(index).getId();
         if (preId != posId) {
             if (mOnCheckedChangeListener != null) {
                 mOnCheckedChangeListener.onCheckedChanged(this, posId, index);
@@ -97,7 +89,7 @@ public class CheckedImageGroup extends LinearLayout implements View.OnClickListe
             }
         }
         mIndex = index;
-        imageViews.get(index).setChecked(true);
+        ((CheckedImageView) getChildAt(index)).setChecked(true);
     }
 
     public CheckedImageGroup(Context context) {
@@ -110,7 +102,6 @@ public class CheckedImageGroup extends LinearLayout implements View.OnClickListe
 
     public CheckedImageGroup(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        imageViews = new ArrayList<>();
         initSwitch = true;
     }
 
@@ -118,23 +109,20 @@ public class CheckedImageGroup extends LinearLayout implements View.OnClickListe
         if (!initSwitch) {
             return;
         }
+        initSwitch = false;
+        if (getChildCount() < 0) {
+            return;
+        }
         int defaultCheckedIndex = 0;
         for (int i = 0; i < getChildCount(); i ++) {
-            imageViews.add((CheckedImageView) getChildAt(i));
             if (((CheckedImageView) getChildAt(i)).isChecked()) {
                 defaultCheckedIndex = i;
             }
         }
-        if (imageViews.isEmpty()) {
-            return;
+        for (int i = 0; i < getChildCount(); i ++) {
+            getChildAt(i).setOnClickListener(this);
         }
-        for (CheckedImageView imageView : imageViews) {
-            imageView.setOnClickListener(this);
-        }
-        checkable = false;
-        checkIndex(defaultCheckedIndex);
-        checkable = true;
-        initSwitch = false;
+        ((CheckedImageView) getChildAt(defaultCheckedIndex)).setChecked(true);
     }
 
 }

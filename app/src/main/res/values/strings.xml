@@ -12,11 +12,9 @@
     <string name="circle">Circle</string>
     <string name="oval">Oval</string>
     <string name="square">Square</string>
-    <string name="rect">Rectangle</string>
+    <string name="rectangle">Rectangle</string>
     <string name="palette">Palette</string>
     <string name="palette_name">Palette Name</string>
-    <string name="export_palette">Export Palette</string>
-    <string name="import_palette">Import Palette</string>
     <string name="undo">Undo</string>
     <string name="redo">Redo</string>
     <string name="settings">Settings</string>
@@ -35,13 +33,43 @@
     <string name="menu">Menu</string>
     <string name="info">Info</string>
     <string name="help">Help</string>
+    <string name="add">Add</string>
+    <string name="adapter_item">Adapter Item</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
+    <string name="reset">Reset</string>
+    <string name="back">Back</string>
+    <string name="quality">Quality</string>
 
-    <string name="palette_1">Palette 1</string>
-    <string name="palette_2">Palette 2</string>
-    <string name="palette_3">Palette 3</string>
+    <string name="background_palette">Background Palette</string>
+    <string name="grid_palette">Grid Palette</string>
+    <string name="builtin_palette">Builtin Palette</string>
 
     <string name="clear">Clear</string>
     <string name="done">Done</string>
     <string name="none">None</string>
+
+    <string name="format_palette">.palette</string>
+    <string name="format_image_png">.png</string>
+    <string name="format_image_jpg">.jpg</string>
+    <string name="format_image_bmp">.bmp</string>
+
+    <string name="file_name_palette">Color Palette</string>
+    <string name="file_name_image">Untitled</string>
+
+    <string name="empty_palette">Empty Palette</string>
+    <string name="copy_current_palette">Copy Current Palette</string>
+    <string name="automatic_gradient">Automatic Gradient</string>
+
+    <string name="load_image">Load Image</string>
+    <string name="new_image">New Image</string>
+    <string name="save_image">Save Image</string>
+    <string name="paste_image">Paste Image</string>
+
+    <string name="warning_reset_palette">Reset the palette ? This operation cannot be undone.</string>
+    <string name="warning_delete_file">Delete the file ? This operation cannot be undone.</string>
+    <string name="warning_same_name_file">There is a file of the same name. Override ? This operation cannot be undone.</string>
+
+    <string name="permission_denied">Unable to run AnsdoPix. Please grant storage permission.</string>
 
 </resources>
