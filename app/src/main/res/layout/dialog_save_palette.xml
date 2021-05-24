@@ -18,7 +18,7 @@
             android:gravity="center"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:text="@string/format_palette"
+            android:text="@string/extension_palette"
             android:textColor="@android:color/black"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -30,7 +30,7 @@
             android:layout_toStartOf="@id/tv_format_palette"
             android:layout_toLeftOf="@id/tv_format_palette"
             android:gravity="start|center_vertical"
-            android:hint="@string/file_name_palette"
+            android:hint="@string/palette_name_default"
             android:inputType="text"
             android:maxLength="256"
             android:paddingLeft="16dp"
@@ -38,7 +38,7 @@
             android:paddingRight="16dp"
             android:paddingEnd="16dp"
             android:singleLine="true"
-            android:text="@string/file_name_palette"
+            android:text="@string/palette_name_default"
             android:textColor="@android:color/black"
             android:textSize="14sp"
             tools:ignore="Autofill" />

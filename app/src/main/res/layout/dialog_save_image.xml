@@ -50,7 +50,7 @@
             android:gravity="center"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:text="@string/format_image_png"
+            android:text="@string/extension_image_png"
             android:textColor="@android:color/black"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -62,7 +62,7 @@
             android:layout_toStartOf="@id/tv_format_image"
             android:layout_toLeftOf="@id/tv_format_image"
             android:gravity="start|center_vertical"
-            android:hint="@string/file_name_image"
+            android:hint="@string/image_name_default"
             android:inputType="text"
             android:maxLength="256"
             android:paddingStart="16dp"
@@ -70,7 +70,7 @@
             android:paddingEnd="16dp"
             android:paddingRight="16dp"
             android:singleLine="true"
-            android:text="@string/file_name_image"
+            android:text="@string/image_name_default"
             android:textColor="@android:color/black"
             android:textSize="14sp"
             tools:ignore="Autofill" />

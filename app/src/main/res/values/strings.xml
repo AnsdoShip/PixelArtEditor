@@ -1,6 +1,5 @@
 <resources>
-
-    <string name="app_name">AnsdoPix</string>
+    <string name="app_name">Pixel Art Editor</string>
     <string name="paint">Paint</string>
     <string name="eraser">Eraser</string>
     <string name="fill">Fill</string>
@@ -34,42 +33,33 @@
     <string name="info">Info</string>
     <string name="help">Help</string>
     <string name="add">Add</string>
-    <string name="adapter_item">Adapter Item</string>
+    <string name="adapter_item" translatable="false">Adapter Item</string>
     <string name="rename">Rename</string>
     <string name="delete">Delete</string>
     <string name="reset">Reset</string>
     <string name="back">Back</string>
     <string name="quality">Quality</string>
-
     <string name="background_palette">Background Palette</string>
     <string name="grid_palette">Grid Palette</string>
     <string name="builtin_palette">Builtin Palette</string>
-
     <string name="clear">Clear</string>
     <string name="done">Done</string>
     <string name="none">None</string>
-
-    <string name="format_palette">.palette</string>
-    <string name="format_image_png">.png</string>
-    <string name="format_image_jpg">.jpg</string>
-    <string name="format_image_bmp">.bmp</string>
-
-    <string name="file_name_palette">Color Palette</string>
-    <string name="file_name_image">Untitled</string>
-
+    <string name="extension_palette" translatable="false">.palette</string>
+    <string name="extension_image_png" translatable="false">.png</string>
+    <string name="extension_image_jpg" translatable="false">.jpg</string>
+    <string name="extension_image_bmp" translatable="false">.bmp</string>
+    <string name="palette_name_default">Color Palette</string>
+    <string name="image_name_default">Untitled</string>
     <string name="empty_palette">Empty Palette</string>
     <string name="copy_current_palette">Copy Current Palette</string>
     <string name="automatic_gradient">Automatic Gradient</string>
-
     <string name="load_image">Load Image</string>
     <string name="new_image">New Image</string>
     <string name="save_image">Save Image</string>
     <string name="paste_image">Paste Image</string>
-
     <string name="warning_reset_palette">Reset the palette ? This operation cannot be undone.</string>
     <string name="warning_delete_file">Delete the file ? This operation cannot be undone.</string>
     <string name="warning_same_name_file">There is a file of the same name. Override ? This operation cannot be undone.</string>
-
-    <string name="permission_denied">Unable to run AnsdoPix. Please grant storage permission.</string>
-
+    <string name="warning_permission_denied">Unable to run Pixel Art Editor. Please grant storage permission.</string>
 </resources>

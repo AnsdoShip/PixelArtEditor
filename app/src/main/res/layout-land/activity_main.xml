@@ -136,54 +136,54 @@
                     android:layout_height="match_parent"
                     android:scrollbars="none">
 
-                    <com.ansdoship.pixart.viewgroup.CheckedImageGroup
+                    <com.ansdoship.pixelarteditor.viewgroup.CheckedImageGroup
                         android:id="@+id/group_tools"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
-                        <com.ansdoship.pixart.view.CheckedImageView
+                        <com.ansdoship.pixelarteditor.view.CheckedImageView
                             android:id="@+id/img_paint"
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
                             app:srcCompat="@drawable/ic_baseline_paint_24" />
 
-                        <com.ansdoship.pixart.view.CheckedImageView
+                        <com.ansdoship.pixelarteditor.view.CheckedImageView
                             android:id="@+id/img_graph"
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
                             app:srcCompat="@drawable/ic_circle_24" />
 
-                        <com.ansdoship.pixart.view.CheckedImageView
+                        <com.ansdoship.pixelarteditor.view.CheckedImageView
                             android:id="@+id/img_eraser"
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
                             app:srcCompat="@drawable/ic_baseline_eraser_24" />
 
-                        <com.ansdoship.pixart.view.CheckedImageView
+                        <com.ansdoship.pixelarteditor.view.CheckedImageView
                             android:id="@+id/img_fill"
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
                             app:srcCompat="@drawable/ic_baseline_format_paint_24" />
 
-                        <com.ansdoship.pixart.view.CheckedImageView
+                        <com.ansdoship.pixelarteditor.view.CheckedImageView
                             android:id="@+id/img_selection"
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
                             app:srcCompat="@drawable/ic_baseline_selection_24" />
 
-                        <com.ansdoship.pixart.view.CheckedImageView
+                        <com.ansdoship.pixelarteditor.view.CheckedImageView
                             android:id="@+id/img_colorize"
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
                             app:srcCompat="@drawable/ic_baseline_colorize_24" />
-                    </com.ansdoship.pixart.viewgroup.CheckedImageGroup>
+                    </com.ansdoship.pixelarteditor.viewgroup.CheckedImageGroup>
                 </ScrollView>
 
             </LinearLayout>
@@ -216,7 +216,7 @@
                     android:layout_height="match_parent"
                     android:scrollbars="none">
 
-                    <com.ansdoship.pixart.viewgroup.PaletteList
+                    <com.ansdoship.pixelarteditor.viewgroup.PaletteList
                         android:id="@+id/list_palettes"
                         android:layout_width="?attr/actionBarSize"
                         android:layout_height="wrap_content"
@@ -228,14 +228,14 @@
                         app:paletteHeight="?attr/actionBarSize"
                         app:paletteWidth="?attr/actionBarSize">
 
-                    </com.ansdoship.pixart.viewgroup.PaletteList>
+                    </com.ansdoship.pixelarteditor.viewgroup.PaletteList>
                 </ScrollView>
 
             </LinearLayout>
 
         </LinearLayout>
 
-        <com.ansdoship.pixart.view.CanvasView
+        <com.ansdoship.pixelarteditor.view.CanvasView
             android:id="@+id/canvas_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
