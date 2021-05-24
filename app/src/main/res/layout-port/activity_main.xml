@@ -151,7 +151,7 @@
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
-                            app:srcCompat="@drawable/ic_circle_24" />
+                            app:srcCompat="@drawable/ic_outline_circle_24" />
 
                         <com.ansdoship.pixelarteditor.view.CheckedImageView
                             android:id="@+id/img_eraser"
@@ -165,7 +165,7 @@
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
-                            app:srcCompat="@drawable/ic_baseline_format_paint_24" />
+                            app:srcCompat="@drawable/ic_baseline_color_fill_24" />
 
                         <com.ansdoship.pixelarteditor.view.CheckedImageView
                             android:id="@+id/img_selection"

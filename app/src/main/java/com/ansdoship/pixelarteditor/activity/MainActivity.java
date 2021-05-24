@@ -58,6 +58,7 @@ import com.ansdoship.pixelarteditor.util.GraphCache;
 import com.ansdoship.pixelarteditor.util.MotionUtils;
 import com.ansdoship.pixelarteditor.util.PaintCache;
 import com.ansdoship.pixelarteditor.util.SelectionCache;
+import com.ansdoship.pixelarteditor.util.Settings;
 import com.ansdoship.pixelarteditor.view.CanvasView;
 import com.ansdoship.pixelarteditor.view.CheckedImageView;
 import com.ansdoship.pixelarteditor.view.PaletteView;
@@ -539,10 +540,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         RecyclerView recyclerView = (RecyclerView) view;
         List<Drawable> images = new ArrayList<>();
         images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_line_24, getTheme()));
-        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_circle_24, getTheme()));
-        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_oval_24, getTheme()));
-        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_square_24, getTheme()));
-        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_rectangle_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_circle_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_ellipse_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_square_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_rectangle_24, getTheme()));
         int checkedPosition = -1;
         switch (graphFlag) {
             case GraphCache.GraphFlag.LINE:
@@ -572,19 +573,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case 1:
                         graphFlag = GraphCache.GraphFlag.CIRCLE;
-                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_circle_24, getTheme()));
+                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_circle_24, getTheme()));
                         break;
                     case 2:
                         graphFlag = GraphCache.GraphFlag.OVAL;
-                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_oval_24, getTheme()));
+                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_ellipse_24, getTheme()));
                         break;
                     case 3:
                         graphFlag = GraphCache.GraphFlag.SQUARE;
-                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_square_24, getTheme()));
+                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_square_24, getTheme()));
                         break;
                     case 4:
                         graphFlag = GraphCache.GraphFlag.RECTANGLE;
-                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_rectangle_24, getTheme()));
+                        imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_rectangle_24, getTheme()));
                         break;
                 }
                 alertDialog.dismiss();
@@ -1980,6 +1981,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         super.onCreate(savedInstanceState);
 
+        Settings.getInstance().getShapeFlag();
+
         // Get permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -2093,16 +2096,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_line_24, getTheme()));
                 break;
             case GraphCache.GraphFlag.CIRCLE:
-                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_circle_24, getTheme()));
+                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_circle_24, getTheme()));
                 break;
             case GraphCache.GraphFlag.OVAL:
-                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_oval_24, getTheme()));
+                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_ellipse_24, getTheme()));
                 break;
             case GraphCache.GraphFlag.SQUARE:
-                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_square_24, getTheme()));
+                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_square_24, getTheme()));
                 break;
             case GraphCache.GraphFlag.RECTANGLE:
-                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_rectangle_24, getTheme()));
+                imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_rectangle_24, getTheme()));
                 break;
         }
 

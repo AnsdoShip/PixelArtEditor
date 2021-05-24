@@ -1,7 +1,6 @@
 package com.ansdoship.pixelarteditor.view;
 import android.annotation.SuppressLint;
 import android.content.res.TypedArray;
-import android.os.Build;
 import android.view.MotionEvent;
 import android.view.View;
 import android.content.Context;
@@ -86,8 +85,7 @@ public class PaletteView extends View implements Checkable {
 	}
 
 	@Override
-	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
-	{
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 		int widthSpecMode = MeasureSpec.getMode(widthMeasureSpec);
 		int heightSpecMode = MeasureSpec.getMode(heightMeasureSpec);
@@ -105,8 +103,7 @@ public class PaletteView extends View implements Checkable {
 	}
 	
 	@Override
-	protected void onDraw(Canvas canvas)
-	{
+	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 		if (paint == null) {
 			paint = new Paint();
@@ -122,17 +119,22 @@ public class PaletteView extends View implements Checkable {
 			canvas.drawRect(0, getHeight() * 0.5f, getWidth() * 0.5f, getHeight(), paint);
 			paint.setColor(paletteColor);
 			if (mChecked || mTouched) {
-				canvas.drawRect(getWidth() * 0.2f, getHeight() * 0.2f,
-						getWidth() * 0.8f, getHeight() * 0.8f, paint);
+
+				canvas.drawRect(getWidth() * 0.1f, getHeight() * 0.1f,
+						getWidth() * 0.9f, getHeight() * 0.9f, paint);
+
 				paint.setStyle(Paint.Style.STROKE);
+
 				paint.setStrokeWidth(getWidth() * 0.2f);
 				paint.setColor(Color.WHITE);
-				canvas.drawRect(getWidth() * 0.2f, getHeight() * 0.2f,
-						getWidth() * 0.8f, getHeight() * 0.8f, paint);
+				canvas.drawRect(getWidth() * 0.1f, getHeight() * 0.1f,
+						getWidth() * 0.9f, getHeight() * 0.9f, paint);
+
 				paint.setStrokeWidth(getWidth() * 0.1f);
 				paint.setColor(Color.BLACK);
-				canvas.drawRect(getWidth() * 0.2f, getHeight() * 0.2f,
-						getWidth() * 0.8f, getHeight() * 0.8f, paint);
+				canvas.drawRect(getWidth() * 0.1f, getHeight() * 0.1f,
+						getWidth() * 0.9f, getHeight() * 0.9f, paint);
+
 				paint.setStyle(Paint.Style.FILL);
 				paint.setStrokeWidth(1);
 			}
@@ -140,6 +142,7 @@ public class PaletteView extends View implements Checkable {
 				canvas.drawRect(getWidth() * 0.1f, getHeight() * 0.1f,
 						getWidth() * 0.9f, getHeight() * 0.9f, paint);
 			}
+
 		}
 	}
 
@@ -149,10 +152,8 @@ public class PaletteView extends View implements Checkable {
 		if (!isClickable()) {
 			return false;
 		}
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-			if (hasOnClickListeners()) {
-				return super.onTouchEvent(event);
-			}
+		if (hasOnClickListeners()) {
+			return super.onTouchEvent(event);
 		}
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
