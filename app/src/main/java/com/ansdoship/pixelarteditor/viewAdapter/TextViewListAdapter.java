@@ -17,10 +17,10 @@ import java.util.List;
 
 public class TextViewListAdapter extends RecyclerView.Adapter<TextViewListAdapter.ViewHolder> {
 
-    private Context mContext;
-    private List<String> mData;
+    private final Context mContext;
+    private final List<String> mData;
     private OnItemClickListener mOnItemClickListener;
-    private Drawable mDrawable;
+    private final Drawable mDrawable;
 
     public TextViewListAdapter (Context context, List<String> data, Drawable drawable) {
         mContext = context;

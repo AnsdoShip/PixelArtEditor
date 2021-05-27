@@ -18,12 +18,12 @@ import java.util.List;
 
 public class FileListAdapter extends RecyclerView.Adapter<FileListAdapter.ViewHolder> {
 
-    private Context mContext;
-    private List<String> mDirs;
-    private List<String> mFiles;
+    private final Context mContext;
+    private final List<String> mDirs;
+    private final List<String> mFiles;
     private OnItemClickListener mOnItemClickListener;
-    private Drawable mFolderDrawable;
-    private Drawable mFileDrawable;
+    private final Drawable mFolderDrawable;
+    private final Drawable mFileDrawable;
 
     public FileListAdapter(Context context, List<String> dirs, List<String> files, Drawable fileIcon) {
         mContext = context;

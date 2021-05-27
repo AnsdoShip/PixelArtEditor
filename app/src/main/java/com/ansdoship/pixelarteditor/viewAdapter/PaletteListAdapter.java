@@ -19,11 +19,11 @@ import java.util.List;
 
 public class PaletteListAdapter extends RecyclerView.Adapter<PaletteListAdapter.ViewHolder> {
 
-    private Context mContext;
-    private List<String> mInternalPalettes;
-    private List<String> mExternalPalettes;
+    private final Context mContext;
+    private final List<String> mInternalPalettes;
+    private final List<String> mExternalPalettes;
     private OnItemClickListener mOnItemClickListener;
-    private int mCheckedPosition;
+    private final int mCheckedPosition;
 
     public PaletteListAdapter(Context context, List<String> internalPalettes,List<String> externalPalettes) {
         this(context, internalPalettes, externalPalettes, -1);

@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.util;
+package com.ansdoship.pixelarteditor.app;
 
 import android.annotation.SuppressLint;
 import android.app.Application;

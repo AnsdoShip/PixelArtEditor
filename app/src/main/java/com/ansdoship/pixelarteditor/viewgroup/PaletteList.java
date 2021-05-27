@@ -11,7 +11,7 @@ import android.widget.LinearLayout;
 import androidx.annotation.Nullable;
 
 import com.ansdoship.pixelarteditor.R;
-import com.ansdoship.pixelarteditor.util.ColorPalette;
+import com.ansdoship.pixelarteditor.editor.ColorPalette;
 import com.ansdoship.pixelarteditor.view.PaletteView;
 
 public class PaletteList extends LinearLayout implements View.OnClickListener{

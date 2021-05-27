@@ -26,5 +26,6 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.preference:preference:1.1.1'
     implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'org.apache.commons.io:commonsIO:2.5.0'
     implementation 'com.tencent:mmkv-static:1.2.8'
 }
