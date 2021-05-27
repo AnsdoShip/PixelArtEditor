@@ -9,20 +9,20 @@ import com.ansdoship.pixelarteditor.Utils;
 import com.ansdoship.pixelarteditor.app.ApplicationUtils;
 import com.tencent.mmkv.MMKV;
 
-public final class ColorPaletteManager {
+public final class PaletteManager {
 
     private enum Singleton {
         INSTANCE;
-        private final ColorPaletteManager instance;
+        private final PaletteManager instance;
         Singleton() {
-            instance = new ColorPaletteManager();
+            instance = new PaletteManager();
         }
-        public ColorPaletteManager getInstance() {
+        public PaletteManager getInstance() {
             return instance;
         }
     }
 
-    private ColorPaletteManager() {
+    private PaletteManager() {
 
         MMKV.initialize(ApplicationUtils.getApplicationContext(),
                 ApplicationUtils.getApplicationContext().getDir("data", Context.MODE_PRIVATE).getAbsolutePath());
@@ -63,8 +63,8 @@ public final class ColorPaletteManager {
 
     }
 
-    public static ColorPaletteManager getInstance() {
-        return ColorPaletteManager.Singleton.INSTANCE.getInstance();
+    public static PaletteManager getInstance() {
+        return PaletteManager.Singleton.INSTANCE.getInstance();
     }
 
     public final static String PREFERENCES_FILE_NAME = "color_palette";

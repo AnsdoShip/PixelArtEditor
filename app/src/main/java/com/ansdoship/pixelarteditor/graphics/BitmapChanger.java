@@ -144,18 +144,21 @@ public final class BitmapChanger {
 
     public BitmapChanger clipOval () {
         path.reset();
+        path.rewind();
         path.addOval(new RectF(0, 0, dst.getWidth(), dst.getHeight()), Path.Direction.CW);
         return clipPath(path);
     }
 
     public BitmapChanger clipRoundRect (float radiusX, float radiusY) {
         path.reset();
+        path.rewind();
         path.addRoundRect(new RectF(0, 0, dst.getWidth(), dst.getHeight()), radiusX, radiusY, Path.Direction.CW);
         return clipPath(path);
     }
 
     public BitmapChanger clipRoundRect (float[] radii) {
         path.reset();
+        path.rewind();
         path.addRoundRect(new RectF(0, 0, dst.getWidth(), dst.getHeight()), radii, Path.Direction.CW);
         return clipPath(path);
     }
@@ -245,8 +248,9 @@ public final class BitmapChanger {
     }
 
     private void replaceDst(Bitmap newDst) {
-        BitmapUtils.recycleBitmap(dst);
+        Bitmap temp = dst;
         dst = newDst;
+        BitmapUtils.recycleBitmap(temp);
     }
 
     public BitmapChanger fill (int x, int y, int color) {

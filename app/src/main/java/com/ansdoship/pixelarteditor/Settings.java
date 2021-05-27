@@ -46,6 +46,7 @@ public final class Settings {
     public final static String KEY_TOOL_FLAG = "tool_flag";
     public final static String KEY_SHAPE_FLAG = "shape_flag";
     public final static String KEY_PAINT_FLAG = "paint_flag";
+    public final static String KEY_SELECTION_FLAG = "selection_flag";
     public final static String KEY_PALETTE_FLAG = "palette_flag";
 
     public final static String KEY_EXTERNAL_PALETTE_NAME = "external_palette_name";
@@ -70,6 +71,7 @@ public final class Settings {
     public final static int TOOL_FLAG_DEFAULT = Flags.ToolFlag.PAINT;
     public final static int SHAPE_FLAG_DEFAULT = Flags.ToolFlag.ShapeFlag.LINE;
     public final static int PAINT_FLAG_DEFAULT = Flags.ToolFlag.PaintFlag.REPLACE;
+    public final static int SELECTION_FLAG_DEFAULT = Flags.ToolFlag.SelectionFlag.NONE;
     public final static int PALETTE_FLAG_DEFAULT = Flags.PaletteFlag.INTERNAL;
     
     public final static int PAINT_WIDTH_DEFAULT = 1;
@@ -163,6 +165,14 @@ public final class Settings {
     public int getPaintFlag() {
 		return getInt(KEY_PAINT_FLAG, PAINT_FLAG_DEFAULT);
 	}
+
+    public void putSelectionFlag(int selectionFlag) {
+        putInt(KEY_SELECTION_FLAG, selectionFlag);
+    }
+
+    public int getSelectionFlag() {
+        return getInt(KEY_SELECTION_FLAG, SELECTION_FLAG_DEFAULT);
+    }
     
     public void putPaletteFlag(int paletteFlag) {
 		putInt(KEY_PALETTE_FLAG, paletteFlag);

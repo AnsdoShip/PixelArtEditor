@@ -147,7 +147,7 @@
                             app:srcCompat="@drawable/ic_baseline_paint_24" />
 
                         <com.ansdoship.pixelarteditor.view.CheckedImageView
-                            android:id="@+id/img_graph"
+                            android:id="@+id/img_shape"
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"

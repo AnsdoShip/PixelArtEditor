@@ -42,12 +42,12 @@ public final class ToolBufferPool {
     }
 
     @NonNull
-    public ToolBufferPool createBitmapBuffer (@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy) {
+    public static ToolBufferPool createToolBufferPool (@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy) {
         return new ToolBufferPool(cacheBitmap, maxSize, isCopy);
     }
 
     @NonNull
-    public ToolBufferPool createBitmapBuffer (@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy,
+    public static ToolBufferPool createToolBufferPool (@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy,
                                               @NonNull ToolBuffer toolBuffer) {
         ToolBufferPool result =  new ToolBufferPool(cacheBitmap, maxSize, isCopy);
         result.addToolBuffer(toolBuffer);
@@ -55,7 +55,7 @@ public final class ToolBufferPool {
     }
 
     @NonNull
-    public ToolBufferPool createBitmapBuffer(@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy,
+    public static ToolBufferPool createToolBufferPool(@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy,
                                              @NonNull ToolBuffer... toolBuffers) {
         ToolBufferPool result =  new ToolBufferPool(cacheBitmap, maxSize, isCopy);
         result.addToolBuffers(toolBuffers);
@@ -63,7 +63,7 @@ public final class ToolBufferPool {
     }
 
     @NonNull
-    public ToolBufferPool createBitmapBuffer (@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy,
+    public static ToolBufferPool createToolBufferPool (@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy,
                                               @NonNull List<ToolBuffer> toolBufferList) {
         ToolBufferPool result =  new ToolBufferPool(cacheBitmap, maxSize, isCopy);
         result.addToolBuffers(toolBufferList);
@@ -146,13 +146,15 @@ public final class ToolBufferPool {
     }
 
     private void replaceCurrentBitmap(Bitmap newBitmap) {
-        BitmapUtils.recycleBitmap(mCurrentBitmap);
+        Bitmap temp = mCurrentBitmap;
         mCurrentBitmap = newBitmap;
+        BitmapUtils.recycleBitmap(temp);
     }
 
     private void replaceCacheBitmap(Bitmap newBitmap) {
-        BitmapUtils.recycleBitmap(mCacheBitmap);
+        Bitmap temp = mCacheBitmap;
         mCacheBitmap = newBitmap;
+        BitmapUtils.recycleBitmap(temp);
     }
 
     private void drawToolBuffer (@NonNull Bitmap bitmap, @NonNull ToolBuffer toolBuffer) {

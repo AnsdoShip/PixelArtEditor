@@ -69,6 +69,7 @@ public final class DialogManager {
 
     private final Context context;
 
+    private int dialogTempPaintWidth;
     private void buildPaintDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         String [] items = {
@@ -202,6 +203,10 @@ public final class DialogManager {
         recyclerView.setAdapter(adapter);
         alertDialog.show();
     }
+    private int dialogTempColor;
+    private int dialogTempColorH;
+    private float dialogTempColorS;
+    private float dialogTempColorV;
     @SuppressLint("SetTextI18n")
     private void buildPaletteColorDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -595,6 +600,8 @@ public final class DialogManager {
         recyclerView.setAdapter(adapter);
         alertDialog.show();
     }
+    private ColorPalette tempPalette;
+    private String dialogTempPaletteName;
     private void buildSavePaletteDialog (String etText) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = View.inflate(this, R.layout.dialog_save_palette, null);
@@ -1041,6 +1048,43 @@ public final class DialogManager {
         List<String> fileNames = new ArrayList<>();
         for (String file : files) {
             fileNames.add(FilePathUtils.getFileName(file));
+        }
+        FileListAdapter adapter = new FileListAdapter(MainActivity.this, dirNames, fileNames,
+                VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_file_24, getTheme()));
+        adapter.setOnItemClickListener(new FileListAdapter.OnItemClickListener() {
+            @Override
+            public void onDirectoryClick(String name, int position) {
+                IMAGE_PATH = IMAGE_PATH + "/" + name;
+                dialogTempTvCurrentPath.setText(IMAGE_PATH);
+                dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(IMAGE_PATH));
+            }
+
+            @Override
+            public void onFileClick(String name, int position) {
+
+            }
+        });
+        return adapter;
+    }
+    private FileListAdapter flushImageListAdapter (String newPath) {
+        List<String> dirs = FileUtils.getAllDirectoryPaths(newPath);
+        List<String> files = FileUtils.getAllFilePaths(newPath, new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                String fileName = file.getName().toLowerCase();
+                return fileName.endsWith(".png") ||
+                        fileName.endsWith(".jpg") ||
+                        fileName.endsWith(".jpeg") ||
+                        fileName.endsWith(".bmp");
+            }
+        });
+        List<String> dirNames = new ArrayList<>();
+        for (String dir : dirs) {
+            dirNames.add(FileUtils.getFileName(dir));
+        }
+        List<String> fileNames = new ArrayList<>();
+        for (String file : files) {
+            fileNames.add(FileUtils.getFileName(file));
         }
         FileListAdapter adapter = new FileListAdapter(MainActivity.this, dirNames, fileNames,
                 VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_file_24, getTheme()));

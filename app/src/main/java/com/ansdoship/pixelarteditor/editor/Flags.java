@@ -40,9 +40,13 @@ public final class Flags {
 
         public final static class SelectionFlag {
 
-            public final static int ROTATE = 0;
+            public final static int NONE = -1;
 
-            public final static int FLIP = 1;
+            public final static int CUT = 0;
+
+            public final static int COPY = 1;
+
+            public final static int CLEAR = 2;
 
         }
 
