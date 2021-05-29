@@ -41,6 +41,13 @@ public final class BitmapDecoder {
         catch (IOException e) {
             e.printStackTrace();
         }
+        if (bitmap != null) {
+            if (!bitmap.isMutable()) {
+                Bitmap temp = bitmap;
+                bitmap = bitmap.copy(bitmap.getConfig(), true);
+                BitmapUtils.recycleBitmap(temp);
+            }
+        }
         return bitmap;
     }
 
@@ -62,6 +69,13 @@ public final class BitmapDecoder {
                 }
             }
         }
+        if (bitmap != null) {
+            if (!bitmap.isMutable()) {
+                Bitmap temp = bitmap;
+                bitmap = bitmap.copy(bitmap.getConfig(), true);
+                BitmapUtils.recycleBitmap(temp);
+            }
+        }
         return bitmap;
     }
 
@@ -80,6 +94,13 @@ public final class BitmapDecoder {
         }
         catch (IOException e) {
             e.printStackTrace();
+        }
+        if (bitmap != null) {
+            if (!bitmap.isMutable()) {
+                Bitmap temp = bitmap;
+                bitmap = bitmap.copy(bitmap.getConfig(), true);
+                BitmapUtils.recycleBitmap(temp);
+            }
         }
         return bitmap;
     }
@@ -103,6 +124,13 @@ public final class BitmapDecoder {
                 }
             }
         }
+        if (bitmap != null) {
+            if (!bitmap.isMutable()) {
+                Bitmap temp = bitmap;
+                bitmap = bitmap.copy(bitmap.getConfig(), true);
+                BitmapUtils.recycleBitmap(temp);
+            }
+        }
         return bitmap;
     }
 
@@ -119,7 +147,15 @@ public final class BitmapDecoder {
     }
 
     public static @Nullable Bitmap decodeByteArray (@NonNull byte[] data, int offset, int length) {
-        return BitmapFactory.decodeByteArray(data, offset, length);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, offset, length);
+        if (bitmap != null) {
+            if (!bitmap.isMutable()) {
+                Bitmap temp = bitmap;
+                bitmap = bitmap.copy(bitmap.getConfig(), true);
+                BitmapUtils.recycleBitmap(temp);
+            }
+        }
+        return bitmap;
     }
 
     public static @Nullable Bitmap decodeByteArray (@NonNull byte[] data, Rect region) {
@@ -142,6 +178,13 @@ public final class BitmapDecoder {
                 if (!decoder.isRecycled()) {
                     decoder.recycle();
                 }
+            }
+        }
+        if (bitmap != null) {
+            if (!bitmap.isMutable()) {
+                Bitmap temp = bitmap;
+                bitmap = bitmap.copy(bitmap.getConfig(), true);
+                BitmapUtils.recycleBitmap(temp);
             }
         }
         return bitmap;
@@ -206,7 +249,15 @@ public final class BitmapDecoder {
 
     public static @Nullable Bitmap decodeDrawable (@NonNull Drawable drawable) {
         if (drawable instanceof BitmapDrawable) {
-            return ((BitmapDrawable)drawable).getBitmap();
+            Bitmap bitmap = ((BitmapDrawable)drawable).getBitmap();
+            if (bitmap != null) {
+                if (!bitmap.isMutable()) {
+                    Bitmap temp = bitmap;
+                    bitmap = bitmap.copy(bitmap.getConfig(), true);
+                    BitmapUtils.recycleBitmap(temp);
+                }
+            }
+            return bitmap;
         }
         else {
             if (drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {

@@ -60,7 +60,7 @@ public final class Settings {
     public static String IMAGE_NAME_DEFAULT() {
     	return ApplicationUtils.getApplicationContext().getString(R.string.image_name_default);
     }
-    public final static int IMAGE_SCALE_DEFAULT = 1;
+    public final static int IMAGE_SCALE_DEFAULT = 20;
     public final static int IMAGE_TRANSLATION_X_DEFAULT = 0;
     public final static int IMAGE_TRANSLATION_Y_DEFAULT = 0;
     public final static int IMAGE_ORIGIN_X_DEFAULT = 0;

@@ -6,10 +6,10 @@ import android.graphics.Paint;
 
 import androidx.annotation.NonNull;
 
-import com.ansdoship.pixelarteditor.Utils;
 import com.ansdoship.pixelarteditor.editor.buffers.FillBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.FlipBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.PaintBuffer;
+import com.ansdoship.pixelarteditor.editor.buffers.PointBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.RotateBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.SelectionBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.ToolBuffer;
@@ -17,16 +17,18 @@ import com.ansdoship.pixelarteditor.graphics.BitmapChanger;
 import com.ansdoship.pixelarteditor.graphics.BitmapUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public final class ToolBufferPool {
 
     private Bitmap mCacheBitmap;
     private Bitmap mCurrentBitmap;
-    private final List<ToolBuffer> mToolBufferList;
+    private Bitmap mTempBitmap;
+    private List<ToolBuffer> mToolBufferList;
     private int index;
     private final int maxSize;
+
+    private boolean tempMode;
 
     private ToolBufferPool(Bitmap cacheBitmap, int maxSize, boolean isCopy) {
         if (isCopy) {
@@ -35,6 +37,7 @@ public final class ToolBufferPool {
         else {
             mCacheBitmap = cacheBitmap;
         }
+        tempMode = false;
         mCurrentBitmap = Bitmap.createBitmap(mCacheBitmap);
         mToolBufferList = new ArrayList<>(maxSize);
         index = -1;
@@ -46,50 +49,15 @@ public final class ToolBufferPool {
         return new ToolBufferPool(cacheBitmap, maxSize, isCopy);
     }
 
-    @NonNull
-    public static ToolBufferPool createToolBufferPool (@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy,
-                                              @NonNull ToolBuffer toolBuffer) {
-        ToolBufferPool result =  new ToolBufferPool(cacheBitmap, maxSize, isCopy);
-        result.addToolBuffer(toolBuffer);
-        return result;
-    }
-
-    @NonNull
-    public static ToolBufferPool createToolBufferPool(@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy,
-                                             @NonNull ToolBuffer... toolBuffers) {
-        ToolBufferPool result =  new ToolBufferPool(cacheBitmap, maxSize, isCopy);
-        result.addToolBuffers(toolBuffers);
-        return result;
-    }
-
-    @NonNull
-    public static ToolBufferPool createToolBufferPool (@NonNull Bitmap cacheBitmap, int maxSize, boolean isCopy,
-                                              @NonNull List<ToolBuffer> toolBufferList) {
-        ToolBufferPool result =  new ToolBufferPool(cacheBitmap, maxSize, isCopy);
-        result.addToolBuffers(toolBufferList);
-        return result;
-    }
-
     public void addToolBuffer (@NonNull ToolBuffer toolBuffer) {
-        addToolBuffers(toolBuffer);
-    }
-
-    public void addToolBuffers (@NonNull ToolBuffer... toolBuffers) {
-        addToolBuffers(Arrays.asList(toolBuffers));
-    }
-
-    public void addToolBuffers (@NonNull List<ToolBuffer> toolBufferList) {
-        Utils.removeNullElements(toolBufferList);
-        if (toolBufferList.isEmpty()) {
-            return;
-        }
+        setTempModeDisabled();
+        drawToolBuffer(mCurrentBitmap, toolBuffer);
         if (getRedoCount() > 0) {
-            mToolBufferList.subList(0, index + 1);
+            mToolBufferList = mToolBufferList.subList(0, index + 1);
         }
-        int originalSize = mToolBufferList.size();
-        mToolBufferList.addAll(toolBufferList);
+        mToolBufferList.add(toolBuffer);
         int size = mToolBufferList.size();
-        index += (size - originalSize);
+        index ++;
         if (size > maxSize) {
             index = maxSize - 1;
             int subIndex = size - maxSize;
@@ -97,7 +65,36 @@ public final class ToolBufferPool {
                 drawToolBuffer(mCacheBitmap, mToolBufferList.get(i));
             }
             replaceCacheBitmap(Bitmap.createBitmap(mCacheBitmap));
-            mToolBufferList.subList(subIndex, size);
+            mToolBufferList = mToolBufferList.subList(subIndex, size);
+        }
+    }
+
+    private void setTempModeEnabled () {
+        if (tempMode) {
+            return;
+        }
+        tempMode = true;
+        mTempBitmap = mCurrentBitmap;
+        mCurrentBitmap = Bitmap.createBitmap(mTempBitmap);
+    }
+
+    private void setTempModeDisabled () {
+        if (!tempMode) {
+            return;
+        }
+        tempMode = false;
+        replaceCurrentBitmap(mTempBitmap);
+        mTempBitmap = null;
+    }
+
+    public void addTempToolBuffer (@NonNull ToolBuffer toolBuffer) {
+        setTempModeEnabled();
+        drawToolBuffer(mCurrentBitmap, toolBuffer);
+    }
+
+    public void clearTempToolBuffers() {
+        if (tempMode) {
+            replaceCurrentBitmap(Bitmap.createBitmap(mTempBitmap));
         }
     }
 
@@ -120,8 +117,8 @@ public final class ToolBufferPool {
 
     public void redo () {
         index += 1;
-        if (index >= maxSize) {
-            index = maxSize - 1;
+        if (index >= mToolBufferList.size()) {
+            index = mToolBufferList.size() - 1;
             return;
         }
         flushCurrentBitmap();
@@ -213,6 +210,10 @@ public final class ToolBufferPool {
                         new BitmapChanger(bitmap, false).flipHorizontally();
                         break;
                 }
+                break;
+           case BufferFlag.POINT:
+                canvas.drawPoint(((PointBuffer)toolBuffer).getPointX(), ((PointBuffer)toolBuffer).getPointY(),
+                        ((PointBuffer)toolBuffer).getPaint());
                 break;
         }
     }

@@ -12,6 +12,8 @@ public final class BufferFlag {
 
     public final static int FLIP = 4;
 
+    public final static int POINT = 5;
+
     public final static class SelectionFlag {
 
         public final static int CUT = 0;

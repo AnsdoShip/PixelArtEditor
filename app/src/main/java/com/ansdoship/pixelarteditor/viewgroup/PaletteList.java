@@ -149,7 +149,7 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
     }
 
     public void setColorPalette (ColorPalette colorPalette) {
-        setColorPalette(colorPalette, 0);
+        setColorPalette(colorPalette, colorPalette.getIndex());
     }
 
     public void setColorPalette (ColorPalette colorPalette, int index) {
@@ -159,7 +159,7 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
             for (int i = 0; i < colorPalette.size(); i++) {
                 PaletteView paletteView = new PaletteView(mContext);
                 paletteView.setLayoutParams(new LinearLayout.LayoutParams(mPaletteWidth, mPaletteHeight));
-                paletteView.setPaletteColor(colorPalette.get(i));
+                paletteView.setPaletteColor(colorPalette.getColor(i));
                 paletteView.setOnClickListener(this);
                 paletteView.setPaletteBackgroundColors(paletteBackgroundColor1, paletteBackgroundColor2);
                 paletteView.setAnimation(AnimationUtils.loadAnimation(mContext, android.R.anim.fade_in));
@@ -173,12 +173,16 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
     public void setPaletteColor (int index, int color) {
         ((PaletteView) getChildAt(index)).setPaletteColor(color);
         if (mColorPalette != null) {
-            mColorPalette.set(index, color);
+            mColorPalette.setColor(index, color);
         }
     }
 
     public int getPaletteColor (int index) {
         return ((PaletteView) getChildAt(index)).getPaletteColor();
+    }
+
+    public int getCurrentColor () {
+        return getPaletteColor(getCheckedIndex());
     }
 
 }
