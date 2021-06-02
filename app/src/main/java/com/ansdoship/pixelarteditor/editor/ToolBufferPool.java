@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 
 import com.ansdoship.pixelarteditor.editor.buffers.FillBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.FlipBuffer;
+import com.ansdoship.pixelarteditor.editor.buffers.MultiBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.PaintBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.PointBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.RotateBuffer;
@@ -23,7 +24,6 @@ public final class ToolBufferPool {
 
     private Bitmap mCacheBitmap;
     private Bitmap mCurrentBitmap;
-    private Bitmap mTempBitmap;
     private List<ToolBuffer> mToolBufferList;
     private int index;
     private final int maxSize;
@@ -74,8 +74,6 @@ public final class ToolBufferPool {
             return;
         }
         tempMode = true;
-        mTempBitmap = mCurrentBitmap;
-        mCurrentBitmap = Bitmap.createBitmap(mTempBitmap);
     }
 
     private void setTempModeDisabled () {
@@ -83,8 +81,7 @@ public final class ToolBufferPool {
             return;
         }
         tempMode = false;
-        replaceCurrentBitmap(mTempBitmap);
-        mTempBitmap = null;
+        flushCurrentBitmap();
     }
 
     public void addTempToolBuffer (@NonNull ToolBuffer toolBuffer) {
@@ -94,7 +91,7 @@ public final class ToolBufferPool {
 
     public void clearTempToolBuffers() {
         if (tempMode) {
-            replaceCurrentBitmap(Bitmap.createBitmap(mTempBitmap));
+            flushCurrentBitmap();
         }
     }
 
@@ -157,6 +154,12 @@ public final class ToolBufferPool {
     private void drawToolBuffer (@NonNull Bitmap bitmap, @NonNull ToolBuffer toolBuffer) {
         Canvas canvas = new Canvas(bitmap);
         switch (toolBuffer.getBufferFlag()) {
+            case BufferFlag.MULTIPLE:
+                ToolBuffer[] toolBuffers = ((MultiBuffer)toolBuffer).getToolBuffers();
+                for (ToolBuffer buffer : toolBuffers) {
+                    drawToolBuffer(bitmap, buffer);
+                }
+                break;
             case BufferFlag.PAINT:
                 canvas.drawPath(((PaintBuffer) toolBuffer).getPath(), ((PaintBuffer) toolBuffer).getPaint());
                 break;

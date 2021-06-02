@@ -32,6 +32,7 @@ import com.ansdoship.pixelarteditor.editor.Flags;
 import com.ansdoship.pixelarteditor.editor.PaletteManager;
 import com.ansdoship.pixelarteditor.editor.ToolBufferPool;
 import com.ansdoship.pixelarteditor.editor.buffers.FillBuffer;
+import com.ansdoship.pixelarteditor.editor.buffers.MultiBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.PaintBuffer;
 import com.ansdoship.pixelarteditor.editor.buffers.PointBuffer;
 import com.ansdoship.pixelarteditor.graphics.BitmapDecoder;
@@ -980,10 +981,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         else {
                             // Draw current bitmap
                             switch (Settings.getInstance().getToolFlag()) {
-                                case Flags.ToolFlag.ERASER:
-                                    toolBufferPool.addToolBuffer(new PaintBuffer(eraser, path));
-                                    break;
                                 case Flags.ToolFlag.PAINT:
+                                    toolBufferPool.addToolBuffer(
+                                            new MultiBuffer(new PointBuffer(paint, downX, downY), new PaintBuffer(paint, path)));
+                                    break;
+                                case Flags.ToolFlag.ERASER:
+                                    toolBufferPool.addToolBuffer(
+                                            new MultiBuffer(new PointBuffer(eraser, downX, downY), new PaintBuffer(eraser, path)));
+                                    break;
                                 case Flags.ToolFlag.SHAPE:
                                     toolBufferPool.addToolBuffer(new PaintBuffer(paint, path));
                                     break;

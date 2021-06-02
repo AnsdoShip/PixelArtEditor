@@ -32,4 +32,6 @@ public final class BufferFlag {
 
     }
 
+    public final static int MULTIPLE = 100;
+
 }
