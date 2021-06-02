@@ -1,18 +1,18 @@
-package com.ansdoship.pixelarteditor.editor;
+package com.ansdoship.pixelarteditor.editor.palette;
 
 import androidx.annotation.NonNull;
 
-public final class ColorPalette {
+public final class Palette {
 
     private final int[] mColors;
 
     private int index;
 
-    private ColorPalette (@NonNull int[] colors) {
+    private Palette(@NonNull int[] colors) {
         this(colors, 0);
     }
 
-    private ColorPalette (@NonNull int[] colors, int index) {
+    private Palette(@NonNull int[] colors, int index) {
         if (colors.length < 1) {
             throw new IllegalArgumentException("Color array length cannot be < 1");
         }
@@ -20,11 +20,11 @@ public final class ColorPalette {
         setIndex(index);
     }
 
-    private ColorPalette (int size, int color) {
+    private Palette(int size, int color) {
         this(size, color, 0);
     }
 
-    private ColorPalette (int size, int color, int index) {
+    private Palette(int size, int color, int index) {
         if (size < 1) {
             throw new IllegalArgumentException("Size cannot be < 1");
         }
@@ -35,40 +35,48 @@ public final class ColorPalette {
         setIndex(index);
     }
 
-    public static @NonNull ColorPalette createColorPalette (int size) {
-        return createColorPalette (size, 0);
+    public static @NonNull
+    Palette createPalette (int size) {
+        return createPalette (size, 0);
     }
 
-    public static @NonNull ColorPalette createColorPalette (int size, int index) {
-        return createColorPalette (size, 0, index);
+    public static @NonNull
+    Palette createPalette (int size, int index) {
+        return createPalette (size, 0, index);
     }
 
-    public static @NonNull ColorPalette createColorPalette (int size, int color, int index) {
-        return new ColorPalette (size, color, index);
+    public static @NonNull
+    Palette createPalette (int size, int color, int index) {
+        return new Palette(size, color, index);
     }
 
-    public static @NonNull ColorPalette createColorPalette (@NonNull ColorPalette src) {
-        return createColorPalette(src, src.size(), src.getIndex());
+    public static @NonNull
+    Palette createPalette (@NonNull Palette src) {
+        return createPalette(src, src.size(), src.getIndex());
     }
 
-    public static @NonNull ColorPalette createColorPalette (@NonNull ColorPalette src, int index) {
-        return createColorPalette(src, src.size(), index);
+    public static @NonNull
+    Palette createPalette (@NonNull Palette src, int index) {
+        return createPalette(src, src.size(), index);
     }
 
-    public static @NonNull ColorPalette createColorPalette (@NonNull ColorPalette src, int size, int index) {
+    public static @NonNull
+    Palette createPalette (@NonNull Palette src, int size, int index) {
         int[] colors = new int[size];
         for (int i = 0; i < Math.min(size, src.size()); i ++) {
             colors[i] = src.getColor(i);
         }
-        return createColorPalette(colors, index);
+        return createPalette(colors, index);
     }
 
-    public static @NonNull ColorPalette createColorPalette (@NonNull int[] colors) {
-        return createColorPalette(colors, 0);
+    public static @NonNull
+    Palette createPalette (@NonNull int[] colors) {
+        return createPalette(colors, 0);
     }
 
-    public static @NonNull ColorPalette createColorPalette (@NonNull int[] colors, int index) {
-        return new ColorPalette(colors, index);
+    public static @NonNull
+    Palette createPalette (@NonNull int[] colors, int index) {
+        return new Palette(colors, index);
     }
 
     public int size () {

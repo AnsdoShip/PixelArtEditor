@@ -11,7 +11,7 @@ import android.widget.LinearLayout;
 import androidx.annotation.Nullable;
 
 import com.ansdoship.pixelarteditor.R;
-import com.ansdoship.pixelarteditor.editor.ColorPalette;
+import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.view.PaletteView;
 
 public class PaletteList extends LinearLayout implements View.OnClickListener{
@@ -19,7 +19,7 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
     private OnCheckedChangeListener mOnCheckedChangeListener;
     private OnDoubleTapListener mOnDoubleTapListener;
     private Context mContext;
-    private ColorPalette mColorPalette;
+    private Palette mPalette;
     private int mPaletteWidth;
     private int mPaletteHeight;
 
@@ -131,7 +131,7 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
         if (size < 1) {
             return;
         }
-        mColorPalette = null;
+        mPalette = null;
         removeAllViews();
         for (int i = 0; i < size; i ++) {
             PaletteView paletteView = new PaletteView(mContext);
@@ -148,18 +148,18 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
         return getChildCount();
     }
 
-    public void setColorPalette (ColorPalette colorPalette) {
-        setColorPalette(colorPalette, colorPalette.getIndex());
+    public void setPalette (Palette palette) {
+        setPalette(palette, palette.getIndex());
     }
 
-    public void setColorPalette (ColorPalette colorPalette, int index) {
-        mColorPalette = colorPalette;
-        if (colorPalette != null) {
+    public void setPalette (Palette palette, int index) {
+        mPalette = palette;
+        if (palette != null) {
             removeAllViews();
-            for (int i = 0; i < colorPalette.size(); i++) {
+            for (int i = 0; i < palette.size(); i++) {
                 PaletteView paletteView = new PaletteView(mContext);
                 paletteView.setLayoutParams(new LinearLayout.LayoutParams(mPaletteWidth, mPaletteHeight));
-                paletteView.setPaletteColor(colorPalette.getColor(i));
+                paletteView.setPaletteColor(palette.getColor(i));
                 paletteView.setOnClickListener(this);
                 paletteView.setPaletteBackgroundColors(paletteBackgroundColor1, paletteBackgroundColor2);
                 paletteView.setAnimation(AnimationUtils.loadAnimation(mContext, android.R.anim.fade_in));
@@ -172,8 +172,8 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
 
     public void setPaletteColor (int index, int color) {
         ((PaletteView) getChildAt(index)).setPaletteColor(color);
-        if (mColorPalette != null) {
-            mColorPalette.setColor(index, color);
+        if (mPalette != null) {
+            mPalette.setColor(index, color);
         }
     }
 

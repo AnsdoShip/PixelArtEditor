@@ -1,6 +1,4 @@
-package com.ansdoship.pixelarteditor.editor.buffers;
-
-import com.ansdoship.pixelarteditor.editor.BufferFlag;
+package com.ansdoship.pixelarteditor.editor.buffer;
 
 public class RotateBuffer extends ToolBuffer {
 

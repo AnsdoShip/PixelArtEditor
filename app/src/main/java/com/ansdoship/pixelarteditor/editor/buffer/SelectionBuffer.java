@@ -1,11 +1,9 @@
-package com.ansdoship.pixelarteditor.editor.buffers;
+package com.ansdoship.pixelarteditor.editor.buffer;
 
 import android.graphics.Point;
 import android.graphics.Rect;
 
 import androidx.annotation.NonNull;
-
-import com.ansdoship.pixelarteditor.editor.BufferFlag;
 
 public class SelectionBuffer extends ToolBuffer {
 

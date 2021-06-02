@@ -5,7 +5,7 @@ import android.content.Context;
 import androidx.annotation.Nullable;
 
 import com.ansdoship.pixelarteditor.app.ApplicationUtils;
-import com.ansdoship.pixelarteditor.editor.PaletteFlag;
+import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
 import com.tencent.mmkv.MMKV;
 

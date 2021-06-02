@@ -27,15 +27,6 @@ public final class Utils {
         return 0;
     }
 
-    public static <T> List<T> removeNullElements (@NonNull List <T> list) {
-        list.removeAll(Collections.singleton(null));
-        return list;
-    }
-
-    public static <T> int getNonNullElementsCount (@NonNull List <T> list) {
-        return removeNullElements(list).size();
-    }
-
     @Nullable
     public static String getCachePath () {
         Context context = ApplicationUtils.getApplicationContext();

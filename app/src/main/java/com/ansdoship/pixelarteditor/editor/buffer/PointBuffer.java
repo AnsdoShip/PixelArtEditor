@@ -1,8 +1,6 @@
-package com.ansdoship.pixelarteditor.editor.buffers;
+package com.ansdoship.pixelarteditor.editor.buffer;
 
 import android.graphics.Paint;
-
-import com.ansdoship.pixelarteditor.editor.BufferFlag;
 
 public class PointBuffer extends ToolBuffer {
 

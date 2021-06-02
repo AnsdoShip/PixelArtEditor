@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.editor.buffers;
+package com.ansdoship.pixelarteditor.editor.buffer;
 
 public abstract class ToolBuffer {
 

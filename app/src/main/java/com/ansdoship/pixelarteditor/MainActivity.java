@@ -27,14 +27,14 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.ansdoship.pixelarteditor.editor.PaletteFlag;
-import com.ansdoship.pixelarteditor.editor.PaletteManager;
-import com.ansdoship.pixelarteditor.editor.ToolBufferPool;
+import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
+import com.ansdoship.pixelarteditor.editor.palette.PaletteManager;
+import com.ansdoship.pixelarteditor.editor.buffer.ToolBufferPool;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
-import com.ansdoship.pixelarteditor.editor.buffers.FillBuffer;
-import com.ansdoship.pixelarteditor.editor.buffers.MultiBuffer;
-import com.ansdoship.pixelarteditor.editor.buffers.PaintBuffer;
-import com.ansdoship.pixelarteditor.editor.buffers.PointBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.FillBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.MultiBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.PaintBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.PointBuffer;
 import com.ansdoship.pixelarteditor.graphics.BitmapDecoder;
 import com.ansdoship.pixelarteditor.graphics.BitmapEncoder;
 import com.ansdoship.pixelarteditor.graphics.BitmapUtils;
@@ -841,7 +841,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 case ToolFlag.SHAPE:
                                     toolBufferPool.clearTempToolBuffers();
                                     path.reset();
-                                    path.rewind();
                                     switch (Settings.getInstance().getShapeFlag()) {
                                         case ToolFlag.ShapeFlag.LINE:
                                             path.moveTo(downX, downY);

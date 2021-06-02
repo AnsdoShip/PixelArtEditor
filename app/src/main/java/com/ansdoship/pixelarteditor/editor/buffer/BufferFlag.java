@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.editor;
+package com.ansdoship.pixelarteditor.editor.buffer;
 
 public final class BufferFlag {
 
