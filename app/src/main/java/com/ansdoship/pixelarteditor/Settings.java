@@ -5,7 +5,8 @@ import android.content.Context;
 import androidx.annotation.Nullable;
 
 import com.ansdoship.pixelarteditor.app.ApplicationUtils;
-import com.ansdoship.pixelarteditor.editor.Flags;
+import com.ansdoship.pixelarteditor.editor.PaletteFlag;
+import com.ansdoship.pixelarteditor.editor.ToolFlag;
 import com.tencent.mmkv.MMKV;
 
 public final class Settings {
@@ -61,18 +62,18 @@ public final class Settings {
     	return ApplicationUtils.getApplicationContext().getString(R.string.image_name_default);
     }
     public final static int IMAGE_SCALE_DEFAULT = 20;
-    public final static int IMAGE_TRANSLATION_X_DEFAULT = 0;
-    public final static int IMAGE_TRANSLATION_Y_DEFAULT = 0;
+    public final static int IMAGE_TRANSLATION_X_DEFAULT = 100;
+    public final static int IMAGE_TRANSLATION_Y_DEFAULT = 100;
     public final static int IMAGE_ORIGIN_X_DEFAULT = 0;
     public final static int IMAGE_ORIGIN_Y_DEFAULT = 0;
     public final static int IMAGE_WIDTH_DEFAULT = 32;
     public final static int IMAGE_HEIGHT_DEFAULT = 32;
     
-    public final static int TOOL_FLAG_DEFAULT = Flags.ToolFlag.PAINT;
-    public final static int SHAPE_FLAG_DEFAULT = Flags.ToolFlag.ShapeFlag.LINE;
-    public final static int PAINT_FLAG_DEFAULT = Flags.ToolFlag.PaintFlag.REPLACE;
-    public final static int SELECTION_FLAG_DEFAULT = Flags.ToolFlag.SelectionFlag.NONE;
-    public final static int PALETTE_FLAG_DEFAULT = Flags.PaletteFlag.INTERNAL;
+    public final static int TOOL_FLAG_DEFAULT = ToolFlag.PAINT;
+    public final static int SHAPE_FLAG_DEFAULT = ToolFlag.ShapeFlag.LINE;
+    public final static int PAINT_FLAG_DEFAULT = ToolFlag.PaintFlag.REPLACE;
+    public final static int SELECTION_FLAG_DEFAULT = ToolFlag.SelectionFlag.NONE;
+    public final static int PALETTE_FLAG_DEFAULT = PaletteFlag.INTERNAL;
     
     public final static int PAINT_WIDTH_DEFAULT = 1;
     

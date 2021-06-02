@@ -155,8 +155,7 @@ public final class ToolBufferPool {
         Canvas canvas = new Canvas(bitmap);
         switch (toolBuffer.getBufferFlag()) {
             case BufferFlag.MULTIPLE:
-                ToolBuffer[] toolBuffers = ((MultiBuffer)toolBuffer).getToolBuffers();
-                for (ToolBuffer buffer : toolBuffers) {
+                for (ToolBuffer buffer : ((MultiBuffer)toolBuffer).getToolBuffers()) {
                     drawToolBuffer(bitmap, buffer);
                 }
                 break;
