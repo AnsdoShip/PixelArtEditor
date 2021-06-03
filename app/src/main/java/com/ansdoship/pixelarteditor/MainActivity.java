@@ -64,8 +64,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void saveData() {
 
         Settings.getInstance().saveData();
-
-        PaletteManager.getInstance().saveInternalPalettes();
         // Bitmap cache
         BitmapEncoder.encodeFile(Utils.getCachePath() + "/CACHE.png",
                 toolBufferPool.getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100,
@@ -84,8 +82,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void loadData() {
 
         Settings.getInstance().loadData();
-
-        PaletteManager.getInstance().loadInternalPalettes();
 
         // Load bitmap
         Bitmap currentBitmap = BitmapDecoder.decodeFile(Utils.getCachePath() + "/CURRENT.png");
@@ -174,27 +170,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void setGridColor(int gridColor) {
-        PaletteManager.getInstance().getGridPalette().setColor(0, gridColor);
+        Settings.getInstance().getGridPalette().setColor(0, gridColor);
         flushGridPaint();
         canvasView.invalidate();
     }
 
     private int getGridColor() {
-        return PaletteManager.getInstance().getGridPalette().getColor(0);
+        return Settings.getInstance().getGridPalette().getColor(0);
     }
 
     private void setCanvasViewBackgroundColor (int backgroundColor) {
-        PaletteManager.getInstance().getBackgroundPalette().setColor(0, backgroundColor);
+        Settings.getInstance().getBackgroundPalette().setColor(0, backgroundColor);
         canvasView.invalidate();
     }
     private int getCanvasViewBackgroundColor () {
-        return PaletteManager.getInstance().getBackgroundPalette().getColor(0);
+        return Settings.getInstance().getBackgroundPalette().getColor(0);
     }
     private int getCanvasBackgroundColor1() {
-        return PaletteManager.getInstance().getBackgroundPalette().getColor(1);
+        return Settings.getInstance().getBackgroundPalette().getColor(1);
     }
     private int getCanvasBackgroundColor2() {
-        return PaletteManager.getInstance().getBackgroundPalette().getColor(2);
+        return Settings.getInstance().getBackgroundPalette().getColor(2);
     }
 
     private Bitmap selectionBitmap;
