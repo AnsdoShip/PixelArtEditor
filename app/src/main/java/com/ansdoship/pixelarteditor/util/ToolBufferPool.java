@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.editor.buffer;
+package com.ansdoship.pixelarteditor.util;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -6,6 +6,15 @@ import android.graphics.Paint;
 
 import androidx.annotation.NonNull;
 
+import com.ansdoship.pixelarteditor.editor.buffer.BufferFlag;
+import com.ansdoship.pixelarteditor.editor.buffer.FillBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.FlipBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.MultiBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.PaintBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.PointBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.RotateBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.SelectionBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.ToolBuffer;
 import com.ansdoship.pixelarteditor.graphics.BitmapChanger;
 import com.ansdoship.pixelarteditor.graphics.BitmapUtils;
 

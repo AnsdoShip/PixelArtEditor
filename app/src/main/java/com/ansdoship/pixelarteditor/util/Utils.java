@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor;
+package com.ansdoship.pixelarteditor.util;
 
 import android.content.Context;
 import android.os.Build;
@@ -12,8 +12,6 @@ import androidx.core.os.EnvironmentCompat;
 import com.ansdoship.pixelarteditor.app.ApplicationUtils;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.List;
 
 public final class Utils {
 

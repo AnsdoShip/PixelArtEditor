@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import com.ansdoship.pixelarteditor.app.ApplicationUtils;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
+import com.ansdoship.pixelarteditor.util.Utils;
 
 public final class Settings {
 	

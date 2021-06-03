@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import com.ansdoship.pixelarteditor.app.ApplicationUtils;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
+import com.ansdoship.pixelarteditor.util.Utils;
 
 public final class PaletteManager {
 
