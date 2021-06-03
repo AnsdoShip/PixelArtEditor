@@ -1,17 +1,14 @@
-package com.ansdoship.pixelarteditor.editor.palette;
+package com.ansdoship.pixelarteditor;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.lifecycle.LifecycleObserver;
-import androidx.lifecycle.ProcessLifecycleOwner;
 
-import com.ansdoship.pixelarteditor.Utils;
 import com.ansdoship.pixelarteditor.app.ApplicationUtils;
-import com.ansdoship.pixelarteditor.lifecycle.LifecycleListener;
+import com.ansdoship.pixelarteditor.editor.palette.Palette;
+import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
 
 public final class PaletteManager {
 
@@ -27,32 +24,10 @@ public final class PaletteManager {
     }
 
     private PaletteManager() {
-
         preferences = ApplicationUtils.getApplicationContext().getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-
-        backgroundPalette = initBackgroundPalette();
-        gridPalette = initGridPalette();
-        builtinPalette = initBuiltinPalette();
-
-        ProcessLifecycleOwner.get().getLifecycle().addObserver(new LifecycleListener() {
-
-            @Override
-            public void onStart() {}
-            @Override
-            public void onStop() {}
-
-            @Override
-            public void onDestroy() {
-                saveInternalPalettes();
-            }
-
-        });
-
     }
 
-    @NonNull
-    private Palette initBackgroundPalette() {
-        Palette backgroundPalette;
+    private void loadBackgroundPalette() {
         String backgroundPaletteString = preferences.getString(KEY_BACKGROUND_PALETTE, null);
         if (backgroundPaletteString == null) {
             backgroundPalette = Palette.createPalette(BACKGROUND_PALETTE_COLORS_DEFAULT);
@@ -63,12 +38,9 @@ public final class PaletteManager {
                 backgroundPalette = Palette.createPalette(BACKGROUND_PALETTE_COLORS_DEFAULT);
             }
         }
-        return backgroundPalette;
     }
 
-    @NonNull
-    private Palette initGridPalette() {
-        Palette gridPalette;
+    private void loadGridPalette() {
         String gridPaletteString = preferences.getString(KEY_GRID_PALETTE, null);
         if (gridPaletteString == null) {
             gridPalette = Palette.createPalette(GRID_PALETTE_COLORS_DEFAULT);
@@ -79,12 +51,9 @@ public final class PaletteManager {
                 gridPalette = Palette.createPalette(GRID_PALETTE_COLORS_DEFAULT);
             }
         }
-        return gridPalette;
     }
 
-    @NonNull
-    private Palette initBuiltinPalette() {
-        Palette builtinPalette;
+    private void loadBuiltinPalette() {
         String builtinPaletteString = preferences.getString(KEY_BUILTIN_PALETTE, null);
         if (builtinPaletteString == null) {
             builtinPalette = Palette.createPalette(BUILTIN_PALETTE_COLORS_DEFAULT);
@@ -95,7 +64,6 @@ public final class PaletteManager {
                 builtinPalette = Palette.createPalette(BUILTIN_PALETTE_COLORS_DEFAULT);
             }
         }
-        return builtinPalette;
     }
 
     public static PaletteManager getInstance() {
@@ -119,12 +87,18 @@ public final class PaletteManager {
 
     private final SharedPreferences preferences;
 
-    private final Palette backgroundPalette;
-    private final Palette gridPalette;
-    private final Palette builtinPalette;
+    private Palette backgroundPalette;
+    private Palette gridPalette;
+    private Palette builtinPalette;
     private Palette externalPalette;
 
-    private void saveInternalPalettes() {
+    public void loadInternalPalettes() {
+        loadBackgroundPalette();
+        loadGridPalette();
+        loadBuiltinPalette();
+    }
+
+    public void saveInternalPalettes() {
         SharedPreferences.Editor editor = preferences.edit();
         editor.clear();
         editor.putString(KEY_BACKGROUND_PALETTE, PaletteFactory.encodeString(backgroundPalette));
