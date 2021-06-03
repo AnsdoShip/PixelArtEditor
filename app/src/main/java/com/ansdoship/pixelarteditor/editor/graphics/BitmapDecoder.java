@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.graphics;
+package com.ansdoship.pixelarteditor.editor.graphics;
 
 import android.content.ContentResolver;
 import android.content.res.AssetManager;
@@ -17,7 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
-import com.ansdoship.pixelarteditor.app.ApplicationUtils;
+import com.ansdoship.pixelarteditor.util.ApplicationUtils;
 
 import java.io.File;
 import java.io.FileInputStream;

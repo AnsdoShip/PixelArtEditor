@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 
 import androidx.annotation.NonNull;
 
-import com.ansdoship.pixelarteditor.graphics.BitmapUtils;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapUtils;
 
 import java.util.HashMap;
 import java.util.Map;

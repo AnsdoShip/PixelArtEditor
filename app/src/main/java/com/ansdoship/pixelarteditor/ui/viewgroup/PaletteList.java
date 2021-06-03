@@ -1,27 +1,52 @@
-package com.ansdoship.pixelarteditor.viewgroup;
+package com.ansdoship.pixelarteditor.ui.viewgroup;
 
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.ansdoship.pixelarteditor.R;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
-import com.ansdoship.pixelarteditor.view.PaletteView;
+import com.ansdoship.pixelarteditor.ui.view.PaletteView;
+import com.ansdoship.pixelarteditor.util.MathUtils;
 
-public class PaletteList extends LinearLayout implements View.OnClickListener{
+public class PaletteList extends LinearLayout implements View.OnClickListener {
+
+    @Override
+    public void addView(View child, int index, ViewGroup.LayoutParams params) {
+        try {
+            throw new IllegalAccessException("Cannot add child view");
+        }
+        catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected boolean addViewInLayout(View child, int index, ViewGroup.LayoutParams params, boolean preventRequestLayout) {
+        try {
+            throw new IllegalAccessException("Cannot add child view");
+        }
+        catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     private int mIndex;
     private OnCheckedChangeListener mOnCheckedChangeListener;
     private OnDoubleTapListener mOnDoubleTapListener;
-    private Context mContext;
+    private final Context mContext;
     private Palette mPalette;
-    private int mPaletteWidth;
-    private int mPaletteHeight;
+    private final int mPaletteWidth;
+    private final int mPaletteHeight;
 
     private int paletteBackgroundColor1;
     private int paletteBackgroundColor2;
@@ -47,6 +72,13 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
         void onDoubleTap(PaletteList paletteList, int checkedIndex);
     }
 
+    private void setIndex(int index) {
+        mIndex = MathUtils.clamp(index, 0, getSize());
+        if (mPalette != null) {
+            mPalette.setIndex(index);
+        }
+    }
+
     public void checkIndex(int index) {
         int preIndex = mIndex;
         if (preIndex != index) {
@@ -59,7 +91,7 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
                 mOnDoubleTapListener.onDoubleTap(this, index);
             }
         }
-        mIndex = index;
+        setIndex(index);
         for (int i = 0; i < getChildCount(); i ++) {
             ((PaletteView) getChildAt(i)).setChecked(false);
         }
@@ -94,15 +126,15 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
         }
     }
 
-    public PaletteList(Context context) {
+    public PaletteList(@NonNull Context context) {
         this(context, null);
     }
 
-    public PaletteList(Context context, @Nullable AttributeSet attrs) {
+    public PaletteList(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public PaletteList(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public PaletteList(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         mContext = context;
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.PaletteList, defStyleAttr, 0);
@@ -148,26 +180,24 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
         return getChildCount();
     }
 
-    public void setPalette (Palette palette) {
+    public void setPalette (@NonNull Palette palette) {
         setPalette(palette, palette.getIndex());
     }
 
-    public void setPalette (Palette palette, int index) {
+    public void setPalette (@NonNull Palette palette, int index) {
         mPalette = palette;
-        if (palette != null) {
-            removeAllViews();
-            for (int i = 0; i < palette.size(); i++) {
-                PaletteView paletteView = new PaletteView(mContext);
-                paletteView.setLayoutParams(new LinearLayout.LayoutParams(mPaletteWidth, mPaletteHeight));
-                paletteView.setPaletteColor(palette.getColor(i));
-                paletteView.setOnClickListener(this);
-                paletteView.setPaletteBackgroundColors(paletteBackgroundColor1, paletteBackgroundColor2);
-                paletteView.setAnimation(AnimationUtils.loadAnimation(mContext, android.R.anim.fade_in));
-                addView(paletteView);
-            }
-            mIndex = index;
-            ((PaletteView) getChildAt(index)).setChecked(true);
+        removeAllViews();
+        for (int i = 0; i < palette.size(); i++) {
+            PaletteView paletteView = new PaletteView(mContext);
+            paletteView.setLayoutParams(new LayoutParams(mPaletteWidth, mPaletteHeight));
+            paletteView.setPaletteColor(palette.getColor(i));
+            paletteView.setOnClickListener(this);
+            paletteView.setPaletteBackgroundColors(paletteBackgroundColor1, paletteBackgroundColor2);
+            paletteView.setAnimation(AnimationUtils.loadAnimation(mContext, android.R.anim.fade_in));
+            addView(paletteView);
         }
+        setIndex(index);
+        ((PaletteView) getChildAt(index)).setChecked(true);
     }
 
     public void setPaletteColor (int index, int color) {
@@ -181,7 +211,11 @@ public class PaletteList extends LinearLayout implements View.OnClickListener{
         return ((PaletteView) getChildAt(index)).getPaletteColor();
     }
 
-    public int getCurrentColor () {
+    public void setCheckedPaletteColor (int color) {
+        setPaletteColor(getCheckedIndex(), color);
+    }
+
+    public int getCheckedPaletteColor () {
         return getPaletteColor(getCheckedIndex());
     }
 

@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.graphics;
+package com.ansdoship.pixelarteditor.editor.graphics;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -13,7 +13,7 @@ import android.os.Build;
 
 import androidx.annotation.NonNull;
 
-import com.ansdoship.pixelarteditor.math.MathUtils;
+import com.ansdoship.pixelarteditor.util.MathUtils;
 
 import java.util.Stack;
 

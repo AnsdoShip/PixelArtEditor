@@ -1,15 +1,38 @@
-package com.ansdoship.pixelarteditor.viewgroup;
+package com.ansdoship.pixelarteditor.ui.viewgroup;
 
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.ansdoship.pixelarteditor.view.CheckedImageView;
+import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
 
 public class CheckedImageGroup extends LinearLayout implements View.OnClickListener {
+
+    @Override
+    public void addView(View child, int index, ViewGroup.LayoutParams params) {
+        try {
+            throw new IllegalAccessException("Cannot add child view");
+        }
+        catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected boolean addViewInLayout(View child, int index, ViewGroup.LayoutParams params, boolean preventRequestLayout) {
+        try {
+            throw new IllegalAccessException("Cannot add child view");
+        }
+        catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     private int mIndex;
     private OnCheckedChangeListener mOnCheckedChangeListener;
@@ -92,15 +115,15 @@ public class CheckedImageGroup extends LinearLayout implements View.OnClickListe
         ((CheckedImageView) getChildAt(index)).setChecked(true);
     }
 
-    public CheckedImageGroup(Context context) {
+    public CheckedImageGroup(@NonNull Context context) {
         this(context, null);
     }
 
-    public CheckedImageGroup(Context context, @Nullable AttributeSet attrs) {
+    public CheckedImageGroup(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public CheckedImageGroup(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public CheckedImageGroup(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         initSwitch = true;
     }

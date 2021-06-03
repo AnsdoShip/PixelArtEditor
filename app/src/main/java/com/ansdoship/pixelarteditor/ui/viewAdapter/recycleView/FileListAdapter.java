@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.viewAdapter;
+package com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
 
@@ -25,7 +26,8 @@ public class FileListAdapter extends RecyclerView.Adapter<FileListAdapter.ViewHo
     private final Drawable mFolderDrawable;
     private final Drawable mFileDrawable;
 
-    public FileListAdapter(Context context, List<String> dirs, List<String> files, Drawable fileIcon) {
+    public FileListAdapter(@NonNull Context context, @NonNull List<String> dirs,
+                           @NonNull List<String> files, Drawable fileIcon) {
         mContext = context;
         mDirs = dirs;
         mFiles = files;

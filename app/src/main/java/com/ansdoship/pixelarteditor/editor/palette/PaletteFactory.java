@@ -3,7 +3,7 @@ package com.ansdoship.pixelarteditor.editor.palette;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.ansdoship.pixelarteditor.json.JSONCodec;
+import com.ansdoship.pixelarteditor.util.JSONCodec;
 
 import org.json.JSONException;
 import org.json.JSONObject;

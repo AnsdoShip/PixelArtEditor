@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.viewAdapter;
+package com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -6,35 +6,31 @@ import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ansdoship.pixelarteditor.R;
-import com.ansdoship.pixelarteditor.view.CheckedImageView;
 
 import java.util.List;
 
-public class ImageViewListAdapter extends RecyclerView.Adapter<ImageViewListAdapter.ViewHolder> {
+public class TextViewListAdapter extends RecyclerView.Adapter<TextViewListAdapter.ViewHolder> {
 
-    private Context mContext;
-    private List<Drawable> mImages;
+    private final Context mContext;
+    private final List<String> mData;
     private OnItemClickListener mOnItemClickListener;
-    private int mCheckedPosition;
+    private final Drawable mDrawable;
 
-    public ImageViewListAdapter(Context context, List<Drawable> images) {
-        this (context, images, -1);
-    }
-
-    public ImageViewListAdapter(Context context, List<Drawable> images, int checkedPosition) {
+    public TextViewListAdapter (@NonNull Context context, List<String> data, Drawable drawable) {
         mContext = context;
-        mImages = images;
-        mCheckedPosition = checkedPosition;
+        mData = data;
+        mDrawable = drawable;
+        mDrawable.setBounds(0, 0, mDrawable.getMinimumWidth(), mDrawable.getMinimumHeight());
     }
 
     public interface OnItemClickListener {
-        void onClick(int position);
+        void onClick (int position);
     }
 
     public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
@@ -45,18 +41,15 @@ public class ImageViewListAdapter extends RecyclerView.Adapter<ImageViewListAdap
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ViewHolder(LayoutInflater.from(mContext).inflate(R.layout.adapter_item_image, parent, false));
+        return new ViewHolder(LayoutInflater.from(mContext).inflate(R.layout.adapter_item_text, parent, false));
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
-        if (position == mCheckedPosition) {
-            holder.imgItem.setChecked(true);
-            holder.imgItem.setColorFilter(ContextCompat.getColor(mContext, R.color.colorTheme));
-        }
-        holder.imgItem.setImageDrawable(mImages.get(position));
+        holder.tvItem.setText(mData.get(position));
+        holder.tvItem.setCompoundDrawables(mDrawable, null, null, null);
         if (mOnItemClickListener != null) {
-            holder.imgItem.setOnClickListener(new View.OnClickListener() {
+            holder.tvItem.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     mOnItemClickListener.onClick(position);
@@ -67,15 +60,15 @@ public class ImageViewListAdapter extends RecyclerView.Adapter<ImageViewListAdap
 
     @Override
     public int getItemCount() {
-        return mImages.size();
+        return mData.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        public CheckedImageView imgItem;
+        public TextView tvItem;
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            imgItem = itemView.findViewById(R.id.img_adapter_item);
+            tvItem = itemView.findViewById(R.id.tv_adapter_item);
         }
 
     }

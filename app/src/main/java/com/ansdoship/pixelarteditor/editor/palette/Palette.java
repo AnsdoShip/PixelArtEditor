@@ -2,6 +2,8 @@ package com.ansdoship.pixelarteditor.editor.palette;
 
 import androidx.annotation.NonNull;
 
+import com.ansdoship.pixelarteditor.util.MathUtils;
+
 public final class Palette {
 
     private final int[] mColors;
@@ -110,7 +112,7 @@ public final class Palette {
     }
 
     public void setIndex(int index) {
-        this.index = index;
+        this.index = MathUtils.clamp(index, 0, mColors.length - 1);
     }
 
     public int getCurrentColor() {

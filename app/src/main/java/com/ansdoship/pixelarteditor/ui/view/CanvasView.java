@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.view;
+package com.ansdoship.pixelarteditor.ui.view;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -8,6 +8,7 @@ import android.view.SurfaceView;
 import android.view.SurfaceHolder;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class CanvasView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -24,15 +25,15 @@ public class CanvasView extends SurfaceView implements SurfaceHolder.Callback {
         mOnInvalidateListener = onInvalidateListener;
     }
 
-    public CanvasView(Context context) {
+    public CanvasView(@NonNull Context context) {
         this(context, null, 0);
     }
 
-    public CanvasView(Context context, AttributeSet attrs) {
+    public CanvasView(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public CanvasView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public CanvasView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
@@ -70,11 +71,9 @@ public class CanvasView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     @Override
-    public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int format, int width, int height) {
-    }
+    public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int format, int width, int height) {}
 
     @Override
-    public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
-    }
+    public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {}
 
 }

@@ -8,13 +8,13 @@ import android.graphics.Color;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.ansdoship.pixelarteditor.app.ApplicationUtils;
+import com.ansdoship.pixelarteditor.util.ApplicationUtils;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
-import com.ansdoship.pixelarteditor.graphics.BitmapDecoder;
-import com.ansdoship.pixelarteditor.graphics.BitmapEncoder;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapDecoder;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapEncoder;
 import com.ansdoship.pixelarteditor.util.BitmapPool;
 import com.ansdoship.pixelarteditor.util.ToolBufferPool;
 import com.ansdoship.pixelarteditor.util.Utils;

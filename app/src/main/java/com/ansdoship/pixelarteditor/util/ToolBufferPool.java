@@ -15,8 +15,8 @@ import com.ansdoship.pixelarteditor.editor.buffer.PointBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.RotateBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.SelectionBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.ToolBuffer;
-import com.ansdoship.pixelarteditor.graphics.BitmapChanger;
-import com.ansdoship.pixelarteditor.graphics.BitmapUtils;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapChanger;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapUtils;
 
 import java.util.ArrayList;
 import java.util.List;

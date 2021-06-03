@@ -33,12 +33,12 @@ import com.ansdoship.pixelarteditor.editor.buffer.FillBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.MultiBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.PaintBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.PointBuffer;
-import com.ansdoship.pixelarteditor.graphics.BitmapUtils;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapUtils;
 import com.ansdoship.pixelarteditor.util.Utils;
-import com.ansdoship.pixelarteditor.view.CanvasView;
-import com.ansdoship.pixelarteditor.view.CheckedImageView;
-import com.ansdoship.pixelarteditor.viewgroup.CheckedImageGroup;
-import com.ansdoship.pixelarteditor.viewgroup.PaletteList;
+import com.ansdoship.pixelarteditor.ui.view.CanvasView;
+import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
+import com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup;
+import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 

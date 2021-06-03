@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.view;
+package com.ansdoship.pixelarteditor.ui.view;
 
 import android.content.Context;
 import android.content.res.TypedArray;

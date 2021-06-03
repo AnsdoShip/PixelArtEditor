@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.view;
+package com.ansdoship.pixelarteditor.ui.view;
 import android.annotation.SuppressLint;
 import android.content.res.TypedArray;
 import android.view.MotionEvent;
@@ -10,9 +10,13 @@ import android.graphics.Paint;
 import android.graphics.Color;
 import android.widget.Checkable;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.ansdoship.pixelarteditor.R;
 
 public class PaletteView extends View implements Checkable {
+
 	private Paint paint;
 	private int paletteColor;
 	private int paletteBackgroundColor1;
@@ -20,13 +24,13 @@ public class PaletteView extends View implements Checkable {
 	private boolean mChecked;
 	private boolean mTouched;
 
-	public PaletteView(Context context){
+	public PaletteView(@NonNull Context context){
 		this(context, null);
 	}
-	public PaletteView(Context context, AttributeSet attrs) {
+	public PaletteView(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
-    public PaletteView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public PaletteView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 		paletteColor = Color.TRANSPARENT;
 		TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.PaletteView, defStyleAttr, 0);

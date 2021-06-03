@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.math;
+package com.ansdoship.pixelarteditor.util;
 
 /**
  * A utility class providing functions useful for common mathematical operations.

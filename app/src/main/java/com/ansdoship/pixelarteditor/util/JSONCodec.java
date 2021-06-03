@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.json;
+package com.ansdoship.pixelarteditor.util;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

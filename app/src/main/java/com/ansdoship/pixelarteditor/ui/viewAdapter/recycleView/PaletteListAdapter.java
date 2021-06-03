@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.viewAdapter;
+package com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -25,11 +25,13 @@ public class PaletteListAdapter extends RecyclerView.Adapter<PaletteListAdapter.
     private OnItemClickListener mOnItemClickListener;
     private final int mCheckedPosition;
 
-    public PaletteListAdapter(Context context, List<String> internalPalettes,List<String> externalPalettes) {
+    public PaletteListAdapter(@NonNull Context context, @NonNull List<String> internalPalettes,
+                              @NonNull List<String> externalPalettes) {
         this(context, internalPalettes, externalPalettes, -1);
     }
 
-    public PaletteListAdapter(Context context, List<String> internalPalettes,List<String> externalPalettes, int checkedPosition) {
+    public PaletteListAdapter(@NonNull Context context, @NonNull List<String> internalPalettes,
+                              @NonNull List<String> externalPalettes, int checkedPosition) {
         mContext = context;
         mInternalPalettes = internalPalettes;
         mExternalPalettes = externalPalettes;

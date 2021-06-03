@@ -9,8 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.os.EnvironmentCompat;
 
-import com.ansdoship.pixelarteditor.app.ApplicationUtils;
-
 import java.io.File;
 
 public final class Utils {

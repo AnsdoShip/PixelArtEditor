@@ -1,4 +1,4 @@
-package com.ansdoship.pixelarteditor.graphics;
+package com.ansdoship.pixelarteditor.editor.graphics;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;

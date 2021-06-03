@@ -10,7 +10,7 @@
         android:layout_marginTop="24dp"
         android:layout_marginBottom="24dp">
 
-        <com.ansdoship.pixelarteditor.view.PaletteView
+        <com.ansdoship.pixelarteditor.ui.view.PaletteView
             android:id="@+id/palette_dialog"
             android:layout_width="?attr/actionBarSize"
             android:layout_height="match_parent"
