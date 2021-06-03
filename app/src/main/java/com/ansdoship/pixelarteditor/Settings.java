@@ -2,8 +2,10 @@ package com.ansdoship.pixelarteditor;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.ansdoship.pixelarteditor.app.ApplicationUtils;
@@ -11,7 +13,13 @@ import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
+import com.ansdoship.pixelarteditor.graphics.BitmapDecoder;
+import com.ansdoship.pixelarteditor.graphics.BitmapEncoder;
+import com.ansdoship.pixelarteditor.util.BitmapPool;
+import com.ansdoship.pixelarteditor.util.ToolBufferPool;
 import com.ansdoship.pixelarteditor.util.Utils;
+
+import java.io.IOException;
 
 public final class Settings {
 	
@@ -83,6 +91,17 @@ public final class Settings {
 
     private Palette externalPalette;
 
+    private ToolBufferPool toolBufferPool;
+    private BitmapPool bitmapPool;
+
+    private static final String KEY_CACHE_BITMAP = "cache_bitmap";
+    private static final String KEY_CURRENT_BITMAP = "current_bitmap";
+    private static final String KEY_CANVAS_BACKGROUND_BITMAP = "canvas_background_bitmap";
+    private static final String KEY_SELECTED_BITMAP = "selected_bitmap";
+
+    private static final String KEY_SCALE_MODE = "scale_mode";
+    private boolean scaleMode;
+
     public void loadData() {
         setImageName(preferences.getString(KEY_IMAGE_NAME, IMAGE_NAME_DEFAULT()));
         setImagePath(preferences.getString(KEY_IMAGE_PATH, IMAGE_PATH_DEFAULT()));
@@ -101,6 +120,7 @@ public final class Settings {
         setGridVisible(preferences.getBoolean(KEY_GRID_VISIBLE, GRID_VISIBLE_DEFAULT));
         setGridWidth(preferences.getInt(KEY_GRID_WIDTH, GRID_WIDTH_DEFAULT));
         setGridHeight(preferences.getInt(KEY_GRID_HEIGHT, GRID_HEIGHT_DEFAULT));
+        setScaleMode(preferences.getBoolean(KEY_SCALE_MODE, SCALE_MODE_DEFAULT));
         String backgroundPaletteString = preferences.getString(KEY_BACKGROUND_PALETTE, null);
         if (backgroundPaletteString == null) {
             backgroundPalette = Palette.createPalette(BACKGROUND_PALETTE_COLORS_DEFAULT);
@@ -131,6 +151,25 @@ public final class Settings {
                 builtinPalette = Palette.createPalette(BUILTIN_PALETTE_COLORS_DEFAULT);
             }
         }
+
+        Bitmap cacheBitmap = null;
+        String cacheBitmapPathName = getCacheBitmapPathname();
+        if (cacheBitmapPathName != null) {
+            cacheBitmap = BitmapDecoder.decodeFile(cacheBitmapPathName);
+        }
+        if(cacheBitmap == null) {
+            cacheBitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                    IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+        }
+
+        if (toolBufferPool == null) {
+            toolBufferPool = ToolBufferPool.createToolBufferPool(cacheBitmap,
+                    MAX_BUFFER_SIZE_DEFAULT, false);
+        }
+
+        bitmapPool = new BitmapPool();
+        bitmapPool.addBitmap(KEY_CACHE_BITMAP, toolBufferPool.getCacheBitmap());
+        bitmapPool.addBitmap(KEY_CURRENT_BITMAP, toolBufferPool.getCurrentBitmap());
     }
 
     public void saveData() {
@@ -156,7 +195,25 @@ public final class Settings {
         editor.putString(KEY_BACKGROUND_PALETTE, PaletteFactory.encodeString(backgroundPalette));
         editor.putString(KEY_GRID_PALETTE, PaletteFactory.encodeString(gridPalette));
         editor.putString(KEY_BUILTIN_PALETTE, PaletteFactory.encodeString(builtinPalette));
+        editor.putBoolean(KEY_SCALE_MODE, scaleMode);
         editor.apply();
+
+        String cacheBitmapPathname = getCacheBitmapPathname();
+        if (cacheBitmapPathname != null) {
+            BitmapEncoder.encodeFile(cacheBitmapPathname,
+                    toolBufferPool.getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100,
+                    new BitmapEncoder.Callback() {
+                        @Override
+                        public void onCreateFailure() {}
+                        @Override
+                        public void onCompressFailure() {}
+                        @Override
+                        public void onFileExists(boolean isDirectory) {}
+                        @Override
+                        public void onIOException(IOException e) {}
+                    });
+        }
+
     }
     
     public static String IMAGE_NAME_DEFAULT() {
@@ -195,6 +252,10 @@ public final class Settings {
             Color.RED, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.MAGENTA,
             Color.WHITE, Color.LTGRAY, Color.GRAY, Color.DKGRAY, Color.BLACK, Color.TRANSPARENT
     };
+
+    public final static int MAX_BUFFER_SIZE_DEFAULT = 20;
+
+    public final static boolean SCALE_MODE_DEFAULT = false;
     
     private final SharedPreferences preferences;
 
@@ -360,7 +421,7 @@ public final class Settings {
     }
 
     public void loadExternalPalette(String name) {
-        externalPalette = PaletteFactory.decodeFile(getPalettesPath() + name + ".palette");
+        externalPalette = PaletteFactory.decodeFile(getPalettesPath() + "/" + name + ".palette");
     }
 
     public @Nullable
@@ -371,5 +432,35 @@ public final class Settings {
     public static String getPalettesPath() {
         return Utils.getFilesPath("palettes");
     }
-    
+
+    @NonNull
+    public static String getCacheBitmapName() {
+        return "CACHE.png";
+    }
+
+    @Nullable
+    public static String getCacheBitmapPathname() {
+        String cachePath = Utils.getCachePath();
+        if (cachePath == null) {
+            return null;
+        }
+        return cachePath + "/" + getCacheBitmapName();
+    }
+
+    public ToolBufferPool getToolBufferPool() {
+        return toolBufferPool;
+    }
+
+    public BitmapPool getBitmapPool() {
+        return bitmapPool;
+    }
+
+    public void setScaleMode(boolean scaleMode) {
+        this.scaleMode = scaleMode;
+    }
+
+    public boolean isScaleMode() {
+        return scaleMode;
+    }
+
 }
