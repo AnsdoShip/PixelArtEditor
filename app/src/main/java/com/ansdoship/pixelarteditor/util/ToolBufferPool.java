@@ -141,12 +141,18 @@ public final class ToolBufferPool {
     }
 
     private void replaceCurrentBitmap(Bitmap newBitmap) {
+        if (mCurrentBitmap == newBitmap) {
+            return;
+        }
         Bitmap temp = mCurrentBitmap;
         mCurrentBitmap = newBitmap;
         BitmapUtils.recycleBitmap(temp);
     }
 
     private void replaceCacheBitmap(Bitmap newBitmap) {
+        if (mCacheBitmap == newBitmap) {
+            return;
+        }
         Bitmap temp = mCacheBitmap;
         mCacheBitmap = newBitmap;
         BitmapUtils.recycleBitmap(temp);

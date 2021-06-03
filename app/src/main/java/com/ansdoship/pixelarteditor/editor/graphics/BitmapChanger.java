@@ -248,6 +248,9 @@ public final class BitmapChanger {
     }
 
     private void replaceDst(Bitmap newDst) {
+        if (dst == newDst) {
+            return;
+        }
         Bitmap temp = dst;
         dst = newDst;
         BitmapUtils.recycleBitmap(temp);

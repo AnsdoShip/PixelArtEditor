@@ -9,16 +9,12 @@ import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,13 +23,13 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.ansdoship.pixelarteditor.editor.Editor;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
 import com.ansdoship.pixelarteditor.editor.buffer.FillBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.MultiBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.PaintBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.PointBuffer;
-import com.ansdoship.pixelarteditor.editor.graphics.BitmapUtils;
 import com.ansdoship.pixelarteditor.util.Utils;
 import com.ansdoship.pixelarteditor.ui.view.CanvasView;
 import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
@@ -42,210 +38,17 @@ import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    // EDITOR
     private boolean dataSaved;
+    private final Editor editor = Editor.getInstance();
 
-    private void setImageScale(int scale) {
-        if(scale >= 1 && scale <= 64) {
-            Settings.getInstance().setImageScale(scale);
-            selectionPaint1.setStrokeWidth(scale * 0.5f + 0.5f);
-            selectionPaint2.setStrokeWidth(scale * 0.25f + 0.25f);
-            flushCanvasBackgroundPaint();
-            flushGridPaint();
-        }
-    }
-
-    private int getBackgroundImageScale() {
-        int imageScale = Settings.getInstance().getImageScale();
-        int result = 0;
-        if(imageScale <= 4) {
-            result = 16;
-        }
-        if (imageScale > 4 && imageScale <= 8) {
-            result = 8;
-        }
-        if (imageScale > 8 && imageScale <= 16) {
-            result = 4;
-        }
-        if (imageScale > 16 && imageScale <= 32) {
-            result = 2;
-        }
-        if (imageScale > 32) {
-            result = 1;
-        }
-        return result;
-    }
-
-    private void setPaintWidth(int width) {
-        Settings.getInstance().setPaintWidth(width);
-        paint.setStrokeWidth(width);
-        eraser.setStrokeWidth(width);
-    }
-
-    private void setPaintFlag (int paintFlag) {
-        if (paint == null) {
-            return;
-        }
-        Settings.getInstance().setPaintFlag(paintFlag);
-        switch (paintFlag) {
-            case ToolFlag.PaintFlag.REPLACE:
-                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-                break;
-            case ToolFlag.PaintFlag.OVERRIDE:
-                paint.setXfermode(null);
-                break;
-        }
-    }
-
-    private boolean selected;
-    private int selectionBitmapX;
-    private int selectionBitmapY;
-    private RectF selectionRectF;
-
-    private void setGridVisible(boolean gridVisible) {
-        Settings.getInstance().setGridVisible(gridVisible);
-        canvasView.invalidate();
-    }
-
-    private void setGridWidth(int gridWidth) {
-        Settings.getInstance().setGridWidth(gridWidth);
-        flushGridPaint();
-    }
-
-    private void setGridHeight(int gridHeight) {
-        Settings.getInstance().setGridHeight(gridHeight);
-        flushGridPaint();
-    }
-
-    private void setGridColor(int gridColor) {
-        Settings.getInstance().getGridPalette().setColor(0, gridColor);
-        flushGridPaint();
-        canvasView.invalidate();
-    }
-
-    private int getGridColor() {
-        return Settings.getInstance().getGridPalette().getColor(0);
-    }
-
-    private void setCanvasViewBackgroundColor (int backgroundColor) {
-        Settings.getInstance().getBackgroundPalette().setColor(0, backgroundColor);
-        canvasView.invalidate();
-    }
-    private int getCanvasViewBackgroundColor () {
-        return Settings.getInstance().getBackgroundPalette().getColor(0);
-    }
-    private int getCanvasBackgroundColor1() {
-        return Settings.getInstance().getBackgroundPalette().getColor(1);
-    }
-    private int getCanvasBackgroundColor2() {
-        return Settings.getInstance().getBackgroundPalette().getColor(2);
-    }
-
-    private Bitmap selectionBitmap;
-
-    private Paint gridPaint;
-    private Paint canvasBackgroundPaint;
-    private Paint bitmapPaint;
-    private Paint paint;
-    private Paint eraser;
-    private Paint selectionPaint1;
-    private Paint selectionPaint2;
-
-    public void initPaints() {
-        gridPaint = new Paint();
-        gridPaint.setAntiAlias(false);
-        gridPaint.setDither(false);
-        gridPaint.setStyle(Paint.Style.STROKE);
-        gridPaint.setStrokeWidth(1);
-        flushGridPaint();
-        canvasBackgroundPaint = new Paint();
-        canvasBackgroundPaint.setAntiAlias(false);
-        canvasBackgroundPaint.setDither(false);
-        flushCanvasBackgroundPaint();
-        bitmapPaint = new Paint();
-        bitmapPaint.setAntiAlias(false);
-        bitmapPaint.setDither(false);
-        bitmapPaint.setFilterBitmap(false);
-        paint = new Paint();
-        paint.setDither(false);
-        paint.setAntiAlias(false);
-        paint.setStyle(Paint.Style.STROKE);
-        flushPaint();
-        setPaintFlag(Settings.getInstance().getPaintFlag());
-        eraser = new Paint();
-        eraser.setDither(false);
-        eraser.setAntiAlias(false);
-        eraser.setStyle(Paint.Style.STROKE);
-        eraser.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        setPaintWidth(Settings.getInstance().getPaintWidth());
-        selectionPaint1 = new Paint();
-        selectionPaint1.setDither(false);
-        selectionPaint1.setAntiAlias(false);
-        selectionPaint1.setStyle(Paint.Style.STROKE);
-        selectionPaint1.setStrokeCap(Paint.Cap.SQUARE);
-        selectionPaint1.setColor(Color.WHITE);
-        selectionPaint1.setStrokeWidth(Settings.getInstance().getImageScale() * 0.5f + 0.5f);
-        selectionPaint2 = new Paint();
-        selectionPaint2.setDither(false);
-        selectionPaint2.setAntiAlias(false);
-        selectionPaint2.setStyle(Paint.Style.STROKE);
-        selectionPaint2.setStrokeCap(Paint.Cap.SQUARE);
-        selectionPaint2.setColor(Color.BLACK);
-        selectionPaint2.setStrokeWidth(Settings.getInstance().getImageScale() * 0.25f + 0.25f);
-    }
-
-    private void flushGridPaint() {
-        gridPaint.setColor(getGridColor());
-    }
-
-    private void flushCanvasBackgroundPaint() {
-        replaceCanvasBackgroundBitmap(Bitmap.createBitmap(new int[] {
-                        getCanvasBackgroundColor1(),
-                        getCanvasBackgroundColor2(),
-                        getCanvasBackgroundColor2(),
-                        getCanvasBackgroundColor1()},
-                2, 2, Bitmap.Config.ARGB_8888));
-        int imageScale = Settings.getInstance().getImageScale();
-        replaceCanvasBackgroundBitmap(Bitmap.createScaledBitmap(canvasBackgroundBitmap,
-                imageScale * getBackgroundImageScale(),
-                imageScale * getBackgroundImageScale(), false));
-        BitmapShader canvasBackgroundShader = new BitmapShader(
-                canvasBackgroundBitmap,
-                BitmapShader.TileMode.REPEAT,
-                BitmapShader.TileMode.REPEAT);
-        canvasBackgroundPaint.setShader(canvasBackgroundShader);
-    }
-
-    private void replaceCanvasBackgroundBitmap(Bitmap newBitmap) {
-        Bitmap temp = canvasBackgroundBitmap;
-        canvasBackgroundBitmap = newBitmap;
-        BitmapUtils.recycleBitmap(temp);
-    }
-
-    private Bitmap canvasBackgroundBitmap;
-
-    private void flushPaint() {
-        paint.setColor(listPalettes.getPaletteColor(listPalettes.getCheckedIndex()));
-    }
-
-    private Matrix matrix;
-    private void initMatrix() {
-        matrix = new Matrix();
-    }
-
-    private Path path;
-    private void initPath() {
-        path = new Path();
-    }
-
-    // Widgets
-
+    // WIDGETS
     // TopBar
     private TextView tvImageName;
     private ImageButton imgGrid;
     private ImageButton imgUndo;
     private ImageButton imgRedo;
     private ImageButton imgMenu;
-
     // ToolBar
     private TextView tvPaintWidth;
     private CheckedImageGroup groupTools;
@@ -255,30 +58,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private CheckedImageView imgFill;
     private CheckedImageView imgSelection;
     private CheckedImageView imgColorize;
-
     // PaletteBar
     private ImageButton imgPalette;
     private PaletteList listPalettes;
-
     // CanvasView
     private CanvasView canvasView;
 
+    // ON CLICK
     @SuppressLint("NonConstantResourceId")
     @Override
     public void onClick(@NonNull View view) {
         switch (view.getId()) {
             case R.id.tv_image_name:
-
                 break;
             case R.id.img_grid:
 
                 break;
             case R.id.img_undo:
-                Settings.getInstance().getToolBufferPool().undo();
+                editor.getToolBufferPool().undo();
                 canvasView.invalidate();
                 break;
             case R.id.img_redo:
-                Settings.getInstance().getToolBufferPool().redo();
+                editor.getToolBufferPool().redo();
                 canvasView.invalidate();
                 break;
             case R.id.img_menu:
@@ -293,6 +94,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    // PERMISSION CALLBACK
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -307,13 +109,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    // SAVE & LOAD DATA
+    // On pause
     @Override
     protected void onPause() {
         if (isFinishing() && (!dataSaved)) {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    Settings.getInstance().saveData();
+                    editor.saveData();
                     dataSaved = true;
                 }
             });
@@ -332,19 +136,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             super.onPause();
         }
     }
-
-    @Override
-    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-    }
-
+    // On save instance state
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         if (!dataSaved) {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    Settings.getInstance().saveData();
+                    editor.saveData();
                 }
             });
             thread.start();
@@ -363,14 +162,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private int downX;
-    private int downY;
-    private int moveX;
-    private int moveY;
-    private int upX;
-    private int upY;
-    private boolean scaleMode;
-    private boolean readOnlyMode;
+    // On restore instance state
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        if (dataSaved) {
+            editor.loadData();
+            dataSaved = false;
+        }
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    // On create
     @SuppressLint({"ClickableViewAccessibility", "SetTextI18n"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -392,27 +194,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Set content view
         setContentView(R.layout.activity_main);
 
-        // Window format
+        // Set window format
         getWindow().setFormat(PixelFormat.RGBA_8888);
 
-        // Init SharedPreferences
-        dataSaved = false;
-
-        // Get widgets
-
+        // Get widgets & set listeners
         // TopBar
         tvImageName = findViewById(R.id.tv_image_name);
         imgGrid = findViewById(R.id.img_grid);
         imgUndo = findViewById(R.id.img_undo);
         imgRedo = findViewById(R.id.img_redo);
         imgMenu = findViewById(R.id.img_menu);
-
         tvImageName.setOnClickListener(this);
         imgGrid.setOnClickListener(this);
         imgUndo.setOnClickListener(this);
         imgRedo.setOnClickListener(this);
         imgMenu.setOnClickListener(this);
-
         // ToolBar
         tvPaintWidth = findViewById(R.id.tv_paint_width);
         groupTools = findViewById(R.id.group_tools);
@@ -422,36 +218,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgFill = findViewById(R.id.img_fill);
         imgSelection = findViewById(R.id.img_selection);
         imgColorize = findViewById(R.id.img_colorize);
-
         tvPaintWidth.setOnClickListener(this);
-
         // PaletteBar
         imgPalette = findViewById(R.id.img_palette);
         listPalettes = findViewById(R.id.list_palettes);
-
         imgPalette.setOnClickListener(this);
-
         // CanvasView
         canvasView = findViewById(R.id.canvas_view);
+        editor.setCanvasView(canvasView);
 
-        // Load data
-        Settings.getInstance().loadData();
-
-        // Init paints
-        initPaints();
-        paint.setColor(Color.BLACK);
-
-        // Init path
-        initPath();
-
-        // Init matrix
-        initMatrix();
-
-        // Paint width text
-        tvPaintWidth.setText(Integer.toString(Settings.getInstance().getPaintWidth()));
-
-        // Set Shape ImageButton image
-        switch (Settings.getInstance().getShapeFlag()) {
+        // Set widget hints
+        // Set paint width text
+        tvPaintWidth.setText(Integer.toString(editor.getPaintWidth()));
+        // Set shape ImageButton image
+        switch (editor.getShapeFlag()) {
             case ToolFlag.ShapeFlag.LINE:
                 imgGraph.setImageDrawable(VectorDrawableCompat.create(getResources(),
                         R.drawable.ic_line_24, getTheme()));
@@ -473,6 +253,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         R.drawable.ic_outline_rectangle_24, getTheme()));
                 break;
         }
+        // Tool group
         // Select tool
         groupTools.setOnCheckedChangeListener(new CheckedImageGroup.OnCheckedChangeListener() {
             @SuppressLint("NonConstantResourceId")
@@ -483,62 +264,56 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 switch (checkedId) {
                     case R.id.img_paint:
-                        Settings.getInstance().setToolFlag(ToolFlag.PAINT);
-                        paint.setStrokeCap(Paint.Cap.SQUARE);
-                        eraser.setStrokeCap(Paint.Cap.SQUARE);
-                        paint.setStrokeJoin(Paint.Join.ROUND);
-                        eraser.setStrokeJoin(Paint.Join.ROUND);
+                        editor.setToolFlag(ToolFlag.PAINT);
+                        editor.setStrokeCap(Paint.Cap.SQUARE);
+                        editor.setStrokeJoin(Paint.Join.ROUND);
                         imgPaint.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_shape:
-                        Settings.getInstance().setToolFlag(ToolFlag.SHAPE);
-                        switch (Settings.getInstance().getShapeFlag()) {
+                        editor.setToolFlag(ToolFlag.SHAPE);
+                        switch (editor.getShapeFlag()) {
                             case ToolFlag.ShapeFlag.CIRCLE:
                             case ToolFlag.ShapeFlag.ELLIPSE:
-                                paint.setStrokeCap(Paint.Cap.ROUND);
-                                eraser.setStrokeCap(Paint.Cap.ROUND);
-                                paint.setStrokeJoin(Paint.Join.ROUND);
-                                eraser.setStrokeJoin(Paint.Join.ROUND);
+                                editor.setStrokeCap(Paint.Cap.ROUND);
+                                editor.setStrokeJoin(Paint.Join.ROUND);
                                 break;
                             case ToolFlag.ShapeFlag.LINE:
                             case ToolFlag.ShapeFlag.SQUARE:
                             case ToolFlag.ShapeFlag.RECTANGLE:
-                                paint.setStrokeCap(Paint.Cap.SQUARE);
-                                eraser.setStrokeCap(Paint.Cap.SQUARE);
-                                paint.setStrokeJoin(Paint.Join.MITER);
-                                eraser.setStrokeJoin(Paint.Join.MITER);
+                                editor.setStrokeCap(Paint.Cap.SQUARE);
+                                editor.setStrokeJoin(Paint.Join.MITER);
                                 break;
                         }
                         imgGraph.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_eraser:
-                        Settings.getInstance().setToolFlag(ToolFlag.ERASER);
-                        eraser.setStrokeCap(Paint.Cap.SQUARE);
-                        eraser.setStrokeJoin(Paint.Join.ROUND);
+                        editor.setToolFlag(ToolFlag.ERASER);
+                        editor.setStrokeCap(Paint.Cap.SQUARE);
+                        editor.setStrokeJoin(Paint.Join.ROUND);
                         imgEraser.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_fill:
-                        Settings.getInstance().setToolFlag(ToolFlag.FILL);
+                        editor.setToolFlag(ToolFlag.FILL);
                         imgFill.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_selection:
-                        Settings.getInstance().setToolFlag(ToolFlag.SELECTION);
+                        editor.setToolFlag(ToolFlag.SELECTION);
                         imgSelection.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_colorize:
-                        Settings.getInstance().setToolFlag(ToolFlag.COLORIZE);
+                        editor.setToolFlag(ToolFlag.COLORIZE);
                         imgColorize.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                 }
-                if (Settings.getInstance().getToolFlag() != ToolFlag.SELECTION) {
-                    selected = false;
-                    Settings.getInstance().setSelectionFlag(ToolFlag.SelectionFlag.NONE);
+                if (editor.getToolFlag() != ToolFlag.SELECTION) {
+                    editor.setSelected(false);
+                    editor.setSelectionFlag(ToolFlag.SelectionFlag.NONE);
                 }
                 canvasView.invalidate();
             }
         });
         // Initial check
-        switch (Settings.getInstance().getToolFlag()) {
+        switch (editor.getToolFlag()) {
             case ToolFlag.PAINT:
                 groupTools.check(R.id.img_paint);
                 imgPaint.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
@@ -578,13 +353,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
+        // Palette list
         // Select palette
+        switch (editor.getPaletteFlag()) {
+            case PaletteFlag.BACKGROUND:
+                listPalettes.setPalette(editor.getBackgroundPalette());
+                break;
+            case PaletteFlag.GRID:
+                listPalettes.setPalette(editor.getGridPalette());
+                break;
+            case PaletteFlag.INTERNAL:
+                listPalettes.setPalette(editor.getBuiltinPalette());
+                break;
+            case PaletteFlag.EXTERNAL:
+                editor.loadExternalPalette(editor.getExternalPaletteName());
+                if (editor.getExternalPalette() == null) {
+                    editor.setPaletteFlag(PaletteFlag.INTERNAL);
+                    listPalettes.setPalette(editor.getBuiltinPalette());
+                }
+                else {
+                    listPalettes.setPalette(editor.getExternalPalette());
+                }
+                break;
+        }
+        // Initial select
         listPalettes.setOnCheckedChangeListener(new PaletteList.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(PaletteList list, int checkedIndex) {
-                paint.setColor(listPalettes.getPaletteColor(checkedIndex));
+                editor.flushPaint(listPalettes.getCheckedPaletteColor());
             }
         });
+        // Double tap
         listPalettes.setOnDoubleTapListener(new PaletteList.OnDoubleTapListener() {
             @Override
             public void onDoubleTap(PaletteList list, int checkedIndex) {
@@ -592,18 +391,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
+        // CanvasView
         // Draw
         canvasView.setOnInvalidateListener(new CanvasView.OnInvalidateListener() {
 
             float imageTranslationX;
             float imageTranslationY;
             int imageScale;
+            final Paint eraser = editor.getEraser();
+            final Matrix matrix = editor.getMatrix();
             
             @Override
             public void onInvalidate(Canvas canvas) {
-                imageTranslationX = Settings.getInstance().getImageTranslationX();
-                imageTranslationY = Settings.getInstance().getImageTranslationY();
-                imageScale = Settings.getInstance().getImageScale();
+                imageTranslationX = editor.getImageTranslationX();
+                imageTranslationY = editor.getImageTranslationY();
+                imageScale = editor.getImageScale();
                 // Clear canvas
                 canvas.drawPaint(eraser);
                 canvas.save();
@@ -614,28 +416,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // Draw background
                 canvas.drawColor(getCanvasViewBackgroundColor());
                 canvas.drawRect(imageTranslationX, imageTranslationY,
-                        imageTranslationX + Settings.getInstance().getToolBufferPool().getCurrentBitmap().getWidth() * imageScale,
-                        imageTranslationY + Settings.getInstance().getToolBufferPool().getCurrentBitmap().getHeight() * imageScale,
+                        imageTranslationX + editor.getToolBufferPool().getCurrentBitmap().getWidth() * imageScale,
+                        imageTranslationY + editor.getToolBufferPool().getCurrentBitmap().getHeight() * imageScale,
                         canvasBackgroundPaint);
                 canvas.save();
                 canvas.restore();
                 // Draw scaled bitmap
-                canvas.drawBitmap(Settings.getInstance().getToolBufferPool().getCurrentBitmap(), matrix, bitmapPaint);
+                canvas.drawBitmap(editor.getToolBufferPool().getCurrentBitmap(), matrix, bitmapPaint);
                 canvas.save();
                 canvas.restore();
                 // Draw grid
-                if(Settings.getInstance().isGridVisible()) {
+                if(editor.isGridVisible()) {
                     if(imageScale >= 4) {
-                        int width = Settings.getInstance().getToolBufferPool().getCurrentBitmap().getWidth();
-                        int height = Settings.getInstance().getToolBufferPool().getCurrentBitmap().getHeight();
-                        for (int i = 0; i <= width; i += Settings.getInstance().getGridWidth()) {
+                        int width = editor.getToolBufferPool().getCurrentBitmap().getWidth();
+                        int height = editor.getToolBufferPool().getCurrentBitmap().getHeight();
+                        for (int i = 0; i <= width; i += editor.getGridWidth()) {
                             canvas.drawLine(
                                     imageTranslationX + i * imageScale,
                                     imageTranslationY,
                                     imageTranslationX + i * imageScale,
                                     imageTranslationY + height * imageScale, gridPaint);
                         }
-                        for (int i = 0; i <= height; i += Settings.getInstance().getGridHeight()) {
+                        for (int i = 0; i <= height; i += editor.getGridHeight()) {
                             canvas.drawLine(
                                     imageTranslationX,
                                     imageTranslationY + i * imageScale,
@@ -647,13 +449,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 }
                 // Draw selection board
-                if (Settings.getInstance().getToolFlag() == ToolFlag.SELECTION && selected) {
+                if (editor.getToolFlag() == ToolFlag.SELECTION && selected) {
                     float selectionLeft;
                     float selectionTop;
                     float selectionRight;
                     float selectionBottom;
                     RectF selectionRectF;
-                    switch (Settings.getInstance().getSelectionFlag()) {
+                    switch (editor.getSelectionFlag()) {
                         case ToolFlag.SelectionFlag.CUT:
                         case ToolFlag.SelectionFlag.COPY:
                             selectionLeft = selectionBitmapX * imageScale + selectionPaint1.getStrokeWidth() / 2;
@@ -691,9 +493,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             int imageScale;
             @Override
             public boolean onTouch(View view, MotionEvent event) {
-                imageTranslationX = Settings.getInstance().getImageTranslationX();
-                imageTranslationY = Settings.getInstance().getImageTranslationY();
-                imageScale = Settings.getInstance().getImageScale();
+                imageTranslationX = editor.getImageTranslationX();
+                imageTranslationY = editor.getImageTranslationY();
+                imageScale = editor.getImageScale();
                 switch (event.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
                         x = event.getX(0);
@@ -705,15 +507,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         moveX = downX;
                         moveY = downY;
                         path.moveTo(downX, downY);
-                        switch (Settings.getInstance().getToolFlag()) {
+                        switch (editor.getToolFlag()) {
                             case ToolFlag.PAINT:
-                                Settings.getInstance().getToolBufferPool().addTempToolBuffer(new PointBuffer(paint, downX, downY));
+                                editor.getToolBufferPool().addTempToolBuffer(new PointBuffer(paint, downX, downY));
                                 break;
                             case ToolFlag.ERASER:
-                                Settings.getInstance().getToolBufferPool().addTempToolBuffer(new PointBuffer(eraser, downX, downY));
+                                editor.getToolBufferPool().addTempToolBuffer(new PointBuffer(eraser, downX, downY));
                                 break;
                             case ToolFlag.SELECTION:
-                                switch (Settings.getInstance().getSelectionFlag()) {
+                                switch (editor.getSelectionFlag()) {
                                     case ToolFlag.SelectionFlag.CUT:
                                     case ToolFlag.SelectionFlag.COPY:
                                         selectionBitmapX = downX - (int)(selectionBitmap.getWidth() * 0.5f);
@@ -726,26 +528,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         if (downX < 0) {
                                             downX = 0;
                                         }
-                                        if (downX >= Settings.getInstance().getToolBufferPool().getCurrentBitmap().getWidth()) {
-                                            downX = Settings.getInstance().getToolBufferPool().getCurrentBitmap().getWidth() - 1;
+                                        if (downX >= editor.getToolBufferPool().getCurrentBitmap().getWidth()) {
+                                            downX = editor.getToolBufferPool().getCurrentBitmap().getWidth() - 1;
                                         }
                                         if (downY < 0) {
                                             downY = 0;
                                         }
-                                        if (downY >= Settings.getInstance().getToolBufferPool().getCurrentBitmap().getHeight()) {
-                                            downY = Settings.getInstance().getToolBufferPool().getCurrentBitmap().getHeight() - 1;
+                                        if (downY >= editor.getToolBufferPool().getCurrentBitmap().getHeight()) {
+                                            downY = editor.getToolBufferPool().getCurrentBitmap().getHeight() - 1;
                                         }
                                         break;
                                 }
                                 break;
                             case ToolFlag.COLORIZE:
-                                if (downX >=0 && downY >= 0 && downX < Settings.getInstance().getToolBufferPool().getCurrentBitmap().getWidth() && downY < Settings.getInstance().getToolBufferPool().getCurrentBitmap().getHeight()) {
-                                    listPalettes.setPaletteColor(listPalettes.getCheckedIndex(), Settings.getInstance().getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
-                                    paint.setColor(Settings.getInstance().getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
-                                    switch (Settings.getInstance().getPaletteFlag()) {
+                                if (downX >=0 && downY >= 0 && downX < editor.getToolBufferPool().getCurrentBitmap().getWidth() && downY < editor.getToolBufferPool().getCurrentBitmap().getHeight()) {
+                                    listPalettes.setPaletteColor(listPalettes.getCheckedIndex(), editor.getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
+                                    paint.setColor(editor.getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
+                                    switch (editor.getPaletteFlag()) {
                                         case PaletteFlag.BACKGROUND:
                                             if (listPalettes.getCheckedIndex() == 0) {
-                                                setCanvasViewBackgroundColor(Settings.getInstance().getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
+                                                setCanvasViewBackgroundColor(editor.getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
                                             }
                                             else {
                                                 flushCanvasBackgroundPaint();
@@ -755,7 +557,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                             }
                                             break;
                                         case PaletteFlag.GRID:
-                                            setGridColor(Settings.getInstance().getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
+                                            setGridColor(editor.getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
                                             break;
                                     }
                                 }
@@ -772,7 +574,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         scaleMode = true;
                         readOnlyMode = true;
 
-                        Settings.getInstance().setSelectionFlag(ToolFlag.SelectionFlag.NONE);
+                        editor.setSelectionFlag(ToolFlag.SelectionFlag.NONE);
                         selected = false;
                         break;
                     case MotionEvent.ACTION_MOVE:
@@ -799,15 +601,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             // Current path
                             moveX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
                             moveY = (int) Math.floor((event.getY(0) - imageTranslationY) / imageScale);
-                            switch (Settings.getInstance().getToolFlag()) {
+                            switch (editor.getToolFlag()) {
                                 case ToolFlag.PAINT:
                                 case ToolFlag.ERASER:
                                     path.lineTo(moveX, moveY);
                                     break;
                                 case ToolFlag.SHAPE:
-                                    Settings.getInstance().getToolBufferPool().clearTempToolBuffers();
+                                    editor.getToolBufferPool().clearTempToolBuffers();
                                     path.reset();
-                                    switch (Settings.getInstance().getShapeFlag()) {
+                                    switch (editor.getShapeFlag()) {
                                         case ToolFlag.ShapeFlag.LINE:
                                             path.moveTo(downX, downY);
                                             path.lineTo(moveX, moveY);
@@ -874,7 +676,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     }
                                     break;
                                 case ToolFlag.SELECTION:
-                                    switch (Settings.getInstance().getSelectionFlag()) {
+                                    switch (editor.getSelectionFlag()) {
                                         case ToolFlag.SelectionFlag.CUT:
                                         case ToolFlag.SelectionFlag.COPY:
                                             break;
@@ -883,27 +685,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                             if (moveX < 0) {
                                                 moveX = 0;
                                             }
-                                            if (moveX >= Settings.getInstance().getToolBufferPool().getCurrentBitmap().getWidth()) {
-                                                moveX = Settings.getInstance().getToolBufferPool().getCurrentBitmap().getWidth() - 1;
+                                            if (moveX >= editor.getToolBufferPool().getCurrentBitmap().getWidth()) {
+                                                moveX = editor.getToolBufferPool().getCurrentBitmap().getWidth() - 1;
                                             }
                                             if (moveY < 0) {
                                                 moveY = 0;
                                             }
-                                            if (moveY >= Settings.getInstance().getToolBufferPool().getCurrentBitmap().getHeight()) {
-                                                moveY = Settings.getInstance().getToolBufferPool().getCurrentBitmap().getHeight() - 1;
+                                            if (moveY >= editor.getToolBufferPool().getCurrentBitmap().getHeight()) {
+                                                moveY = editor.getToolBufferPool().getCurrentBitmap().getHeight() - 1;
                                             }
                                             break;
                                     }
                                     selected = true;
                                     break;
                                 case ToolFlag.COLORIZE:
-                                    if (moveX >=0 && moveY >= 0 && moveX < Settings.getInstance().getToolBufferPool().getCurrentBitmap().getWidth() && moveY < Settings.getInstance().getToolBufferPool().getCurrentBitmap().getHeight()) {
-                                        listPalettes.setPaletteColor(listPalettes.getCheckedIndex(), Settings.getInstance().getToolBufferPool().getCurrentBitmap().getPixel(moveX, moveY));
-                                        paint.setColor(Settings.getInstance().getToolBufferPool().getCurrentBitmap().getPixel(moveX, moveY));
-                                        switch (Settings.getInstance().getPaletteFlag()) {
+                                    if (moveX >=0 && moveY >= 0 && moveX < editor.getToolBufferPool().getCurrentBitmap().getWidth() && moveY < editor.getToolBufferPool().getCurrentBitmap().getHeight()) {
+                                        listPalettes.setPaletteColor(listPalettes.getCheckedIndex(), editor.getToolBufferPool().getCurrentBitmap().getPixel(moveX, moveY));
+                                        paint.setColor(editor.getToolBufferPool().getCurrentBitmap().getPixel(moveX, moveY));
+                                        switch (editor.getPaletteFlag()) {
                                             case PaletteFlag.BACKGROUND:
                                                 if (listPalettes.getCheckedIndex() == 0) {
-                                                    setCanvasViewBackgroundColor(Settings.getInstance().getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
+                                                    setCanvasViewBackgroundColor(editor.getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
                                                 } else {
                                                     flushCanvasBackgroundPaint();
                                                     listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
@@ -912,26 +714,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                 }
                                                 break;
                                             case PaletteFlag.GRID:
-                                                setGridColor(Settings.getInstance().getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
+                                                setGridColor(editor.getToolBufferPool().getCurrentBitmap().getPixel(downX, downY));
                                                 break;
                                         }
                                     }
                                     break;
                             }
-                            switch (Settings.getInstance().getToolFlag()) {
+                            switch (editor.getToolFlag()) {
                                 // Draw down point
                                 case ToolFlag.PAINT:
-                                    Settings.getInstance().getToolBufferPool().addTempToolBuffer(new PointBuffer(paint, downX, downY));
+                                    editor.getToolBufferPool().addTempToolBuffer(new PointBuffer(paint, downX, downY));
                                 case ToolFlag.SHAPE:
-                                    Settings.getInstance().getToolBufferPool().addTempToolBuffer(new PaintBuffer(paint, path));
+                                    editor.getToolBufferPool().addTempToolBuffer(new PaintBuffer(paint, path));
                                     break;
                                 case ToolFlag.ERASER:
-                                    Settings.getInstance().getToolBufferPool().addTempToolBuffer(new PointBuffer(eraser, downX, downY));
-                                    Settings.getInstance().getToolBufferPool().addTempToolBuffer(new PaintBuffer(eraser, path));
+                                    editor.getToolBufferPool().addTempToolBuffer(new PointBuffer(eraser, downX, downY));
+                                    editor.getToolBufferPool().addTempToolBuffer(new PaintBuffer(eraser, path));
                                     break;
                                 // Draw selection bmp
                                 case ToolFlag.SELECTION:
-                                    switch (Settings.getInstance().getSelectionFlag()) {
+                                    switch (editor.getSelectionFlag()) {
                                         case ToolFlag.SelectionFlag.CUT:
                                         case ToolFlag.SelectionFlag.COPY:
                                             selectionBitmapX = moveX - (int)(selectionBitmap.getWidth() * 0.5f);
@@ -954,25 +756,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                         else {
                             // Draw current bitmap
-                            switch (Settings.getInstance().getToolFlag()) {
+                            switch (editor.getToolFlag()) {
                                 case ToolFlag.PAINT:
-                                    Settings.getInstance().getToolBufferPool().addToolBuffer(
+                                    editor.getToolBufferPool().addToolBuffer(
                                             new MultiBuffer(new PointBuffer(paint, downX, downY), new PaintBuffer(paint, path)));
                                     break;
                                 case ToolFlag.ERASER:
-                                    Settings.getInstance().getToolBufferPool().addToolBuffer(
+                                    editor.getToolBufferPool().addToolBuffer(
                                             new MultiBuffer(new PointBuffer(eraser, downX, downY), new PaintBuffer(eraser, path)));
                                     break;
                                 case ToolFlag.SHAPE:
-                                    Settings.getInstance().getToolBufferPool().addToolBuffer(new PaintBuffer(paint, path));
+                                    editor.getToolBufferPool().addToolBuffer(new PaintBuffer(paint, path));
                                     break;
                                 case ToolFlag.FILL:
-                                    if (downX >=0 && downY >= 0 && downX < Settings.getInstance().getToolBufferPool().getCurrentBitmap().getWidth() && downY < Settings.getInstance().getToolBufferPool().getCurrentBitmap().getHeight()) {
-                                        Settings.getInstance().getToolBufferPool().addToolBuffer(new FillBuffer(downX, downY, paint.getColor()));
+                                    if (downX >=0 && downY >= 0 && downX < editor.getToolBufferPool().getCurrentBitmap().getWidth() && downY < editor.getToolBufferPool().getCurrentBitmap().getHeight()) {
+                                        editor.getToolBufferPool().addToolBuffer(new FillBuffer(downX, downY, paint.getColor()));
                                     }
                                     break;
                                 case ToolFlag.SELECTION:
-                                    switch (Settings.getInstance().getSelectionFlag()) {
+                                    switch (editor.getSelectionFlag()) {
                                         case ToolFlag.SelectionFlag.CUT:
                                         case ToolFlag.SelectionFlag.COPY:
                                             // Clear canvas
@@ -990,7 +792,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     }
                                     break;
                             }
-                            if (Settings.getInstance().getToolFlag() != ToolFlag.SELECTION) {
+                            if (editor.getToolFlag() != ToolFlag.SELECTION) {
                                 //currentCanvas.save();
                                 //currentCanvas.restore();
                                 canvasView.invalidate();
