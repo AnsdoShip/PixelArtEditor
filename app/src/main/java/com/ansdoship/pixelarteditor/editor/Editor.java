@@ -10,8 +10,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.RectF;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,7 +23,7 @@ import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapDecoder;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapEncoder;
-import com.ansdoship.pixelarteditor.util.ToolBufferPool;
+import com.ansdoship.pixelarteditor.editor.buffer.ToolBufferPool;
 import com.ansdoship.pixelarteditor.util.Utils;
 
 import java.io.IOException;
