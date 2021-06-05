@@ -51,15 +51,14 @@ public class PaletteList extends LinearLayout implements View.OnClickListener {
     }
 
     private void setIndex(int index) {
-        mIndex = MathUtils.clamp(index, 0, getSize());
+        mIndex = MathUtils.clamp(index, 0, getSize() - 1);
         if (mPalette != null) {
             mPalette.setIndex(index);
         }
     }
 
     public void checkIndex(int index) {
-        int preIndex = mIndex;
-        if (preIndex != index) {
+        if (mIndex != index) {
             if (mOnCheckedChangeListener != null) {
                 mOnCheckedChangeListener.onCheckedChanged(this, index);
             }
@@ -73,9 +72,7 @@ public class PaletteList extends LinearLayout implements View.OnClickListener {
         for (int i = 0; i < getChildCount(); i ++) {
             ((PaletteView) getChildAt(i)).setChecked(false);
         }
-        if (index >= 0 && index < getChildCount()) {
-            ((PaletteView) getChildAt(index)).setChecked(true);
-        }
+        ((PaletteView) getChildAt(mIndex)).setChecked(true);
     }
 
     public int getCheckedIndex() {

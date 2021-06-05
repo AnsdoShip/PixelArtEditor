@@ -76,4 +76,9 @@ public class CanvasView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {}
 
+    @Override
+    public boolean performClick() {
+        return super.performClick();
+    }
+    
 }

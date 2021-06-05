@@ -389,11 +389,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 break;
         }
+        editor.flushPaint(listPalettes.getCheckedPaletteColor());
         // Initial select
         listPalettes.setOnCheckedChangeListener(new PaletteList.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(PaletteList list, int checkedIndex) {
-                editor.flushPaint(listPalettes.getCheckedPaletteColor());
+                editor.flushPaint(listPalettes.getPaletteColor(checkedIndex));
             }
         });
         // Double tap
