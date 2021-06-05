@@ -3,7 +3,6 @@ package com.ansdoship.pixelarteditor.ui.viewgroup;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
@@ -12,27 +11,6 @@ import androidx.annotation.Nullable;
 import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
 
 public class CheckedImageGroup extends LinearLayout implements View.OnClickListener {
-
-    @Override
-    public void addView(View child, int index, ViewGroup.LayoutParams params) {
-        try {
-            throw new IllegalAccessException("Cannot add child view");
-        }
-        catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    protected boolean addViewInLayout(View child, int index, ViewGroup.LayoutParams params, boolean preventRequestLayout) {
-        try {
-            throw new IllegalAccessException("Cannot add child view");
-        }
-        catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
 
     private int mIndex;
     private OnCheckedChangeListener mOnCheckedChangeListener;

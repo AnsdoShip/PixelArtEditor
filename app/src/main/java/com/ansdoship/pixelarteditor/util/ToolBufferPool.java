@@ -96,8 +96,16 @@ public final class ToolBufferPool {
         }
     }
 
+    public void setCacheBitmap(Bitmap cacheBitmap) {
+        mCacheBitmap = cacheBitmap;
+    }
+
     public Bitmap getCacheBitmap() {
         return mCacheBitmap;
+    }
+
+    public void setCurrentBitmap(Bitmap currentBitmap) {
+        mCurrentBitmap = currentBitmap;
     }
 
     public Bitmap getCurrentBitmap () {
@@ -133,7 +141,7 @@ public final class ToolBufferPool {
         return 0;
     }
 
-    private void flushCurrentBitmap() {
+    public void flushCurrentBitmap() {
         replaceCurrentBitmap(Bitmap.createBitmap(mCacheBitmap));
         for (int i = 0; i <= index; i ++) {
             drawToolBuffer(mCurrentBitmap, mToolBufferList.get(i));

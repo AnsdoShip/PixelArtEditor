@@ -5,7 +5,6 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
 
@@ -18,27 +17,6 @@ import com.ansdoship.pixelarteditor.ui.view.PaletteView;
 import com.ansdoship.pixelarteditor.util.MathUtils;
 
 public class PaletteList extends LinearLayout implements View.OnClickListener {
-
-    @Override
-    public void addView(View child, int index, ViewGroup.LayoutParams params) {
-        try {
-            throw new IllegalAccessException("Cannot add child view");
-        }
-        catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    protected boolean addViewInLayout(View child, int index, ViewGroup.LayoutParams params, boolean preventRequestLayout) {
-        try {
-            throw new IllegalAccessException("Cannot add child view");
-        }
-        catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
 
     private int mIndex;
     private OnCheckedChangeListener mOnCheckedChangeListener;

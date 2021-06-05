@@ -138,7 +138,13 @@ public final class PaletteFactory {
         String[] stringArray = colorStringArray.substring(1, colorStringArray.length() - 1).split(",");
         int[] colorArray = new int[stringArray.length];
         for (int i = 0; i < stringArray.length; i ++) {
-            colorArray[i] = Integer.parseInt(stringArray[i]);
+            stringArray[i] = stringArray[i].replace(" ", "");
+            if (stringArray[i].startsWith("-")) {
+                colorArray[i] = - Integer.parseInt(stringArray[i].substring(1));
+            }
+            else {
+                colorArray[i] = Integer.parseInt(stringArray[i]);
+            }
         }
         return colorArray;
     }

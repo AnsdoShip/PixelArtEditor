@@ -11,6 +11,7 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -106,25 +107,45 @@ public final class Editor {
     private boolean readOnlyMode;
 
     public void loadData() {
-        setImageName(preferences.getString(KEY_IMAGE_NAME, IMAGE_NAME_DEFAULT()));
-        setImagePath(preferences.getString(KEY_IMAGE_PATH, IMAGE_PATH_DEFAULT()));
-        setImageScale(preferences.getInt(KEY_IMAGE_SCALE, IMAGE_SCALE_DEFAULT));
-        setImageTranslationX(preferences.getInt(KEY_IMAGE_TRANSLATION_X, IMAGE_TRANSLATION_X_DEFAULT));
-        setImageTranslationY(preferences.getInt(KEY_IMAGE_TRANSLATION_Y, IMAGE_TRANSLATION_Y_DEFAULT));
-        setImageOriginX(preferences.getInt(KEY_IMAGE_ORIGIN_X, IMAGE_ORIGIN_X_DEFAULT));
-        setImageOriginY(preferences.getInt(KEY_IMAGE_ORIGIN_Y, IMAGE_ORIGIN_Y_DEFAULT));
-        setToolFlag(preferences.getInt(KEY_TOOL_FLAG, TOOL_FLAG_DEFAULT));
-        setShapeFlag(preferences.getInt(KEY_SHAPE_FLAG, SHAPE_FLAG_DEFAULT));
-        setPaintFlag(preferences.getInt(KEY_PAINT_FLAG, PAINT_FLAG_DEFAULT));
-        setSelectionFlag(preferences.getInt(KEY_SELECTION_FLAG, SELECTION_FLAG_DEFAULT));
-        setPaletteFlag(preferences.getInt(KEY_PALETTE_FLAG, PALETTE_FLAG_DEFAULT));
-        setExternalPaletteName(preferences.getString(KEY_EXTERNAL_PALETTE_NAME, EXTERNAL_PALETTE_NAME_DEFAULT));
-        setPaintWidth(preferences.getInt(KEY_PAINT_WIDTH, PAINT_WIDTH_DEFAULT));
-        setGridVisible(preferences.getBoolean(KEY_GRID_VISIBLE, GRID_VISIBLE_DEFAULT));
-        setGridWidth(preferences.getInt(KEY_GRID_WIDTH, GRID_WIDTH_DEFAULT));
-        setGridHeight(preferences.getInt(KEY_GRID_HEIGHT, GRID_HEIGHT_DEFAULT));
-        setScaleMode(SCALE_MODE_DEFAULT);
-        setSelected(SELECTED_DEFAULT);
+
+        gridPaint = new Paint();
+        gridPaint.setAntiAlias(false);
+        gridPaint.setDither(false);
+        gridPaint.setStyle(Paint.Style.STROKE);
+        gridPaint.setStrokeWidth(1);
+        canvasBackgroundPaint = new Paint();
+        canvasBackgroundPaint.setAntiAlias(false);
+        canvasBackgroundPaint.setDither(false);
+        bitmapPaint = new Paint();
+        bitmapPaint.setAntiAlias(false);
+        bitmapPaint.setDither(false);
+        bitmapPaint.setFilterBitmap(false);
+        paint = new Paint();
+        paint.setDither(false);
+        paint.setAntiAlias(false);
+        paint.setStyle(Paint.Style.STROKE);
+        eraser = new Paint();
+        eraser.setDither(false);
+        eraser.setAntiAlias(false);
+        eraser.setStyle(Paint.Style.STROKE);
+        eraser.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        selectionPaint1 = new Paint();
+        selectionPaint1.setDither(false);
+        selectionPaint1.setAntiAlias(false);
+        selectionPaint1.setStyle(Paint.Style.STROKE);
+        selectionPaint1.setStrokeCap(Paint.Cap.SQUARE);
+        selectionPaint1.setColor(Color.WHITE);
+        selectionPaint1.setStrokeWidth(Editor.getInstance().getImageScale() * 0.5f + 0.5f);
+        selectionPaint2 = new Paint();
+        selectionPaint2.setDither(false);
+        selectionPaint2.setAntiAlias(false);
+        selectionPaint2.setStyle(Paint.Style.STROKE);
+        selectionPaint2.setStrokeCap(Paint.Cap.SQUARE);
+        selectionPaint2.setColor(Color.BLACK);
+        selectionPaint2.setStrokeWidth(Editor.getInstance().getImageScale() * 0.25f + 0.25f);
+        path = new Path();
+        matrix = new Matrix();
+
         String backgroundPaletteString = preferences.getString(KEY_BACKGROUND_PALETTE, null);
         if (backgroundPaletteString == null) {
             backgroundPalette = Palette.createPalette(BACKGROUND_PALETTE_COLORS_DEFAULT);
@@ -156,58 +177,55 @@ public final class Editor {
             }
         }
 
-        String cacheBitmapPathName = getCacheBitmapPathname();
-        if (cacheBitmapPathName != null) {
-            cacheBitmap = BitmapDecoder.decodeFile(cacheBitmapPathName);
+        setImageName(preferences.getString(KEY_IMAGE_NAME, IMAGE_NAME_DEFAULT()));
+        setImagePath(preferences.getString(KEY_IMAGE_PATH, IMAGE_PATH_DEFAULT()));
+        setImageScale(preferences.getInt(KEY_IMAGE_SCALE, IMAGE_SCALE_DEFAULT));
+        setImageTranslationX(preferences.getInt(KEY_IMAGE_TRANSLATION_X, IMAGE_TRANSLATION_X_DEFAULT));
+        setImageTranslationY(preferences.getInt(KEY_IMAGE_TRANSLATION_Y, IMAGE_TRANSLATION_Y_DEFAULT));
+        setImageOriginX(preferences.getInt(KEY_IMAGE_ORIGIN_X, IMAGE_ORIGIN_X_DEFAULT));
+        setImageOriginY(preferences.getInt(KEY_IMAGE_ORIGIN_Y, IMAGE_ORIGIN_Y_DEFAULT));
+        setToolFlag(preferences.getInt(KEY_TOOL_FLAG, TOOL_FLAG_DEFAULT));
+        setShapeFlag(preferences.getInt(KEY_SHAPE_FLAG, SHAPE_FLAG_DEFAULT));
+        setPaintFlag(preferences.getInt(KEY_PAINT_FLAG, PAINT_FLAG_DEFAULT));
+        setSelectionFlag(preferences.getInt(KEY_SELECTION_FLAG, SELECTION_FLAG_DEFAULT));
+        setPaletteFlag(preferences.getInt(KEY_PALETTE_FLAG, PALETTE_FLAG_DEFAULT));
+        setExternalPaletteName(preferences.getString(KEY_EXTERNAL_PALETTE_NAME, EXTERNAL_PALETTE_NAME_DEFAULT));
+        setPaintWidth(preferences.getInt(KEY_PAINT_WIDTH, PAINT_WIDTH_DEFAULT));
+        setGridVisible(preferences.getBoolean(KEY_GRID_VISIBLE, GRID_VISIBLE_DEFAULT));
+        setGridWidth(preferences.getInt(KEY_GRID_WIDTH, GRID_WIDTH_DEFAULT));
+        setGridHeight(preferences.getInt(KEY_GRID_HEIGHT, GRID_HEIGHT_DEFAULT));
+        setScaleMode(SCALE_MODE_DEFAULT);
+        setReadOnlyMode(READ_ONLY_MODE_DEFAULT);
+        setSelected(SELECTED_DEFAULT);
+
+        if (toolBufferPool == null) {
+            String cacheBitmapPathName = getCurrentBitmapPathname();
+            if (cacheBitmapPathName != null) {
+                replaceCacheBitmap(BitmapDecoder.decodeFile(cacheBitmapPathName));
+            }
+            if(cacheBitmap == null) {
+                replaceCacheBitmap(Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                        IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888));
+            }
+            setBitmap(cacheBitmap);
         }
-        if(cacheBitmap == null) {
-            cacheBitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
-                    IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+        else {
+            String cacheBitmapPathName = getCacheBitmapPathname();
+            if (cacheBitmapPathName != null) {
+                replaceCacheBitmap(BitmapDecoder.decodeFile(cacheBitmapPathName));
+            }
+            if (cacheBitmap == null) {
+                replaceCacheBitmap(Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                        IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888));
+                setBitmap(cacheBitmap);
+            }
+            else {
+                toolBufferPool.setCacheBitmap(cacheBitmap);
+                toolBufferPool.flushCurrentBitmap();
+                replaceCurrentBitmap(toolBufferPool.getCurrentBitmap());
+            }
         }
 
-        setBitmap(cacheBitmap);
-
-        gridPaint = new Paint();
-        gridPaint.setAntiAlias(false);
-        gridPaint.setDither(false);
-        gridPaint.setStyle(Paint.Style.STROKE);
-        gridPaint.setStrokeWidth(1);
-        flushGridPaint();
-        canvasBackgroundPaint = new Paint();
-        canvasBackgroundPaint.setAntiAlias(false);
-        canvasBackgroundPaint.setDither(false);
-        flushCanvasBackgroundPaint();
-        bitmapPaint = new Paint();
-        bitmapPaint.setAntiAlias(false);
-        bitmapPaint.setDither(false);
-        bitmapPaint.setFilterBitmap(false);
-        paint = new Paint();
-        paint.setDither(false);
-        paint.setAntiAlias(false);
-        paint.setStyle(Paint.Style.STROKE);
-        setPaintFlag(Editor.getInstance().getPaintFlag());
-        eraser = new Paint();
-        eraser.setDither(false);
-        eraser.setAntiAlias(false);
-        eraser.setStyle(Paint.Style.STROKE);
-        eraser.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        setPaintWidth(Editor.getInstance().getPaintWidth());
-        selectionPaint1 = new Paint();
-        selectionPaint1.setDither(false);
-        selectionPaint1.setAntiAlias(false);
-        selectionPaint1.setStyle(Paint.Style.STROKE);
-        selectionPaint1.setStrokeCap(Paint.Cap.SQUARE);
-        selectionPaint1.setColor(Color.WHITE);
-        selectionPaint1.setStrokeWidth(Editor.getInstance().getImageScale() * 0.5f + 0.5f);
-        selectionPaint2 = new Paint();
-        selectionPaint2.setDither(false);
-        selectionPaint2.setAntiAlias(false);
-        selectionPaint2.setStyle(Paint.Style.STROKE);
-        selectionPaint2.setStrokeCap(Paint.Cap.SQUARE);
-        selectionPaint2.setColor(Color.BLACK);
-        selectionPaint2.setStrokeWidth(Editor.getInstance().getImageScale() * 0.25f + 0.25f);
-        path = new Path();
-        matrix = new Matrix();
     }
 
     public void saveData() {
@@ -238,6 +256,21 @@ public final class Editor {
         String cacheBitmapPathname = getCacheBitmapPathname();
         if (cacheBitmapPathname != null) {
             BitmapEncoder.encodeFile(cacheBitmapPathname,
+                    toolBufferPool.getCacheBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100,
+                    new BitmapEncoder.Callback() {
+                        @Override
+                        public void onCreateFailure() {}
+                        @Override
+                        public void onCompressFailure() {}
+                        @Override
+                        public void onFileExists(boolean isDirectory) {}
+                        @Override
+                        public void onIOException(IOException e) {}
+                    });
+        }
+        String currentBitmapPathname = getCurrentBitmapPathname();
+        if (currentBitmapPathname != null) {
+            BitmapEncoder.encodeFile(currentBitmapPathname,
                     toolBufferPool.getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100,
                     new BitmapEncoder.Callback() {
                         @Override
@@ -328,7 +361,6 @@ public final class Editor {
     private boolean selected;
     private int selectionBitmapX;
     private int selectionBitmapY;
-    private RectF selectionRectF;
 
     private int downX;
     private int downY;
@@ -579,14 +611,6 @@ public final class Editor {
         return selectionBitmapY;
     }
 
-    public void setSelectionRectF(RectF selectionRectF) {
-        this.selectionRectF = selectionRectF;
-    }
-
-    public RectF getSelectionRectF() {
-        return selectionRectF;
-    }
-
     public void setImageName(String imageName) {
         this.imageName = imageName;
     }
@@ -778,11 +802,14 @@ public final class Editor {
     }
 
     public void loadExternalPalette(@Nullable String externalPaletteName) {
+        if (externalPalette != null) {
+            PaletteFactory.encodeFile(externalPalette, getExternalPalettePathName(getExternalPaletteName()), true);
+        }
         if (externalPaletteName != null) {
             externalPalette = PaletteFactory.decodeFile(getExternalPalettePathName(externalPaletteName));
-        }
-        if (externalPalette != null) {
-            setExternalPaletteName(externalPaletteName);
+            if (externalPalette != null) {
+                setExternalPaletteName(externalPaletteName);
+            }
         }
     }
 
@@ -812,6 +839,20 @@ public final class Editor {
             return null;
         }
         return cachePath + "/" + getCacheBitmapName();
+    }
+
+    @NonNull
+    public static String getCurrentBitmapName() {
+        return "CURRENT.png";
+    }
+
+    @Nullable
+    public static String getCurrentBitmapPathname() {
+        String cachePath = Utils.getCachePath();
+        if (cachePath == null) {
+            return null;
+        }
+        return cachePath + "/" + getCurrentBitmapName();
     }
 
     public ToolBufferPool getToolBufferPool() {
