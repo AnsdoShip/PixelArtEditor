@@ -19,25 +19,34 @@ import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.InputFilter;
+import android.text.Spanned;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.ansdoship.pixelarteditor.editor.Editor;
+import com.ansdoship.pixelarteditor.editor.palette.Palette;
+import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
 import com.ansdoship.pixelarteditor.ui.view.CanvasView;
 import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.ImageViewListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.PaletteListAdapter;
+import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.TextViewListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup;
 import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
+import com.ansdoship.pixelarteditor.util.Utils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -219,7 +228,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                //buildAddPaletteDialog();
+                buildAddPaletteDialog();
             }
         });
         final AlertDialog alertDialog = builder.create();
@@ -229,12 +238,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         internalPaletteNames.add(getString(R.string.background_palette));
         internalPaletteNames.add(getString(R.string.grid_palette));
         internalPaletteNames.add(getString(R.string.builtin_palette));
-        File[] externalPaletteFiles = FileUtils.listFiles(new File(Editor.getPalettesPath()),
-                        new String[]{"palette"}, false).toArray(new File[0]);
-        List<String> externalPaletteNames = new ArrayList<>();
-        for (File externalPaletteFile : externalPaletteFiles) {
-            externalPaletteNames.add(FilenameUtils.getBaseName(externalPaletteFile.getName()));
-        }
+        List<String> externalPaletteNames = Editor.getExternalPaletteNames();
         int checkedPosition = -1;
         switch (editor.getPaletteFlag()) {
             case PaletteFlag.BACKGROUND:
@@ -319,38 +323,313 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
             @Override
             public void onRenameClick(int position) {
-                /*
                 buildRenamePaletteDialog(externalPaletteNames.get(position));
                 alertDialog.dismiss();
-
-                 */
             }
             @Override
             public void onDeleteClick(final int position) {
-                /*
                 buildDeleteFileDialog(new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        FileUtils.deleteFile(externalPalettePaths.get(position));
-                        if (externalPaletteNames.get(position).equals(paletteName)) {
-                            paletteId = BUILTIN_PALETTE;
-                            listPalettes.setColorPalette(builtinPalette, listPalettes.getCheckedIndex());
+                        try {
+                            FileUtils.forceDelete(new File(Editor.getExternalPalettePathName(
+                                    externalPaletteNames.get(position))));
+                            if (editor.getPaletteFlag() == PaletteFlag.EXTERNAL) {
+                                editor.setPaletteFlag(PaletteFlag.INTERNAL);
+                                editor.removeExternalPalette();
+                            }
+                        }
+                        catch (IOException e) {
+                            e.printStackTrace();
                         }
                         alertDialog.dismiss();
-                        buildSelectPaletteDialog();
+                        buildPaletteFlagDialog();
                     }
                 }, null);
-
-                 */
             }
         });
         recyclerView.setAdapter(adapter);
         alertDialog.show();
     }
+    // Add palette dialog
+    private Palette tempPalette;
+    private void buildAddPaletteDialog () {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        String [] items = {
+                getString(R.string.empty_palette),
+                getString(R.string.copy_current_palette),
+                getString(R.string.automatic_gradient)
+        };
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        tempPalette = Palette.createPalette(12);
+                        break;
+                    case 1:
+                        switch (editor.getPaletteFlag()) {
+                            case PaletteFlag.BACKGROUND:
+                                tempPalette  = Palette.createPalette(editor.getBackgroundPalette(), 12);
+                                break;
+                            case PaletteFlag.GRID:
+                                tempPalette  = Palette.createPalette(editor.getGridPalette(), 12);
+                                break;
+                            case PaletteFlag.INTERNAL:
+                                tempPalette  = Palette.createPalette(editor.getBuiltinPalette());
+                                break;
+                            case PaletteFlag.EXTERNAL:
+                                Palette externalPalette = editor.getExternalPalette();
+                                if (externalPalette == null) {
+                                    tempPalette = Palette.createPalette(12);
+                                }
+                                else {
+                                    tempPalette = Palette.createPalette(externalPalette);
+                                }
+                                break;
+                        }
+                        break;
+                    case 2:
+                        tempPalette = Palette.createPalette(12);
+                        break;
+                }
+                buildSavePaletteDialog(null);
+                dialog.dismiss();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                buildPaletteFlagDialog();
+            }
+        });
+        builder.create().show();
+    }
+    // Save palette dialog
+    private String dialogTempPaletteName;
+    private boolean dialogTempPaletteSameName;
+    private void buildSavePaletteDialog (String etText) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_save_palette, null);
+        final EditText etPaletteName = view.findViewById(R.id.et_palette_name);
+        etPaletteName.setFilters(new InputFilter[] {
+                new InputFilter() {
+                    @Override
+                    public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+                        for (int i = start; i < end; i ++) {
+                            if (Character.toString(source.charAt(i)).equals("/")) {
+                                return "";
+                            }
+                        }
+                        return null;
+                    }
+                }
+        });
+        if (etText != null) {
+            etPaletteName.setText(etText);
+        }
+        RecyclerView recyclerPalettes = view.findViewById(R.id.recycler_palettes);
+        recyclerPalettes.setLayoutManager(new LinearLayoutManager(this));
+        List<String> externalPaletteNames = Editor.getExternalPaletteNames();
+        TextViewListAdapter adapter = new TextViewListAdapter(this, externalPaletteNames,
+                VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_palette_24, getTheme()));
+        adapter.setOnItemClickListener(new TextViewListAdapter.OnItemClickListener() {
+            @Override
+            public void onClick(int position) {
+                etPaletteName.setText(externalPaletteNames.get(position));
+            }
+        });
+        recyclerPalettes.setAdapter(adapter);
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialogTempPaletteName = etPaletteName.getText().toString();
+                dialogTempPaletteSameName = false;
+                PaletteFactory.encodeFile(tempPalette, Editor.getExternalPalettePathName(dialogTempPaletteName),
+                        false,
+                        new PaletteFactory.Callback() {
+                            @Override
+                            public void onCreateFile(boolean isSuccess) {}
+                            @Override
+                            public void onException(Exception e) {
+                                e.printStackTrace();
+                            }
+                            @Override
+                            public void onFileExists(boolean isDirectory) {
+                                if (!isDirectory) {
+                                    Utils.hideSoftInputFromView(MainActivity.this, etPaletteName);
+                                    buildFileSameNameDialog(new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            PaletteFactory.encodeFile(tempPalette,
+                                                    Editor.getExternalPalettePathName(dialogTempPaletteName), true);
+                                            editor.loadExternalPalette(dialogTempPaletteName);
+                                            buildPaletteFlagDialog();
+                                        }
+                                    }, new DialogInterface.OnCancelListener() {
+                                        @Override
+                                        public void onCancel(DialogInterface dialog) {
+                                            buildAddPaletteDialog();
+                                        }
+                                    });
+                                    dialogTempPaletteSameName = true;
+                                }
+                            }
+                        });
+                if (dialogTempPaletteSameName) {
+                    return;
+                }
+                Utils.hideSoftInputFromView(MainActivity.this, etPaletteName);
+                buildPaletteFlagDialog();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                tempPalette = null;
+                Utils.hideSoftInputFromView(MainActivity.this, etPaletteName);
+                buildAddPaletteDialog();
+            }
+        });
+        builder.create().show();
+    }
+    // Rename palette dialog
+    private void buildRenamePaletteDialog (@NonNull final String oldName) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_save_palette, null);
+        final EditText etPaletteName = view.findViewById(R.id.et_palette_name);
+        etPaletteName.setFilters(new InputFilter[] {
+                new InputFilter() {
+                    @Override
+                    public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+                        for (int i = start; i < end; i ++) {
+                            if (Character.toString(source.charAt(i)).equals("/")) {
+                                return "";
+                            }
+                        }
+                        return null;
+                    }
+                }
+        });
+        etPaletteName.setText(oldName);
+        RecyclerView recyclerPalettes = view.findViewById(R.id.recycler_palettes);
+        recyclerPalettes.setLayoutManager(new LinearLayoutManager(this));
+        List<String> externalPaletteNames = Editor.getExternalPaletteNames();
+        TextViewListAdapter adapter = new TextViewListAdapter(this, externalPaletteNames,
+                VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_palette_24, getTheme()));
+        adapter.setOnItemClickListener(new TextViewListAdapter.OnItemClickListener() {
+            @Override
+            public void onClick(int position) {
+                etPaletteName.setText(externalPaletteNames.get(position));
+            }
+        });
+        recyclerPalettes.setAdapter(adapter);
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialogTempPaletteName = etPaletteName.getText().toString();
+                if (dialogTempPaletteName.equals(oldName)) {
+                    dialog.cancel();
+                    return;
+                }
+                File srcFile = new File(Editor.getExternalPalettePathName(oldName));
+                File destFile = new File(Editor.getExternalPalettePathName(dialogTempPaletteName));
+                if (destFile.exists()) {
+                    if (destFile.isFile()) {
+                        dialog.dismiss();
+                        buildFileSameNameDialog(new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                try {
+                                    FileUtils.forceDelete(destFile);
+                                    FileUtils.moveFile(srcFile, destFile);
+                                    if (editor.getPaletteFlag() == PaletteFlag.EXTERNAL) {
+                                        editor.removeExternalPalette();
+                                        editor.loadExternalPalette(dialogTempPaletteName);
+                                    }
+                                }
+                                catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                buildPaletteFlagDialog();
+                            }
+                        }, new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                buildPaletteFlagDialog();
+                            }
+                        });
+                    }
+                }
+                else {
+                    try {
+                        FileUtils.moveFile(srcFile, destFile);
+                    }
+                    catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    dialog.cancel();
+                }
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                Utils.hideSoftInputFromView(MainActivity.this, etPaletteName);
+                buildPaletteFlagDialog();
+            }
+        });
+        builder.create().show();
+    }
+    // Reset palette dialog
     private void buildResetPaletteDialog(DialogInterface.OnClickListener positiveListener,
                                          DialogInterface.OnCancelListener cancelListener) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(R.string.warning_reset_palette);
+        builder.setPositiveButton(android.R.string.ok, positiveListener);
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(cancelListener);
+        builder.create().show();
+    }
+    // Delete file dialog
+    private void buildDeleteFileDialog(DialogInterface.OnClickListener positiveListener,
+                                       DialogInterface.OnCancelListener cancelListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.warning_delete_file);
+        builder.setPositiveButton(android.R.string.ok, positiveListener);
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(cancelListener);
+        builder.create().show();
+    }
+    // File same name dialog
+    private void buildFileSameNameDialog(DialogInterface.OnClickListener positiveListener,
+                                         DialogInterface.OnCancelListener cancelListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.warning_same_name_file);
         builder.setPositiveButton(android.R.string.ok, positiveListener);
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
             @Override

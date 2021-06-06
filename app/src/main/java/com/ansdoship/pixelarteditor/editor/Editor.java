@@ -36,7 +36,13 @@ import com.ansdoship.pixelarteditor.editor.graphics.BitmapEncoder;
 import com.ansdoship.pixelarteditor.editor.buffer.ToolBufferPool;
 import com.ansdoship.pixelarteditor.util.Utils;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class Editor {
 	
@@ -1151,6 +1157,27 @@ public final class Editor {
 
     public void setPaletteFlag(int paletteFlag) {
         this.paletteFlag = paletteFlag;
+        if (listPalettes != null) {
+            switch (paletteFlag) {
+                case PaletteFlag.BACKGROUND:
+                    listPalettes.setPalette(backgroundPalette);
+                    break;
+                case PaletteFlag.GRID:
+                    listPalettes.setPalette(gridPalette);
+                    break;
+                case PaletteFlag.INTERNAL:
+                    listPalettes.setPalette(builtinPalette);
+                    break;
+                case PaletteFlag.EXTERNAL:
+                    listPalettes.setPalette(externalPalette);
+                    break;
+            }
+        }
+    }
+
+    public void removeExternalPalette() {
+        externalPaletteName = null;
+        externalPalette = null;
     }
 
     public int getPaletteFlag() {
@@ -1258,12 +1285,19 @@ public final class Editor {
 
     public void loadExternalPalette(@Nullable String externalPaletteName) {
         if (externalPalette != null) {
-            PaletteFactory.encodeFile(externalPalette, getExternalPalettePathName(getExternalPaletteName()), true);
+            if (!this.externalPaletteName.equals(externalPaletteName)) {
+                PaletteFactory.encodeFile(externalPalette, getExternalPalettePathName(getExternalPaletteName()), true);
+            }
         }
         if (externalPaletteName != null) {
             externalPalette = PaletteFactory.decodeFile(getExternalPalettePathName(externalPaletteName));
             if (externalPalette != null) {
                 setExternalPaletteName(externalPaletteName);
+                if (listPalettes != null) {
+                    if (paletteFlag == PaletteFlag.EXTERNAL) {
+                        listPalettes.setPalette(externalPalette);
+                    }
+                }
             }
         }
     }
@@ -1271,6 +1305,17 @@ public final class Editor {
     @Nullable
     public Palette getExternalPalette() {
         return externalPalette;
+    }
+
+    @NonNull
+    public static List<String> getExternalPaletteNames() {
+        File[] externalPaletteFiles = FileUtils.listFiles(new File(getPalettesPath()),
+                new String[]{"palette"}, false).toArray(new File[0]);
+        List<String> externalPaletteNames = new ArrayList<>();
+        for (File externalPaletteFile : externalPaletteFiles) {
+            externalPaletteNames.add(FilenameUtils.getBaseName(externalPaletteFile.getName()));
+        }
+        return externalPaletteNames;
     }
 
     public static String getPalettesPath() {

@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,6 +14,12 @@ import androidx.core.os.EnvironmentCompat;
 import java.io.File;
 
 public final class Utils {
+
+    public static void hideSoftInputFromView(@NonNull Context context, @NonNull View view) {
+        ((InputMethodManager) (context.getSystemService(Context.INPUT_METHOD_SERVICE)))
+                .hideSoftInputFromWindow(view.getWindowToken(),
+                        InputMethodManager.HIDE_NOT_ALWAYS);
+    }
 
     // Calculate linear distance of two fingers
     public static double spacing(@NonNull MotionEvent event) {
