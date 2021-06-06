@@ -1,39 +1,39 @@
 package com.ansdoship.pixelarteditor;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.PixelFormat;
-import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.ansdoship.pixelarteditor.editor.Editor;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
-import com.ansdoship.pixelarteditor.editor.buffer.FillBuffer;
-import com.ansdoship.pixelarteditor.editor.buffer.MultiBuffer;
-import com.ansdoship.pixelarteditor.editor.buffer.PaintBuffer;
-import com.ansdoship.pixelarteditor.editor.buffer.PointBuffer;
-import com.ansdoship.pixelarteditor.util.Utils;
 import com.ansdoship.pixelarteditor.ui.view.CanvasView;
 import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
+import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.ImageViewListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup;
 import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -63,6 +63,160 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // CanvasView
     private CanvasView canvasView;
 
+    // DIALOGS
+    // Paint flag dialog
+    private void buildPaintFlagDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        String [] items = {
+                getString(R.string.replace),
+                getString(R.string.override)
+        };
+        int checkedItem = -1;
+        switch (editor.getPaintFlag()) {
+            case ToolFlag.PaintFlag.REPLACE:
+                checkedItem = 0;
+                break;
+            case ToolFlag.PaintFlag.OVERRIDE:
+                checkedItem = 1;
+                break;
+        }
+        builder.setSingleChoiceItems(items, checkedItem, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(final DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        editor.setPaintFlag(ToolFlag.PaintFlag.REPLACE);
+                        break;
+                    case 1:
+                        editor.setPaintFlag(ToolFlag.PaintFlag.OVERRIDE);
+                        break;
+                }
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
+    }
+    // Paint width dialog
+    private int dialogTempPaintWidth;
+    @SuppressLint("SetTextI18n")
+    private void buildPaintWidthDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_paint_width, null);
+        SeekBar barPaintWidthValue = view.findViewById(R.id.bar_paint_width_value);
+        final TextView tvPaintWidthValue = view.findViewById(R.id.tv_paint_width_value);
+        barPaintWidthValue.setProgress(editor.getPaintWidth() - 1);
+        tvPaintWidthValue.setText(Integer.toString(editor.getPaintWidth()));
+        barPaintWidthValue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                dialogTempPaintWidth = progress + 1;
+                tvPaintWidthValue.setText(Integer.toString(dialogTempPaintWidth));
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                editor.setPaintWidth(dialogTempPaintWidth);
+                tvPaintWidth.setText(Integer.toString(editor.getPaintWidth()));
+                tvPaintWidth.requestLayout();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {}
+        });
+        builder.create().show();
+    }
+    // Shape flag dialog
+    private void buildShapeFlagDialog () {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_recycler_view, null);
+        builder.setView(view);
+        final AlertDialog alertDialog = builder.create();
+        RecyclerView recyclerView = (RecyclerView) view;
+        List<Drawable> images = new ArrayList<>();
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_line_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_circle_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_ellipse_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_square_24, getTheme()));
+        images.add(VectorDrawableCompat.create(getResources(), R.drawable.ic_outline_rectangle_24, getTheme()));
+        int checkedPosition = -1;
+        switch (editor.getShapeFlag()) {
+            case ToolFlag.ShapeFlag.LINE:
+                checkedPosition = 0;
+                break;
+            case ToolFlag.ShapeFlag.CIRCLE:
+                checkedPosition = 1;
+                break;
+            case ToolFlag.ShapeFlag.ELLIPSE:
+                checkedPosition = 2;
+                break;
+            case ToolFlag.ShapeFlag.SQUARE:
+                checkedPosition = 3;
+                break;
+            case ToolFlag.ShapeFlag.RECTANGLE:
+                checkedPosition = 4;
+                break;
+        }
+        ImageViewListAdapter adapter = new ImageViewListAdapter(this, images, checkedPosition);
+        adapter.setOnItemClickListener(new ImageViewListAdapter.OnItemClickListener() {
+            @Override
+            public void onClick(int position) {
+                switch (position) {
+                    case 0:
+                        editor.setShapeFlag(ToolFlag.ShapeFlag.LINE);
+                        imgShape.setImageDrawable(VectorDrawableCompat.create(getResources(),
+                                R.drawable.ic_line_24, getTheme()));
+                        break;
+                    case 1:
+                        editor.setShapeFlag(ToolFlag.ShapeFlag.CIRCLE);
+                        imgShape.setImageDrawable(VectorDrawableCompat.create(getResources(),
+                                R.drawable.ic_outline_circle_24, getTheme()));
+                        break;
+                    case 2:
+                        editor.setShapeFlag(ToolFlag.ShapeFlag.ELLIPSE);
+                        imgShape.setImageDrawable(VectorDrawableCompat.create(getResources(),
+                                R.drawable.ic_outline_ellipse_24, getTheme()));
+                        break;
+                    case 3:
+                        editor.setShapeFlag(ToolFlag.ShapeFlag.SQUARE);
+                        imgShape.setImageDrawable(VectorDrawableCompat.create(getResources(),
+                                R.drawable.ic_outline_square_24, getTheme()));
+                        break;
+                    case 4:
+                        editor.setShapeFlag(ToolFlag.ShapeFlag.RECTANGLE);
+                        imgShape.setImageDrawable(VectorDrawableCompat.create(getResources(),
+                                R.drawable.ic_outline_rectangle_24, getTheme()));
+                        break;
+                }
+                alertDialog.dismiss();
+            }
+        });
+        recyclerView.setLayoutManager(new GridLayoutManager(this,
+                5, RecyclerView.VERTICAL, false));
+        recyclerView.setAdapter(adapter);
+        alertDialog.show();
+    }
+    // Permission dialog
+    private void buildPermissionDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.warning_permission_denied);
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                finish();
+            }
+        });
+        builder.create().show();
+    }
+
     // ON CLICK
     @SuppressLint("NonConstantResourceId")
     @Override
@@ -71,7 +225,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.tv_image_name:
                 break;
             case R.id.img_grid:
-
+                editor.setGridVisible(!editor.isGridVisible());
+                if (editor.isGridVisible()) {
+                    imgGrid.setImageDrawable(VectorDrawableCompat.create(getResources(),
+                            R.drawable.ic_baseline_grid_off_24, getTheme()));
+                }
+                else {
+                    imgGrid.setImageDrawable(VectorDrawableCompat.create(getResources(),
+                            R.drawable.ic_baseline_grid_24, getTheme()));
+                }
                 break;
             case R.id.img_undo:
                 editor.getToolBufferPool().undo();
@@ -85,7 +247,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //buildMenuPopup();
                 break;
             case R.id.tv_paint_width:
-                //buildPaintWidthDialog();
+                buildPaintWidthDialog();
                 break;
             case R.id.img_palette:
                 //buildSelectPaletteDialog();
@@ -100,7 +262,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (requestCode == 1) {
             dataSaved = true;
             if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                // FIXME: BUILD PERMISSION DIALOG
+                buildPermissionDialog();
             }
             else {
                 recreate();
@@ -241,6 +403,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         editor.setCanvasView(canvasView);
 
         // Set widget hints
+        // Set grid visible
+        if (editor.isGridVisible()) {
+            imgGrid.setImageDrawable(VectorDrawableCompat.create(getResources(),
+                    R.drawable.ic_baseline_grid_off_24, getTheme()));
+        }
+        else {
+            imgGrid.setImageDrawable(VectorDrawableCompat.create(getResources(),
+                    R.drawable.ic_baseline_grid_24, getTheme()));
+        }
         // Set paint width text
         tvPaintWidth.setText(Integer.toString(editor.getPaintWidth()));
         // Set shape ImageButton image
@@ -354,14 +525,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         // Double tap
         groupTools.setOnDoubleTapListener(new CheckedImageGroup.OnDoubleTapListener() {
+            @SuppressLint("NonConstantResourceId")
             @Override
             public void onDoubleTap(CheckedImageGroup group, int checkedId, int checkedIndex) {
                 switch (checkedId) {
                     case R.id.img_paint:
-                        //buildPaintDialog();
+                        buildPaintFlagDialog();
                         break;
                     case R.id.img_shape:
-                        //buildGraphDialog();
+                        buildShapeFlagDialog();
                         break;
                 }
             }

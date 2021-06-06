@@ -304,13 +304,13 @@ public final class Editor {
     public static String IMAGE_PATH_DEFAULT() {
         return Utils.getFilesPath("images");
     }
-    public final static int IMAGE_SCALE_DEFAULT = 20;
-    public final static int IMAGE_TRANSLATION_X_DEFAULT = 100;
-    public final static int IMAGE_TRANSLATION_Y_DEFAULT = 100;
+    public final static int IMAGE_SCALE_DEFAULT = 40;
+    public final static int IMAGE_TRANSLATION_X_DEFAULT = 0;
+    public final static int IMAGE_TRANSLATION_Y_DEFAULT = 0;
     public final static int IMAGE_ORIGIN_X_DEFAULT = 0;
     public final static int IMAGE_ORIGIN_Y_DEFAULT = 0;
-    public final static int IMAGE_WIDTH_DEFAULT = 32;
-    public final static int IMAGE_HEIGHT_DEFAULT = 32;
+    public final static int IMAGE_WIDTH_DEFAULT = 16;
+    public final static int IMAGE_HEIGHT_DEFAULT = 16;
     
     public final static int TOOL_FLAG_DEFAULT = ToolFlag.PAINT;
     public final static int SHAPE_FLAG_DEFAULT = ToolFlag.ShapeFlag.LINE;
@@ -756,14 +756,12 @@ public final class Editor {
                         case MotionEvent.ACTION_MOVE:
                             if(scaleMode) {
                                 newDist = Utils.spacing(event);
-                                // If distance of two fingers > 256
-                                // Replace 256 with other value to control sensitivity
                                 if(newDist != 0) {
-                                    if(newDist >= oldDist + 256) {
+                                    if(newDist >= oldDist + 256 * ApplicationUtils.getResources().getDisplayMetrics().density) {
                                         setImageScale(imageScale * 2);
                                         oldDist = newDist;
                                     }
-                                    if(newDist <= oldDist - 256) {
+                                    if(newDist <= oldDist - 256 * ApplicationUtils.getResources().getDisplayMetrics().density) {
                                         setImageScale(imageScale / 2);
                                         oldDist = newDist;
                                     }
