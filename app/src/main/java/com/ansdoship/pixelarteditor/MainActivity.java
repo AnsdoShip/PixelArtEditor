@@ -14,23 +14,30 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputFilter;
 import android.text.Spanned;
+import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.ansdoship.pixelarteditor.editor.Editor;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapDecoder;
 import com.ansdoship.pixelarteditor.editor.graphics.ColorFactory;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
@@ -39,6 +46,7 @@ import com.ansdoship.pixelarteditor.editor.ToolFlag;
 import com.ansdoship.pixelarteditor.ui.view.CanvasView;
 import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
 import com.ansdoship.pixelarteditor.ui.view.PaletteView;
+import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.FileListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.ImageViewListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.PaletteListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.TextViewListAdapter;
@@ -48,8 +56,12 @@ import com.ansdoship.pixelarteditor.util.Utils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.filefilter.NotFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -82,6 +94,59 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private PaletteList listPalettes;
     // CanvasView
     private CanvasView canvasView;
+
+    // POPUPS
+    // Menu popup
+    private void buildMenuPopup() {
+        View view = View.inflate(this, R.layout.popup_menu, null);
+        view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        final PopupWindow window = new PopupWindow(view,
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        window.setOutsideTouchable(true);
+        window.setTouchable(true);
+        window.setAnimationStyle(R.style.animTranslateInLeftBottom);
+        window.showAsDropDown(imgMenu);
+        ImageButton imgLoad = view.findViewById(R.id.img_load);
+        ImageButton imgSave = view.findViewById(R.id.img_save);
+        ImageButton imgHelp = view.findViewById(R.id.img_help);
+        ImageButton imgInfo = view.findViewById(R.id.img_info);
+        ImageButton imgExit = view.findViewById(R.id.img_exit);
+        imgLoad.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                buildLoadDialog();
+                window.dismiss();
+            }
+        });
+        imgSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //FIXME buildSaveImageDialog();
+                window.dismiss();
+            }
+        });
+        imgHelp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //FIXME HELP DIALOG
+            }
+        });
+        imgInfo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //FIXME INFO DIALOG
+            }
+        });
+        imgExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                window.dismiss();
+                finish();
+            }
+        });
+    }
 
     // DIALOGS
     // Paint flag dialog
@@ -843,6 +908,107 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setOnCancelListener(cancelListener);
         builder.create().show();
     }
+    // Load image dialog
+    private void buildLoadDialog () {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        String[] items = {
+                getString(R.string.load_image),
+                getString(R.string.new_image),
+                getString(R.string.paste_image)
+        };
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        buildLoadImageDialog();
+                        break;
+                    case 1:
+
+                        break;
+                    case 2:
+
+                        break;
+                }
+            }
+        });
+        builder.create().show();
+    }
+    // Load image dialog
+    private RecyclerView dialogTempRecyclerImageList;
+    private TextView dialogTempTvCurrentPath;
+    private AlertDialog loadImageDialog;
+    private void buildLoadImageDialog () {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_load_image, null);
+        builder.setView(view);
+        loadImageDialog = builder.create();
+        dialogTempRecyclerImageList = view.findViewById(R.id.recycler_images);
+        dialogTempRecyclerImageList.setLayoutManager(new LinearLayoutManager(this));
+        dialogTempTvCurrentPath = view.findViewById(R.id.tv_current_path);
+        dialogTempTvCurrentPath.setText(editor.getImagePath());
+        dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(editor.getImagePath()));
+        ImageView imgBack = view.findViewById(R.id.img_back);
+        imgBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String imagePath = editor.getImagePath();
+                if (!imagePath.equals("/")) {
+                    File imageParentDir = new File(imagePath).getParentFile();
+                    if (imageParentDir != null) {
+                        if (imageParentDir.canRead() && imageParentDir.canWrite()) {
+                            editor.setImagePath(imageParentDir.getAbsolutePath());
+                        }
+                    }
+                }
+                dialogTempTvCurrentPath.setText(editor.getImagePath());
+                dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(editor.getImagePath()));
+            }
+        });
+        loadImageDialog.show();
+    }
+    @NonNull
+    private FileListAdapter flushImageListAdapter (String newPath) {
+        File[] dirs = new File(newPath).listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.isDirectory();
+            }
+        });
+        Collection<File> files = FileUtils.listFiles(new File(newPath),
+                new String[] {"png", "jpg", "jpeg", "bmp"}, false);
+        List<String> dirNames = new ArrayList<>();
+        if (dirs != null) {
+            for (File dir : dirs) {
+                dirNames.add(dir.getName());
+            }
+        }
+        List<String> fileNames = new ArrayList<>();
+        for (File file : files) {
+            fileNames.add(file.getName());
+        }
+        FileListAdapter adapter = new FileListAdapter(MainActivity.this, dirNames, fileNames,
+                VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_file_24, getTheme()));
+        adapter.setOnItemClickListener(new FileListAdapter.OnItemClickListener() {
+            @Override
+            public void onDirectoryClick(String name, int position) {
+                editor.setImagePath(editor.getImagePath() + "/" + name);
+                dialogTempTvCurrentPath.setText(editor.getImagePath());
+                dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(editor.getImagePath()));
+            }
+            @Override
+            public void onFileClick(String name, int position) {
+                Bitmap bitmap = BitmapDecoder.decodeFile(editor.getImagePath() + "/" + name);
+                if (bitmap != null) {
+                    editor.setImageName(name);
+                    tvImageName.setText(name);
+                    editor.setBitmap(bitmap);
+                    loadImageDialog.dismiss();
+                }
+            }
+        });
+        return adapter;
+    }
     // Delete file dialog
     private void buildDeleteFileDialog(DialogInterface.OnClickListener positiveListener,
                                        DialogInterface.OnCancelListener cancelListener) {
@@ -892,6 +1058,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(@NonNull View view) {
         switch (view.getId()) {
             case R.id.tv_image_name:
+                // FIXME IMAGE NAME DIALOG
                 break;
             case R.id.img_grid:
                 editor.setGridVisible(!editor.isGridVisible());
@@ -913,7 +1080,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 canvasView.invalidate();
                 break;
             case R.id.img_menu:
-                //buildMenuPopup();
+                buildMenuPopup();
                 break;
             case R.id.tv_paint_width:
                 buildPaintWidthDialog();
@@ -1044,6 +1211,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Get widgets & set listeners
         // TopBar
         tvImageName = findViewById(R.id.tv_image_name);
+        tvImageName.setText(editor.getImageName());
         imgGrid = findViewById(R.id.img_grid);
         imgUndo = findViewById(R.id.img_undo);
         imgRedo = findViewById(R.id.img_redo);

@@ -1391,6 +1391,7 @@ public final class Editor {
         toolBufferPool = ToolBufferPool.createToolBufferPool(cacheBitmap,
                 MAX_BUFFER_SIZE_DEFAULT, false);
         replaceCurrentBitmap(toolBufferPool.getCurrentBitmap());
+        invalidateCanvasView();
     }
 
     public void invalidateCanvasView() {
