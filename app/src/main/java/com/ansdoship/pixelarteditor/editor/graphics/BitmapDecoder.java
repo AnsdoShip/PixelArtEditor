@@ -47,6 +47,9 @@ public final class BitmapDecoder {
                 bitmap = bitmap.copy(bitmap.getConfig(), true);
                 BitmapUtils.recycleBitmap(temp);
             }
+            if (!bitmap.hasAlpha()) {
+                bitmap.setHasAlpha(true);
+            }
         }
         return bitmap;
     }
@@ -75,6 +78,9 @@ public final class BitmapDecoder {
                 bitmap = bitmap.copy(bitmap.getConfig(), true);
                 BitmapUtils.recycleBitmap(temp);
             }
+            if (!bitmap.hasAlpha()) {
+                bitmap.setHasAlpha(true);
+            }
         }
         return bitmap;
     }
@@ -100,6 +106,9 @@ public final class BitmapDecoder {
                 Bitmap temp = bitmap;
                 bitmap = bitmap.copy(bitmap.getConfig(), true);
                 BitmapUtils.recycleBitmap(temp);
+            }
+            if (!bitmap.hasAlpha()) {
+                bitmap.setHasAlpha(true);
             }
         }
         return bitmap;
@@ -130,6 +139,9 @@ public final class BitmapDecoder {
                 bitmap = bitmap.copy(bitmap.getConfig(), true);
                 BitmapUtils.recycleBitmap(temp);
             }
+            if (!bitmap.hasAlpha()) {
+                bitmap.setHasAlpha(true);
+            }
         }
         return bitmap;
     }
@@ -153,6 +165,9 @@ public final class BitmapDecoder {
                 Bitmap temp = bitmap;
                 bitmap = bitmap.copy(bitmap.getConfig(), true);
                 BitmapUtils.recycleBitmap(temp);
+            }
+            if (!bitmap.hasAlpha()) {
+                bitmap.setHasAlpha(true);
             }
         }
         return bitmap;
@@ -185,6 +200,9 @@ public final class BitmapDecoder {
                 Bitmap temp = bitmap;
                 bitmap = bitmap.copy(bitmap.getConfig(), true);
                 BitmapUtils.recycleBitmap(temp);
+            }
+            if (!bitmap.hasAlpha()) {
+                bitmap.setHasAlpha(true);
             }
         }
         return bitmap;
@@ -251,11 +269,14 @@ public final class BitmapDecoder {
         if (drawable instanceof BitmapDrawable) {
             Bitmap bitmap = ((BitmapDrawable)drawable).getBitmap();
             if (bitmap != null) {
-                if (!bitmap.isMutable()) {
-                    Bitmap temp = bitmap;
-                    bitmap = bitmap.copy(bitmap.getConfig(), true);
-                    BitmapUtils.recycleBitmap(temp);
-                }
+            if (!bitmap.isMutable()) {
+                Bitmap temp = bitmap;
+                bitmap = bitmap.copy(bitmap.getConfig(), true);
+                BitmapUtils.recycleBitmap(temp);
+            }
+            if (!bitmap.hasAlpha()) {
+                bitmap.setHasAlpha(true);
+            }
             }
             return bitmap;
         }

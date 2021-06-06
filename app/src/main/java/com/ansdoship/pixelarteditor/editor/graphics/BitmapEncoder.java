@@ -69,6 +69,36 @@ public final class BitmapEncoder {
 		return null;
 	}
 
+	public static boolean encodeFile(@NonNull String pathname, @NonNull Bitmap bitmap, boolean override,
+									 @NonNull CompressFormat format, int quality) {
+		return encodeFile(new File(pathname), bitmap, override, format, quality);
+	}
+
+	public static boolean encodeFile(@NonNull File file, @NonNull Bitmap bitmap, boolean override,
+									 @NonNull CompressFormat format, int quality) {
+		final boolean[] result = new boolean[1];
+		encodeFile(file, bitmap, override, format, quality, new Callback() {
+			@Override
+			public void onCreateFailure() {
+				result[0] = false;
+			}
+			@Override
+			public void onCompressFailure() {
+				result[0] = false;
+			}
+			@Override
+			public void onFileExists(boolean isDirectory) {
+				result[0] = false;
+			}
+			@Override
+			public void onIOException(IOException e) {
+				e.printStackTrace();
+				result[0] = false;
+			}
+		});
+		return result[0];
+	}
+
 	public static void encodeFile (@NonNull String pathname, @NonNull Bitmap bitmap,
 								   boolean override, @NonNull CompressFormat format,
 								   int quality, @NonNull Callback callback) {

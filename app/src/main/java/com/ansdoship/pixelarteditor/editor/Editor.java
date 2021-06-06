@@ -34,6 +34,7 @@ import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapDecoder;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapEncoder;
 import com.ansdoship.pixelarteditor.editor.buffer.ToolBufferPool;
+import com.ansdoship.pixelarteditor.util.MathUtils;
 import com.ansdoship.pixelarteditor.util.Utils;
 
 import org.apache.commons.io.FileUtils;
@@ -69,6 +70,10 @@ public final class Editor {
     
     public final static String KEY_IMAGE_NAME = "image_name";
     private String imageName;
+    public final static String KEY_IMAGE_FORMAT = "image_format";
+    private String imageFormat;
+    public final static String KEY_IMAGE_QUALITY = "image_quality";
+    private int imageQuality;
     public final static String KEY_IMAGE_PATH = "image_path";
     private String imagePath;
     public final static String KEY_IMAGE_SCALE = "image_scale";
@@ -192,6 +197,8 @@ public final class Editor {
         }
 
         setImageName(preferences.getString(KEY_IMAGE_NAME, IMAGE_NAME_DEFAULT()));
+        setImageFormat(preferences.getString(KEY_IMAGE_FORMAT, IMAGE_FORMAT_DEFAULT));
+        setImageQuality(preferences.getInt(KEY_IMAGE_QUALITY, IMAGE_QUALITY_DEFAULT));
         setImagePath(preferences.getString(KEY_IMAGE_PATH, IMAGE_PATH_DEFAULT()));
         setImageScale(preferences.getInt(KEY_IMAGE_SCALE, IMAGE_SCALE_DEFAULT));
         setImageTranslationX(preferences.getInt(KEY_IMAGE_TRANSLATION_X, IMAGE_TRANSLATION_X_DEFAULT));
@@ -246,6 +253,8 @@ public final class Editor {
         SharedPreferences.Editor editor = preferences.edit();
         editor.clear();
         editor.putString(KEY_IMAGE_NAME, imageName);
+        editor.putString(KEY_IMAGE_FORMAT, imageFormat);
+        editor.putInt(KEY_IMAGE_QUALITY, imageQuality);
         editor.putString(KEY_IMAGE_PATH, imagePath);
         editor.putInt(KEY_IMAGE_SCALE, imageScale);
         editor.putInt(KEY_IMAGE_TRANSLATION_X, imageTranslationX);
@@ -308,6 +317,10 @@ public final class Editor {
     public static String IMAGE_NAME_DEFAULT() {
     	return ApplicationUtils.getApplicationContext().getString(R.string.image_name_default);
     }
+    public final static String IMAGE_FORMAT_DEFAULT = "png";
+    public final static int IMAGE_QUALITY_MAX = 100;
+    public final static int IMAGE_QUALITY_MIN = 30;
+    public final static int IMAGE_QUALITY_DEFAULT = IMAGE_QUALITY_MAX;
     public static String IMAGE_PATH_DEFAULT() {
         return Utils.getFilesPath("images");
     }
@@ -1059,6 +1072,22 @@ public final class Editor {
 
     public String getImageName() {
         return imageName;
+    }
+
+    public void setImageFormat(String imageFormat) {
+        this.imageFormat = imageFormat;
+    }
+
+    public String getImageFormat() {
+        return imageFormat;
+    }
+
+    public void setImageQuality(int imageQuality) {
+        this.imageQuality = MathUtils.clamp(imageQuality, IMAGE_QUALITY_MIN, IMAGE_QUALITY_MAX);
+    }
+
+    public int getImageQuality() {
+        return imageQuality;
     }
 
     public void setImagePath(String imagePath) {

@@ -24,10 +24,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.InputFilter;
 import android.text.Spanned;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -38,6 +36,7 @@ import android.widget.TextView;
 
 import com.ansdoship.pixelarteditor.editor.Editor;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapDecoder;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapEncoder;
 import com.ansdoship.pixelarteditor.editor.graphics.ColorFactory;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
@@ -56,9 +55,6 @@ import com.ansdoship.pixelarteditor.util.Utils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.commons.io.filefilter.NotFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -123,7 +119,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //FIXME buildSaveImageDialog();
+                buildSaveDialog();
                 window.dismiss();
             }
         });
@@ -938,10 +934,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private RecyclerView dialogTempRecyclerImageList;
     private TextView dialogTempTvCurrentPath;
     private AlertDialog loadImageDialog;
+    private boolean dialogTempLoadImage;
     private void buildLoadImageDialog () {
+        dialogTempLoadImage = true;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = View.inflate(this, R.layout.dialog_load_image, null);
         builder.setView(view);
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                buildLoadDialog();
+            }
+        });
         loadImageDialog = builder.create();
         dialogTempRecyclerImageList = view.findViewById(R.id.recycler_images);
         dialogTempRecyclerImageList.setLayoutManager(new LinearLayoutManager(this));
@@ -966,6 +970,209 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         loadImageDialog.show();
+    }
+    // Save image dialog
+    private String dialogTempImageName;
+    private void buildSaveDialog () {
+        dialogTempLoadImage = false;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_save_image, null);
+        final TextView tvImageFormat = view.findViewById(R.id.tv_image_format);
+        tvImageFormat.setText(".");
+        tvImageFormat.append(editor.getImageFormat());
+        tvImageFormat.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                buildImageFormatDialog(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        tvImageFormat.setText(".");
+                        tvImageFormat.append(editor.getImageFormat());
+                    }
+                });
+            }
+        });
+        final EditText etImageName = view.findViewById(R.id.et_image_name);
+        etImageName.setText(editor.getImageName());
+        etImageName.setFilters(new InputFilter[] {
+                new InputFilter() {
+                    @Override
+                    public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+                        for (int i = start; i < end; i ++) {
+                            if (Character.toString(source.charAt(i)).equals("/")) {
+                                return "";
+                            }
+                        }
+                        return null;
+                    }
+                }
+        });
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialogTempImageName = etImageName.getText().toString();
+                String imageFormat = editor.getImageFormat();
+                BitmapEncoder.CompressFormat compressFormat;
+                switch (imageFormat) {
+                    case "jpeg":
+                        compressFormat = BitmapEncoder.CompressFormat.JPEG;
+                        dialogTempImageName = dialogTempImageName + ".jpeg";
+                        break;
+                    case "bmp":
+                        compressFormat = BitmapEncoder.CompressFormat.BMP;
+                        dialogTempImageName = dialogTempImageName + ".bmp";
+                        break;
+                    default:
+                        compressFormat = BitmapEncoder.CompressFormat.PNG;
+                        dialogTempImageName = dialogTempImageName + ".png";
+                        break;
+                }
+                Utils.hideSoftInputFromView(MainActivity.this, etImageName);
+                BitmapEncoder.encodeFile(editor.getImagePath() + "/" + dialogTempImageName,
+                        editor.getToolBufferPool().getCurrentBitmap(),
+                        false, compressFormat, editor.getImageQuality(),
+                        new BitmapEncoder.Callback() {
+                            @Override
+                            public void onCreateFailure() {}
+                            @Override
+                            public void onCompressFailure() {}
+                            @Override
+                            public void onFileExists(boolean isDirectory) {
+                                if (!isDirectory) {
+                                    buildFileSameNameDialog(new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            BitmapEncoder.encodeFile(editor.getImagePath() + "/" + dialogTempImageName,
+                                                    editor.getCurrentBitmap(), true,
+                                                    compressFormat, editor.getImageQuality());
+                                        }
+                                    }, new DialogInterface.OnCancelListener() {
+                                        @Override
+                                        public void onCancel(DialogInterface dialog) {
+                                            Utils.hideSoftInputFromView(MainActivity.this, etImageName);
+                                            buildSaveDialog();
+                                        }
+                                    });
+                                }
+                            }
+                            @Override
+                            public void onIOException(IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                Utils.hideSoftInputFromView(MainActivity.this, etImageName);
+            }
+        });
+        dialogTempRecyclerImageList = view.findViewById(R.id.recycler_images);
+        dialogTempRecyclerImageList.setLayoutManager(new LinearLayoutManager(this));
+        dialogTempTvCurrentPath = view.findViewById(R.id.tv_current_path);
+        dialogTempTvCurrentPath.setText(editor.getImagePath());
+        dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(editor.getImagePath()));
+        ImageView imgBack = view.findViewById(R.id.img_back);
+        imgBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String imagePath = editor.getImagePath();
+                if (!imagePath.equals("/")) {
+                    File imageParentDir = new File(imagePath).getParentFile();
+                    if (imageParentDir != null) {
+                        if (imageParentDir.canRead() && imageParentDir.canWrite()) {
+                            editor.setImagePath(imageParentDir.getAbsolutePath());
+                        }
+                    }
+                }
+                dialogTempTvCurrentPath.setText(editor.getImagePath());
+                dialogTempRecyclerImageList.setAdapter(flushImageListAdapter(editor.getImagePath()));
+            }
+        });
+        builder.setView(view);
+        builder.create().show();
+    }
+    private int dialogTempImageQuality;
+    private void buildImageFormatDialog (DialogInterface.OnCancelListener listener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_image_format, null);
+        final TabHost tabHost = view.findViewById(R.id.tabhost_image_format);
+        tabHost.setup();
+        TabHost.TabSpec png = tabHost.newTabSpec("png");
+        png.setIndicator("PNG");
+        png.setContent(R.id.ll_empty);
+        tabHost.addTab(png);
+        TabHost.TabSpec jpeg = tabHost.newTabSpec("jpeg");
+        jpeg.setIndicator("JPEG");
+        jpeg.setContent(R.id.ll_jpeg_quality);
+        tabHost.addTab(jpeg);
+        TabHost.TabSpec bmp = tabHost.newTabSpec("bmp");
+        bmp.setIndicator("BMP");
+        bmp.setContent(R.id.ll_empty);
+        tabHost.addTab(bmp);
+        if (editor.getImageFormat().equals("png")) {
+            tabHost.setCurrentTabByTag("png");
+        }
+        if (editor.getImageFormat().equals("jpeg")) {
+            tabHost.setCurrentTabByTag("jpeg");
+        }
+        if (editor.getImageFormat().equals("bmp")) {
+            tabHost.setCurrentTabByTag("bmp");
+        }
+        dialogTempImageQuality = editor.getImageQuality();
+        final TextView tvJpegQuality = view.findViewById(R.id.tv_jpeg_quality);
+        SeekBar barJpegQuality = view.findViewById(R.id.bar_jpeg_quality);
+        tvJpegQuality.setText(R.string.quality);
+        tvJpegQuality.append(": ");
+        tvJpegQuality.append(Integer.toString(dialogTempImageQuality));
+        barJpegQuality.setProgress(dialogTempImageQuality - 30);
+        barJpegQuality.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                dialogTempImageQuality = progress + 30;
+                tvJpegQuality.setText(R.string.quality);
+                tvJpegQuality.append(": ");
+                tvJpegQuality.append(Integer.toString(dialogTempImageQuality));
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (tabHost.getCurrentTab()) {
+                    case 0:
+                        editor.setImageFormat("png");
+                        break;
+                    case 1:
+                        editor.setImageFormat("jpeg");
+                        break;
+                    case 2:
+                        editor.setImageFormat("bmp");
+                        break;
+                }
+                editor.setImageQuality(dialogTempImageQuality);
+                dialog.cancel();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.setOnCancelListener(listener);
+        builder.create().show();
     }
     @NonNull
     private FileListAdapter flushImageListAdapter (String newPath) {
@@ -998,12 +1205,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
             @Override
             public void onFileClick(String name, int position) {
-                Bitmap bitmap = BitmapDecoder.decodeFile(editor.getImagePath() + "/" + name);
-                if (bitmap != null) {
-                    editor.setImageName(name);
-                    tvImageName.setText(name);
-                    editor.setBitmap(bitmap);
-                    loadImageDialog.dismiss();
+                if (dialogTempLoadImage) {
+                    Bitmap bitmap = BitmapDecoder.decodeFile(editor.getImagePath() + "/" + name);
+                    if (bitmap != null) {
+                        editor.setImageName(FilenameUtils.getBaseName(name));
+                        tvImageName.setText(editor.getImageName());
+                        editor.setBitmap(bitmap);
+                        if (loadImageDialog != null) {
+                            loadImageDialog.dismiss();
+                        }
+                    }
                 }
             }
         });
@@ -1039,6 +1250,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setOnCancelListener(cancelListener);
         builder.create().show();
     }
+    // Image name dialog
+    private void buildImageNameDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(editor.getImageName());
+        builder.create().show();
+    }
     // Permission dialog
     private void buildPermissionDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -1058,7 +1275,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(@NonNull View view) {
         switch (view.getId()) {
             case R.id.tv_image_name:
-                // FIXME IMAGE NAME DIALOG
+                buildImageNameDialog();
                 break;
             case R.id.img_grid:
                 editor.setGridVisible(!editor.isGridVisible());
