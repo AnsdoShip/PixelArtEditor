@@ -14,6 +14,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
@@ -26,15 +27,18 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
+import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.ansdoship.pixelarteditor.editor.Editor;
+import com.ansdoship.pixelarteditor.editor.graphics.ColorFactory;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
 import com.ansdoship.pixelarteditor.ui.view.CanvasView;
 import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
+import com.ansdoship.pixelarteditor.ui.view.PaletteView;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.ImageViewListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.PaletteListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.TextViewListAdapter;
@@ -219,6 +223,235 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 5, RecyclerView.VERTICAL, false));
         recyclerView.setAdapter(adapter);
         alertDialog.show();
+    }
+    // Color picker dialog
+    private int dialogTempColor;
+    private int dialogTempColorH;
+    private float dialogTempColorS;
+    private float dialogTempColorV;
+    @SuppressLint("SetTextI18n")
+    private void buildColorPickerDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_palette, null);
+        TabHost tabHost = view.findViewById(R.id.tabhost_palette);
+        tabHost.setup();
+        TabHost.TabSpec rgb = tabHost.newTabSpec("rgb");
+        rgb.setIndicator("RGB");
+        rgb.setContent(R.id.ll_palette_rgb);
+        tabHost.addTab(rgb);
+        TabHost.TabSpec hsv = tabHost.newTabSpec("hsv");
+        hsv.setIndicator("HSV");
+        hsv.setContent(R.id.ll_palette_hsv);
+        tabHost.addTab(hsv);
+        builder.setView(view);
+        final PaletteView palette = view.findViewById(R.id.palette_dialog);
+        palette.setPaletteBackgroundColors(
+                editor.getCanvasBackgroundColor1(),
+                editor.getCanvasBackgroundColor2());
+        final TextView tvPaletteColorValue = view.findViewById(R.id.tv_palette_color_value);
+        final TextView tvColorA = view.findViewById(R.id.tv_color_a);
+        final TextView tvColorR = view.findViewById(R.id.tv_color_r);
+        final TextView tvColorG = view.findViewById(R.id.tv_color_g);
+        final TextView tvColorB = view.findViewById(R.id.tv_color_b);
+        final TextView tvColorH = view.findViewById(R.id.tv_color_h);
+        final TextView tvColorS = view.findViewById(R.id.tv_color_s);
+        final TextView tvColorV = view.findViewById(R.id.tv_color_v);
+        SeekBar barColorA = view.findViewById(R.id.bar_color_a);
+        final SeekBar barColorR = view.findViewById(R.id.bar_color_r);
+        final SeekBar barColorG = view.findViewById(R.id.bar_color_g);
+        final SeekBar barColorB = view.findViewById(R.id.bar_color_b);
+        final SeekBar barColorH = view.findViewById(R.id.bar_color_h);
+        final SeekBar barColorS = view.findViewById(R.id.bar_color_s);
+        final SeekBar barColorV = view.findViewById(R.id.bar_color_v);
+        dialogTempColor = listPalettes.getPaletteColor(listPalettes.getCheckedIndex());
+        dialogTempColorH = (int) ColorFactory.hue(dialogTempColor);
+        dialogTempColorS = ColorFactory.saturation(dialogTempColor);
+        dialogTempColorV = ColorFactory.value(dialogTempColor);
+        tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+        tvColorA.setText("A: " + Color.alpha(dialogTempColor));
+        tvColorR.setText("R: " + Color.red(dialogTempColor));
+        tvColorG.setText("G: " + Color.green(dialogTempColor));
+        tvColorB.setText("B: " + Color.blue(dialogTempColor));
+        tvColorH.setText("H: " + (int) ColorFactory.hue(dialogTempColor));
+        tvColorS.setText("S: " + (int) (ColorFactory.saturation(dialogTempColor) * 100));
+        tvColorV.setText("V: " + (int) (ColorFactory.value(dialogTempColor) * 100));
+        palette.setPaletteColor(dialogTempColor);
+        barColorA.setProgress(Color.alpha(dialogTempColor));
+        barColorR.setProgress(Color.red(dialogTempColor));
+        barColorG.setProgress(Color.green(dialogTempColor));
+        barColorB.setProgress(Color.blue(dialogTempColor));
+        barColorH.setProgress((int) ColorFactory.hue(dialogTempColor));
+        barColorS.setProgress((int) (ColorFactory.saturation(dialogTempColor) * 100));
+        barColorV.setProgress((int) (ColorFactory.value(dialogTempColor) * 100));
+        barColorA.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorA.setText("A: " + progress);
+                dialogTempColor = ColorFactory.resetAlpha(dialogTempColor, progress);
+                tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+                palette.setPaletteColor(dialogTempColor);
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorR.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorR.setText("R: " + progress);
+                if (fromUser) {
+                    dialogTempColor = ColorFactory.resetRed(dialogTempColor, progress);
+                    tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+                    barColorH.setProgress((int) ColorFactory.hue(dialogTempColor));
+                    barColorS.setProgress((int) ColorFactory.saturation(dialogTempColor) * 100);
+                    barColorV.setProgress((int) ColorFactory.value(dialogTempColor) * 100);
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorG.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorG.setText("G: " + progress);
+                if (fromUser) {
+                    dialogTempColor = ColorFactory.resetGreen(dialogTempColor, progress);
+                    tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+                    barColorH.setProgress((int) ColorFactory.hue(dialogTempColor));
+                    barColorS.setProgress((int) ColorFactory.saturation(dialogTempColor) * 100);
+                    barColorV.setProgress((int) ColorFactory.value(dialogTempColor) * 100);
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorB.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorB.setText("B: " + progress);
+                if (fromUser) {
+                    dialogTempColor = ColorFactory.resetBlue(dialogTempColor, progress);
+                    tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+                    barColorH.setProgress((int) ColorFactory.hue(dialogTempColor));
+                    barColorS.setProgress((int) ColorFactory.saturation(dialogTempColor) * 100);
+                    barColorV.setProgress((int) ColorFactory.value(dialogTempColor) * 100);
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorH.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorH.setText("H: " + progress);
+                if (fromUser) {
+                    dialogTempColorH = progress;
+                    dialogTempColor = ColorFactory.resetValue(dialogTempColor, dialogTempColorV);
+                    dialogTempColor = ColorFactory.resetSaturation(dialogTempColor, dialogTempColorS);
+                    dialogTempColor = ColorFactory.resetHue(dialogTempColor, dialogTempColorH);
+                    tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+                    barColorR.setProgress(Color.red(dialogTempColor));
+                    barColorG.setProgress(Color.green(dialogTempColor));
+                    barColorB.setProgress(Color.blue(dialogTempColor));
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorS.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorS.setText("S: " + progress);
+                if (fromUser) {
+                    dialogTempColorS = progress * 0.01f;
+                    dialogTempColor = ColorFactory.resetValue(dialogTempColor, dialogTempColorV);
+                    dialogTempColor = ColorFactory.resetSaturation(dialogTempColor, dialogTempColorS);
+                    dialogTempColor = ColorFactory.resetHue(dialogTempColor, dialogTempColorH);
+                    tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+                    barColorR.setProgress(Color.red(dialogTempColor));
+                    barColorG.setProgress(Color.green(dialogTempColor));
+                    barColorB.setProgress(Color.blue(dialogTempColor));
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        barColorV.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvColorV.setText("V: " + progress);
+                if (fromUser) {
+                    dialogTempColorV = progress * 0.01f;
+                    dialogTempColor = ColorFactory.resetValue(dialogTempColor, dialogTempColorV);
+                    dialogTempColor = ColorFactory.resetSaturation(dialogTempColor, dialogTempColorS);
+                    dialogTempColor = ColorFactory.resetHue(dialogTempColor, dialogTempColorH);
+                    tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+                    barColorR.setProgress(Color.red(dialogTempColor));
+                    barColorG.setProgress(Color.green(dialogTempColor));
+                    barColorB.setProgress(Color.blue(dialogTempColor));
+                    palette.setPaletteColor(dialogTempColor);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                listPalettes.setCheckedPaletteColor(dialogTempColor);
+                editor.flushPaint(dialogTempColor);
+                switch (editor.getPaletteFlag()) {
+                    case PaletteFlag.BACKGROUND:
+                        if (listPalettes.getCheckedIndex() == 0) {
+                            editor.setCanvasViewBackgroundColor(dialogTempColor);
+                        }
+                        else {
+                            editor.flushCanvasBackgroundPaint();
+                        }
+                        break;
+                    case PaletteFlag.GRID:
+                        editor.setGridColor(dialogTempColor);
+                        break;
+                }
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {}
+        });
+        builder.create().show();
     }
     // Palette flag dialog
     private void buildPaletteFlagDialog () {
@@ -1012,7 +1245,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         listPalettes.setOnDoubleTapListener(new PaletteList.OnDoubleTapListener() {
             @Override
             public void onDoubleTap(PaletteList list, int checkedIndex) {
-                //buildPaletteColorDialog();
+                buildColorPickerDialog();
             }
         });
     }
