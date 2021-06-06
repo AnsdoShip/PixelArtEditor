@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
 
@@ -29,10 +30,16 @@ import com.ansdoship.pixelarteditor.editor.ToolFlag;
 import com.ansdoship.pixelarteditor.ui.view.CanvasView;
 import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.ImageViewListAdapter;
+import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.PaletteListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup;
 import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -204,6 +211,156 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         recyclerView.setAdapter(adapter);
         alertDialog.show();
     }
+    // Palette flag dialog
+    private void buildPaletteFlagDialog () {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_recycler_view, null);
+        builder.setView(view);
+        builder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //buildAddPaletteDialog();
+            }
+        });
+        final AlertDialog alertDialog = builder.create();
+        RecyclerView recyclerView = (RecyclerView) view;
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        List<String> internalPaletteNames = new ArrayList<>();
+        internalPaletteNames.add(getString(R.string.background_palette));
+        internalPaletteNames.add(getString(R.string.grid_palette));
+        internalPaletteNames.add(getString(R.string.builtin_palette));
+        File[] externalPaletteFiles = FileUtils.listFiles(new File(Editor.getPalettesPath()),
+                        new String[]{"palette"}, false).toArray(new File[0]);
+        List<String> externalPaletteNames = new ArrayList<>();
+        for (File externalPaletteFile : externalPaletteFiles) {
+            externalPaletteNames.add(FilenameUtils.getBaseName(externalPaletteFile.getName()));
+        }
+        int checkedPosition = -1;
+        switch (editor.getPaletteFlag()) {
+            case PaletteFlag.BACKGROUND:
+                checkedPosition = 0;
+                break;
+            case PaletteFlag.GRID:
+                checkedPosition = 1;
+                break;
+            case PaletteFlag.INTERNAL:
+                checkedPosition = 2;
+                break;
+            case PaletteFlag.EXTERNAL:
+                checkedPosition = 3;
+                checkedPosition += externalPaletteNames.indexOf(editor.getExternalPaletteName());
+                break;
+        }
+        final PaletteListAdapter adapter = new PaletteListAdapter(this,
+                internalPaletteNames, externalPaletteNames, checkedPosition);
+        adapter.setOnItemClickListener(new PaletteListAdapter.OnItemClickListener() {
+            @Override
+            public void onInternalPaletteClick(int position) {
+                switch (position) {
+                    case 0:
+                        editor.setPaletteFlag(PaletteFlag.BACKGROUND);
+                        listPalettes.setPalette(editor.getBackgroundPalette());
+                        break;
+                    case 1:
+                        editor.setPaletteFlag(PaletteFlag.GRID);
+                        listPalettes.setPalette(editor.getGridPalette());
+                        break;
+                    case 2:
+                        editor.setPaletteFlag(PaletteFlag.INTERNAL);
+                        listPalettes.setPalette(editor.getBuiltinPalette());
+                        break;
+                }
+                editor.flushPaint(listPalettes.getCheckedPaletteColor());
+                alertDialog.dismiss();
+            }
+            @Override
+            public void onExternalPaletteClick(int position) {
+                editor.loadExternalPalette(externalPaletteNames.get(position));
+                if (editor.getExternalPalette() == null) {
+                    alertDialog.dismiss();
+                    buildPaletteFlagDialog();
+                }
+                editor.setPaletteFlag(PaletteFlag.EXTERNAL);
+                listPalettes.setPalette(editor.getExternalPalette());
+                editor.flushPaint(listPalettes.getCheckedPaletteColor());
+                alertDialog.dismiss();
+            }
+            @Override
+            public void onResetClick(int position) {
+                final int mPosition = position;
+                buildResetPaletteDialog(new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (mPosition) {
+                            case 0:
+                                editor.resetBackgroundPalette();
+                                break;
+                            case 1:
+                                editor.resetGridPalette();
+                                break;
+                            case 2:
+                                editor.resetBuiltinPalette();
+                                break;
+                        }
+                        switch (editor.getPaletteFlag()) {
+                            case PaletteFlag.BACKGROUND:
+                                listPalettes.setPalette(editor.getBackgroundPalette());
+                                break;
+                            case PaletteFlag.GRID:
+                                listPalettes.setPalette(editor.getGridPalette());
+                                break;
+                            case PaletteFlag.INTERNAL:
+                                listPalettes.setPalette(editor.getBuiltinPalette());
+                                break;
+                        }
+                        editor.flushPaint(listPalettes.getCheckedPaletteColor());
+                    }
+                }, null);
+            }
+            @Override
+            public void onRenameClick(int position) {
+                /*
+                buildRenamePaletteDialog(externalPaletteNames.get(position));
+                alertDialog.dismiss();
+
+                 */
+            }
+            @Override
+            public void onDeleteClick(final int position) {
+                /*
+                buildDeleteFileDialog(new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        FileUtils.deleteFile(externalPalettePaths.get(position));
+                        if (externalPaletteNames.get(position).equals(paletteName)) {
+                            paletteId = BUILTIN_PALETTE;
+                            listPalettes.setColorPalette(builtinPalette, listPalettes.getCheckedIndex());
+                        }
+                        alertDialog.dismiss();
+                        buildSelectPaletteDialog();
+                    }
+                }, null);
+
+                 */
+            }
+        });
+        recyclerView.setAdapter(adapter);
+        alertDialog.show();
+    }
+    private void buildResetPaletteDialog(DialogInterface.OnClickListener positiveListener,
+                                         DialogInterface.OnCancelListener cancelListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.warning_reset_palette);
+        builder.setPositiveButton(android.R.string.ok, positiveListener);
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(cancelListener);
+        builder.create().show();
+    }
     // Permission dialog
     private void buildPermissionDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -250,7 +407,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 buildPaintWidthDialog();
                 break;
             case R.id.img_palette:
-                //buildSelectPaletteDialog();
+                buildPaletteFlagDialog();
                 break;
         }
     }

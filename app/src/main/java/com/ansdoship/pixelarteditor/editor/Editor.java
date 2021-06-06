@@ -740,9 +740,6 @@ public final class Editor {
                                                 }
                                                 else {
                                                     flushCanvasBackgroundPaint();
-                                                    listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
-                                                            getCanvasBackgroundColor2());
-                                                    canvasView.invalidate();
                                                 }
                                                 break;
                                             case PaletteFlag.GRID:
@@ -890,7 +887,7 @@ public final class Editor {
                                                 moveX < toolBufferPool.getCurrentBitmap().getWidth() &&
                                                 moveY < toolBufferPool.getCurrentBitmap().getHeight()) {
                                             listPalettes.setCheckedPaletteColor(toolBufferPool.getCurrentBitmap().getPixel(moveX, moveY));
-                                            paint.setColor(listPalettes.getCheckedPaletteColor());
+                                            flushPaint(listPalettes.getCheckedPaletteColor());
                                             switch (paletteFlag) {
                                                 case PaletteFlag.BACKGROUND:
                                                     if (listPalettes.getCheckedIndex() == 0) {
@@ -898,9 +895,6 @@ public final class Editor {
                                                     }
                                                     else {
                                                         flushCanvasBackgroundPaint();
-                                                        listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
-                                                                getCanvasBackgroundColor2());
-                                                        canvasView.invalidate();
                                                     }
                                                     break;
                                                 case PaletteFlag.GRID:
@@ -1231,12 +1225,31 @@ public final class Editor {
         return gridPalette.getCurrentColor();
     }
 
+    public void resetBackgroundPalette() {
+        backgroundPalette = Palette.createPalette(BACKGROUND_PALETTE_COLORS_DEFAULT);
+        flushCanvasBackgroundPaint();
+        invalidateCanvasView();
+        if (listPalettes != null) {
+            listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
+                    getCanvasBackgroundColor2());
+        }
+    }
+
     public Palette getBackgroundPalette() {
         return backgroundPalette;
     }
 
+    public void resetGridPalette() {
+        gridPalette = Palette.createPalette(GRID_PALETTE_COLORS_DEFAULT);
+        setGridColor(gridPalette.getCurrentColor());
+    }
+
     public Palette getGridPalette() {
         return gridPalette;
+    }
+
+    public void resetBuiltinPalette() {
+        builtinPalette = Palette.createPalette(BUILTIN_PALETTE_COLORS_DEFAULT);
     }
 
     public Palette getBuiltinPalette() {
