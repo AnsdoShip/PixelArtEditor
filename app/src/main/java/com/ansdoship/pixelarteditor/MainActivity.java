@@ -396,8 +396,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tvPaintWidth.setOnClickListener(this);
         // PaletteBar
         imgPalette = findViewById(R.id.img_palette);
-        listPalettes = findViewById(R.id.list_palettes);
         imgPalette.setOnClickListener(this);
+        listPalettes = findViewById(R.id.list_palettes);
+        editor.setPaletteList(listPalettes);
         // CanvasView
         canvasView = findViewById(R.id.canvas_view);
         editor.setCanvasView(canvasView);
@@ -539,6 +540,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         // Palette list
+        // Set palette background color
+        listPalettes.setPaletteBackgroundColors(editor.getCanvasBackgroundColor1(), editor.getCanvasBackgroundColor2());
         // Select palette
         switch (editor.getPaletteFlag()) {
             case PaletteFlag.BACKGROUND:

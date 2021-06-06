@@ -26,6 +26,7 @@ import com.ansdoship.pixelarteditor.editor.buffer.PaintBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.PointBuffer;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapUtils;
 import com.ansdoship.pixelarteditor.ui.view.CanvasView;
+import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
 import com.ansdoship.pixelarteditor.util.ApplicationUtils;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
@@ -365,6 +366,8 @@ public final class Editor {
 
     private CanvasView canvasView;
 
+    private PaletteList listPalettes;
+
     private boolean selected;
     private int selectionBitmapX;
     private int selectionBitmapY;
@@ -570,6 +573,17 @@ public final class Editor {
         return backgroundPalette.getColor(2);
     }
 
+    public void setPaletteList(PaletteList paletteList) {
+        if (listPalettes == paletteList) {
+            return;
+        }
+        listPalettes = paletteList;
+    }
+
+    public PaletteList getPaletteList() {
+        return listPalettes;
+    }
+
     public void setCanvasView(CanvasView canvasView) {
         if (this.canvasView == canvasView) {
             return;
@@ -714,14 +728,15 @@ public final class Editor {
                                     }
                                     break;
                                 case ToolFlag.COLORIZE:
-                                    /*
-                                    if (downX >=0 && downY >= 0 && downX < editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getWidth() && downY < editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getHeight()) {
-                                        listPalettes.setPaletteColor(listPalettes.getCheckedIndex(), editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getPixel(downX, downY));
-                                        paint.setColor(editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getPixel(downX, downY));
-                                        switch (editor.getPaletteFlag()) {
+                                    if (downX >=0 && downY >= 0 &&
+                                            downX < toolBufferPool.getCurrentBitmap().getWidth() &&
+                                            downY < toolBufferPool.getCurrentBitmap().getHeight()) {
+                                        listPalettes.setCheckedPaletteColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
+                                        flushPaint(listPalettes.getCheckedPaletteColor());
+                                        switch (paletteFlag) {
                                             case PaletteFlag.BACKGROUND:
                                                 if (listPalettes.getCheckedIndex() == 0) {
-                                                    setCanvasViewBackgroundColor(editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getPixel(downX, downY));
+                                                    setCanvasViewBackgroundColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
                                                 }
                                                 else {
                                                     flushCanvasBackgroundPaint();
@@ -731,12 +746,10 @@ public final class Editor {
                                                 }
                                                 break;
                                             case PaletteFlag.GRID:
-                                                setGridColor(editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getPixel(downX, downY));
+                                                setGridColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
                                                 break;
                                         }
                                     }
-
-                                     */
                                     break;
                             }
                             //currentCanvas.save();
@@ -873,15 +886,17 @@ public final class Editor {
                                         selected = true;
                                         break;
                                     case ToolFlag.COLORIZE:
-                                        /*
-                                        if (moveX >=0 && moveY >= 0 && moveX < editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getWidth() && moveY < editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getHeight()) {
-                                            listPalettes.setPaletteColor(listPalettes.getCheckedIndex(), editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getPixel(moveX, moveY));
-                                            paint.setColor(editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getPixel(moveX, moveY));
-                                            switch (editor.getPaletteFlag()) {
+                                        if (moveX >=0 && moveY >= 0 &&
+                                                moveX < toolBufferPool.getCurrentBitmap().getWidth() &&
+                                                moveY < toolBufferPool.getCurrentBitmap().getHeight()) {
+                                            listPalettes.setCheckedPaletteColor(toolBufferPool.getCurrentBitmap().getPixel(moveX, moveY));
+                                            paint.setColor(listPalettes.getCheckedPaletteColor());
+                                            switch (paletteFlag) {
                                                 case PaletteFlag.BACKGROUND:
                                                     if (listPalettes.getCheckedIndex() == 0) {
-                                                        setCanvasViewBackgroundColor(editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getPixel(downX, downY));
-                                                    } else {
+                                                        setCanvasViewBackgroundColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
+                                                    }
+                                                    else {
                                                         flushCanvasBackgroundPaint();
                                                         listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
                                                                 getCanvasBackgroundColor2());
@@ -889,12 +904,10 @@ public final class Editor {
                                                     }
                                                     break;
                                                 case PaletteFlag.GRID:
-                                                    setGridColor(editor.getToolBufferPool().gettoolBufferPool.getCurrentBitmap()().getPixel(downX, downY));
+                                                    setGridColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
                                                     break;
                                             }
                                         }
-
-                                         */
                                         break;
                                 }
                                 switch (toolFlag) {
