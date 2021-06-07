@@ -82,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // WIDGETS
     // TopBar
     private TextView tvImageName;
+    private TextView tvImageStatus;
     private ImageButton imgGrid;
     private ImageButton imgUndo;
     private ImageButton imgRedo;
@@ -1334,8 +1335,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         View view = View.inflate(this, R.layout.dialog_new_image, null);
         EditText etImageWidth = view.findViewById(R.id.et_image_width);
         EditText etImageHeight = view.findViewById(R.id.et_image_height);
-        etImageWidth.setText(Integer.toString(editor.getToolBufferPool().getCurrentBitmap().getWidth()));
-        etImageHeight.setText(Integer.toString(editor.getToolBufferPool().getCurrentBitmap().getHeight()));
+        etImageWidth.setText(Integer.toString(editor.getCurrentBitmap().getWidth()));
+        etImageHeight.setText(Integer.toString(editor.getCurrentBitmap().getHeight()));
         etImageWidth.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -1403,11 +1404,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 editor.setBitmap(Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888));
                 editor.setImageTranslationX(Editor.IMAGE_TRANSLATION_X_DEFAULT);
                 editor.setImageTranslationY(Editor.IMAGE_TRANSLATION_Y_DEFAULT);
-                tvImageName.setText("[");
-                tvImageName.append(editor.getToolBufferPool().getCurrentBitmap().getWidth() + " * " +
-                        editor.getToolBufferPool().getCurrentBitmap().getHeight());
-                tvImageName.append("] ");
-                tvImageName.append(editor.getImageName());
+                tvImageName.setText(editor.getImageName());
                 dialog.dismiss();
             }
         });
@@ -1484,7 +1481,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 Utils.hideSoftInputFromView(MainActivity.this, etImageName);
                 BitmapEncoder.encodeFile(editor.getImagePath() + "/" + dialogTempImageName,
-                        editor.getToolBufferPool().getCurrentBitmap(),
+                        editor.getCurrentBitmap(),
                         false, compressFormat, editor.getImageQuality(),
                         new BitmapEncoder.Callback() {
                             @Override
@@ -1650,7 +1647,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             fileNames.add(file.getName());
         }
         FileListAdapter adapter = new FileListAdapter(MainActivity.this, dirNames, fileNames,
-                VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_file_24, getTheme()));
+                VectorDrawableCompat.create(getResources(), R.drawable.ic_baseline_image_24, getTheme()));
         adapter.setOnItemClickListener(new FileListAdapter.OnItemClickListener() {
             @Override
             public void onDirectoryClick(String name, int position) {
@@ -1671,11 +1668,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         Bitmap bitmap = BitmapDecoder.decodeFile(pathname);
                         if (bitmap != null) {
                             editor.setImageName(FilenameUtils.getBaseName(name));
-                            tvImageName.setText("[");
-                            tvImageName.append(editor.getToolBufferPool().getCurrentBitmap().getWidth() + " * " +
-                                    editor.getToolBufferPool().getCurrentBitmap().getHeight());
-                            tvImageName.append("] ");
-                            tvImageName.append(editor.getImageName());
+                            tvImageName.setText(editor.getImageName());
                             editor.setBitmap(bitmap);
                             editor.setImageTranslationX(Editor.IMAGE_TRANSLATION_X_DEFAULT);
                             editor.setImageTranslationY(Editor.IMAGE_TRANSLATION_Y_DEFAULT);
@@ -1745,6 +1738,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()) {
             case R.id.tv_image_name:
                 buildImageNameDialog();
+                break;
+            case R.id.tv_image_status:
+                // FIXME RESIZE DIALOG
                 break;
             case R.id.img_grid:
                 editor.setGridVisible(!editor.isGridVisible());
@@ -1898,16 +1894,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Get widgets & set listeners
         // TopBar
         tvImageName = findViewById(R.id.tv_image_name);
-        tvImageName.setText("[");
-        tvImageName.append(editor.getToolBufferPool().getCurrentBitmap().getWidth() + " * " +
-                editor.getToolBufferPool().getCurrentBitmap().getHeight());
-        tvImageName.append("] ");
-        tvImageName.append(editor.getImageName());
+        tvImageName.setText(editor.getImageName());
+        tvImageStatus = findViewById(R.id.tv_image_status);
+        tvImageStatus.setText(editor.getCurrentBitmap().getWidth() + " * " +
+                editor.getCurrentBitmap().getHeight());
+        tvImageStatus.append(" [" + (editor.getImageScale() * 100) + "%" + "]");
         imgGrid = findViewById(R.id.img_grid);
         imgUndo = findViewById(R.id.img_undo);
         imgRedo = findViewById(R.id.img_redo);
         imgMenu = findViewById(R.id.img_menu);
         tvImageName.setOnClickListener(this);
+        tvImageStatus.setOnClickListener(this);
         imgGrid.setOnClickListener(this);
         imgUndo.setOnClickListener(this);
         imgRedo.setOnClickListener(this);
@@ -1943,18 +1940,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     default:
                         if (editor.getDownX() >= 0 && editor.getDownY() >= 0 &&
                                 editor.getDownX() <
-                                        editor.getToolBufferPool().getCurrentBitmap().getWidth() &&
+                                        editor.getCurrentBitmap().getWidth() &&
                                 editor.getDownY() <
-                                        editor.getToolBufferPool().getCurrentBitmap().getHeight() &&
+                                        editor.getCurrentBitmap().getHeight() &&
                                 editor.getMoveX() <
-                                        editor.getToolBufferPool().getCurrentBitmap().getWidth() &&
+                                        editor.getCurrentBitmap().getWidth() &&
                                 editor.getMoveY() <
-                                        editor.getToolBufferPool().getCurrentBitmap().getHeight()) {
+                                        editor.getCurrentBitmap().getHeight()) {
                             buildSelectionPopup1();
                         }
                         break;
                 }
             }
+
+            @Override
+            public void ImageScaleChanged() {
+                tvImageStatus.setText(editor.getCurrentBitmap().getWidth() + " * " +
+                        editor.getCurrentBitmap().getHeight());
+                tvImageStatus.append(" [" + (editor.getImageScale() * 100) + "%" + "]");
+            }
+
+            @Override
+            public void SetBitmapCallback() {
+                tvImageStatus = findViewById(R.id.tv_image_status);
+                tvImageStatus.setText(editor.getCurrentBitmap().getWidth() + " * " +
+                        editor.getCurrentBitmap().getHeight());
+                tvImageStatus.append(" [" + (editor.getImageScale() * 100) + "%" + "]");
+            }
+
         });
 
         // Set widget hints

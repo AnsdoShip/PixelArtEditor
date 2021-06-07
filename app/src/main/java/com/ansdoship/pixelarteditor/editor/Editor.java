@@ -168,6 +168,7 @@ public final class Editor {
         selectionPaint2.setStrokeWidth(Editor.getInstance().getImageScale() * 0.25f + 0.25f);
         path = new Path();
         matrix = new Matrix();
+        canvasBackgroundMatrix = new Matrix();
 
         String backgroundPaletteString = preferences.getString(KEY_BACKGROUND_PALETTE, null);
         if (backgroundPaletteString == null) {
@@ -251,7 +252,6 @@ public final class Editor {
             else {
                 toolBufferPool.setCacheBitmap(cacheBitmap);
                 toolBufferPool.flushCurrentBitmap();
-                replaceCurrentBitmap(toolBufferPool.getCurrentBitmap());
             }
         }
 
@@ -302,7 +302,7 @@ public final class Editor {
         String currentBitmapPathname = getCurrentBitmapPathname();
         if (currentBitmapPathname != null) {
             BitmapEncoder.encodeFile(currentBitmapPathname,
-                    toolBufferPool.getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100,
+                    getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100,
                     new BitmapEncoder.Callback() {
                         @Override
                         public void onCreateFailure() {}
@@ -314,7 +314,7 @@ public final class Editor {
                         public void onIOException(IOException e) {}
                     });
         }
-        BitmapUtils.recycleBitmaps(cacheBitmap, currentBitmap, canvasBackgroundBitmap);
+        BitmapUtils.recycleBitmaps(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
 
         if (externalPalette != null) {
             PaletteFactory.encodeFile(externalPalette, getExternalPalettePathName(getExternalPaletteName()), true);
@@ -332,7 +332,8 @@ public final class Editor {
     public static String IMAGE_PATH_DEFAULT() {
         return Utils.getFilesPath("images");
     }
-    public final static int IMAGE_SCALE_DEFAULT = 20;
+    public final static int IMAGE_SCALE_DEFAULT = 16;
+    public final static int IMAGE_SCALE_MIN = 1;
     public final static int IMAGE_SCALE_MAX = 64;
     public final static int IMAGE_TRANSLATION_X_DEFAULT = 0;
     public final static int IMAGE_TRANSLATION_Y_DEFAULT = 0;
@@ -379,7 +380,6 @@ public final class Editor {
     private final SharedPreferences preferences;
 
     private Bitmap cacheBitmap;
-    private Bitmap currentBitmap;
     private Bitmap canvasBackgroundBitmap;
 
     private Paint gridPaint;
@@ -391,6 +391,7 @@ public final class Editor {
     private Paint selectionPaint2;
 
     private Matrix matrix;
+    private Matrix canvasBackgroundMatrix;
 
     private Path path;
 
@@ -413,6 +414,8 @@ public final class Editor {
 
     public interface Callback {
         void SelectionCallback();
+        void ImageScaleChanged();
+        void SetBitmapCallback();
     }
 
     private Callback mCallback;
@@ -489,15 +492,6 @@ public final class Editor {
         BitmapUtils.recycleBitmap(temp);
     }
 
-    private void replaceCurrentBitmap(Bitmap newBitmap) {
-        if (currentBitmap == newBitmap) {
-            return;
-        }
-        Bitmap temp = currentBitmap;
-        currentBitmap = newBitmap;
-        BitmapUtils.recycleBitmap(temp);
-    }
-
     private void replaceCanvasBackgroundBitmap(Bitmap newBitmap) {
         if (canvasBackgroundBitmap == newBitmap) {
             return;
@@ -555,10 +549,11 @@ public final class Editor {
                         getCanvasBackgroundColor1()},
                 2, 2, Bitmap.Config.ARGB_8888));
         int imageScale = Editor.getInstance().getImageScale();
+        int canvasBackgroundImageScale = getCanvasBackgroundImageScale();
         replaceCanvasBackgroundBitmap(Bitmap.createScaledBitmap(
                 canvasBackgroundBitmap,
-                imageScale * getCanvasBackgroundImageScale(),
-                imageScale * getCanvasBackgroundImageScale(), false));
+                imageScale * canvasBackgroundImageScale,
+                imageScale * canvasBackgroundImageScale, false));
         BitmapShader canvasBackgroundShader = new BitmapShader(
                 canvasBackgroundBitmap,
                 BitmapShader.TileMode.REPEAT,
@@ -651,21 +646,25 @@ public final class Editor {
                     matrix.postScale(imageScale, imageScale);
                     // Draw background
                     canvas.drawColor(getCanvasViewBackgroundColor());
-                    canvas.drawRect(imageTranslationX, imageTranslationY,
-                            imageTranslationX + toolBufferPool.getCurrentBitmap().getWidth() * imageScale,
-                            imageTranslationY + toolBufferPool.getCurrentBitmap().getHeight() * imageScale,
+                    canvasBackgroundMatrix.reset();
+                    canvasBackgroundMatrix.setTranslate(imageTranslationX, imageTranslationY);
+                    canvas.setMatrix(canvasBackgroundMatrix);
+                    canvas.drawRect(0, 0,
+                            getCurrentBitmap().getWidth() * imageScale,
+                            getCurrentBitmap().getHeight() * imageScale,
                             canvasBackgroundPaint);
+                    canvas.setMatrix(null);
                     canvas.save();
                     canvas.restore();
                     // Draw scaled bitmap
-                    canvas.drawBitmap(toolBufferPool.getCurrentBitmap(), matrix, bitmapPaint);
+                    canvas.drawBitmap(getCurrentBitmap(), matrix, bitmapPaint);
                     canvas.save();
                     canvas.restore();
                     // Draw grid
                     if(isGridVisible()) {
                         if(imageScale >= 4) {
-                            int width = toolBufferPool.getCurrentBitmap().getWidth();
-                            int height = toolBufferPool.getCurrentBitmap().getHeight();
+                            int width = getCurrentBitmap().getWidth();
+                            int height = getCurrentBitmap().getHeight();
                             for (int i = 0; i <= width; i += gridWidth) {
                                 canvas.drawLine(
                                         imageTranslationX + i * imageScale,
@@ -771,35 +770,35 @@ public final class Editor {
                                             if (downX < 0) {
                                                 downX = 0;
                                             }
-                                            if (downX >= toolBufferPool.getCurrentBitmap().getWidth()) {
-                                                downX = toolBufferPool.getCurrentBitmap().getWidth() - 1;
+                                            if (downX >= getCurrentBitmap().getWidth()) {
+                                                downX = getCurrentBitmap().getWidth() - 1;
                                             }
                                             if (downY < 0) {
                                                 downY = 0;
                                             }
-                                            if (downY >= toolBufferPool.getCurrentBitmap().getHeight()) {
-                                                downY = toolBufferPool.getCurrentBitmap().getHeight() - 1;
+                                            if (downY >= getCurrentBitmap().getHeight()) {
+                                                downY = getCurrentBitmap().getHeight() - 1;
                                             }
                                             break;
                                     }
                                     break;
                                 case ToolFlag.COLORIZE:
                                     if (downX >=0 && downY >= 0 &&
-                                            downX < toolBufferPool.getCurrentBitmap().getWidth() &&
-                                            downY < toolBufferPool.getCurrentBitmap().getHeight()) {
-                                        listPalettes.setCheckedPaletteColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
+                                            downX < getCurrentBitmap().getWidth() &&
+                                            downY < getCurrentBitmap().getHeight()) {
+                                        listPalettes.setCheckedPaletteColor(getCurrentBitmap().getPixel(downX, downY));
                                         flushPaint(listPalettes.getCheckedPaletteColor());
                                         switch (paletteFlag) {
                                             case PaletteFlag.BACKGROUND:
                                                 if (listPalettes.getCheckedIndex() == 0) {
-                                                    setCanvasViewBackgroundColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
+                                                    setCanvasViewBackgroundColor(getCurrentBitmap().getPixel(downX, downY));
                                                 }
                                                 else {
                                                     flushCanvasBackgroundPaint();
                                                 }
                                                 break;
                                             case PaletteFlag.GRID:
-                                                setGridColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
+                                                setGridColor(getCurrentBitmap().getPixel(downX, downY));
                                                 break;
                                         }
                                     }
@@ -923,14 +922,14 @@ public final class Editor {
                                                 if (moveX < 0) {
                                                     moveX = 0;
                                                 }
-                                                if (moveX >= toolBufferPool.getCurrentBitmap().getWidth()) {
-                                                    moveX = toolBufferPool.getCurrentBitmap().getWidth() - 1;
+                                                if (moveX >= getCurrentBitmap().getWidth()) {
+                                                    moveX = getCurrentBitmap().getWidth() - 1;
                                                 }
                                                 if (moveY < 0) {
                                                     moveY = 0;
                                                 }
-                                                if (moveY >= toolBufferPool.getCurrentBitmap().getHeight()) {
-                                                    moveY = toolBufferPool.getCurrentBitmap().getHeight() - 1;
+                                                if (moveY >= getCurrentBitmap().getHeight()) {
+                                                    moveY = getCurrentBitmap().getHeight() - 1;
                                                 }
                                                 break;
                                         }
@@ -938,21 +937,21 @@ public final class Editor {
                                         break;
                                     case ToolFlag.COLORIZE:
                                         if (moveX >=0 && moveY >= 0 &&
-                                                moveX < toolBufferPool.getCurrentBitmap().getWidth() &&
-                                                moveY < toolBufferPool.getCurrentBitmap().getHeight()) {
-                                            listPalettes.setCheckedPaletteColor(toolBufferPool.getCurrentBitmap().getPixel(moveX, moveY));
+                                                moveX < getCurrentBitmap().getWidth() &&
+                                                moveY < getCurrentBitmap().getHeight()) {
+                                            listPalettes.setCheckedPaletteColor(getCurrentBitmap().getPixel(moveX, moveY));
                                             flushPaint(listPalettes.getCheckedPaletteColor());
                                             switch (paletteFlag) {
                                                 case PaletteFlag.BACKGROUND:
                                                     if (listPalettes.getCheckedIndex() == 0) {
-                                                        setCanvasViewBackgroundColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
+                                                        setCanvasViewBackgroundColor(getCurrentBitmap().getPixel(downX, downY));
                                                     }
                                                     else {
                                                         flushCanvasBackgroundPaint();
                                                     }
                                                     break;
                                                 case PaletteFlag.GRID:
-                                                    setGridColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
+                                                    setGridColor(getCurrentBitmap().getPixel(downX, downY));
                                                     break;
                                             }
                                         }
@@ -1019,8 +1018,8 @@ public final class Editor {
                                         break;
                                     case ToolFlag.FILL:
                                         if (downX >= 0 && downY >= 0 &&
-                                                downX < toolBufferPool.getCurrentBitmap().getWidth() &&
-                                                downY < toolBufferPool.getCurrentBitmap().getHeight()) {
+                                                downX < getCurrentBitmap().getWidth() &&
+                                                downY < getCurrentBitmap().getHeight()) {
                                             toolBufferPool.addToolBuffer(new FillBuffer(downX, downY, paint.getColor()));
                                         }
                                         break;
@@ -1060,7 +1059,7 @@ public final class Editor {
     }
 
     public Bitmap getCurrentBitmap() {
-        return currentBitmap;
+        return toolBufferPool.getCurrentBitmap();
     }
 
     public Bitmap getCanvasBackgroundBitmap() {
@@ -1208,6 +1207,9 @@ public final class Editor {
             selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
             flushCanvasBackgroundPaint();
             flushGridPaint();
+        }
+        if (mCallback != null) {
+            mCallback.ImageScaleChanged();
         }
     }
 
@@ -1523,8 +1525,10 @@ public final class Editor {
         replaceCacheBitmap(bitmap);
         toolBufferPool = ToolBufferPool.createToolBufferPool(cacheBitmap,
                 MAX_BUFFER_SIZE_DEFAULT, false);
-        replaceCurrentBitmap(toolBufferPool.getCurrentBitmap());
         invalidateCanvasView();
+        if (mCallback != null) {
+            mCallback.SetBitmapCallback();
+        }
     }
 
     public void invalidateCanvasView() {

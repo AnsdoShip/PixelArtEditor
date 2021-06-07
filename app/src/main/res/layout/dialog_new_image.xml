@@ -40,8 +40,7 @@
             android:paddingRight="16dp"
             android:text="@string/width"
             android:textColor="@android:color/black"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textSize="14sp" />
 
     </RelativeLayout>
 
@@ -79,8 +78,7 @@
             android:paddingRight="16dp"
             android:text="@string/height"
             android:textColor="@android:color/black"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textSize="14sp" />
 
     </RelativeLayout>
 

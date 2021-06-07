@@ -20,7 +20,7 @@
 
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="match_parent">
 
                 <LinearLayout
                     android:id="@+id/llayout_topbar_menu"
@@ -79,9 +79,9 @@
                     android:drawablePadding="8dp"
                     android:ellipsize="end"
                     android:gravity="start|center_vertical"
+                    android:maxLines="2"
                     android:paddingLeft="16dp"
                     android:paddingRight="16dp"
-                    android:singleLine="true"
                     android:textColor="@android:color/white"
                     android:textSize="14sp"
                     android:textStyle="bold"
@@ -91,6 +91,7 @@
             </RelativeLayout>
 
             <View
+                android:id="@+id/view"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="?android:attr/listDivider" />
@@ -235,11 +236,40 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/flayout_image_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_below="@id/llayout_topbar"
+            android:layout_toStartOf="@id/llayout_toolbar"
+            android:layout_toLeftOf="@id/llayout_toolbar"
+            android:background="@android:color/white">
+
+            <TextView
+                android:id="@+id/tv_image_status"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:background="?attr/selectableItemBackground"
+                android:drawablePadding="8dp"
+                android:ellipsize="end"
+                android:gravity="start|center_vertical"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:singleLine="true"
+                android:textColor="@android:color/black"
+                android:textSize="12sp" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
+        </LinearLayout>
+
         <com.ansdoship.pixelarteditor.ui.view.CanvasView
             android:id="@+id/canvas_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@id/llayout_topbar"
+            android:layout_below="@id/flayout_image_status"
             android:layout_toStartOf="@id/llayout_toolbar"
             android:layout_toLeftOf="@id/llayout_toolbar" />
 

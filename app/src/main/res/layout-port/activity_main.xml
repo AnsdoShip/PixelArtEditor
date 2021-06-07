@@ -15,12 +15,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
-            android:background="@color/colorTheme"
+            android:background="@android:color/white"
             android:orientation="vertical">
 
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:background="@color/colorTheme">
 
                 <LinearLayout
                     android:id="@+id/llayout_topbar_menu"
@@ -79,9 +80,9 @@
                     android:drawablePadding="8dp"
                     android:ellipsize="end"
                     android:gravity="start|center_vertical"
+                    android:maxLines="2"
                     android:paddingLeft="16dp"
                     android:paddingRight="16dp"
-                    android:singleLine="true"
                     android:textColor="@android:color/white"
                     android:textSize="14sp"
                     android:textStyle="bold"
@@ -89,6 +90,25 @@
                     app:drawableTint="@android:color/white" />
 
             </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
+
+            <TextView
+                android:id="@+id/tv_image_status"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:background="?attr/selectableItemBackground"
+                android:drawablePadding="8dp"
+                android:ellipsize="end"
+                android:gravity="start|center_vertical"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:singleLine="true"
+                android:textColor="@android:color/black"
+                android:textSize="12sp" />
 
             <View
                 android:layout_width="match_parent"
