@@ -708,7 +708,7 @@ public final class Editor {
                                         Math.min(downY, moveY) * imageScale + selectionPaint1.getStrokeWidth() / 2;
                                 selectionRight = imageTranslationX +
                                         Math.max(downX, moveX) * imageScale + selectionPaint1.getStrokeWidth() / 2 * 3;
-                                selectionBottom = imageTranslationX +
+                                selectionBottom = imageTranslationY +
                                         Math.max(downY, moveY) * imageScale + selectionPaint1.getStrokeWidth() / 2 * 3;
                                 break;
                         }
