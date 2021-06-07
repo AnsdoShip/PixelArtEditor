@@ -147,6 +147,7 @@ public final class Editor {
         paint.setDither(false);
         paint.setAntiAlias(false);
         paint.setStyle(Paint.Style.STROKE);
+        flushPaint();
         eraser = new Paint();
         eraser.setDither(false);
         eraser.setAntiAlias(false);
@@ -562,8 +563,8 @@ public final class Editor {
         canvasBackgroundPaint.setShader(canvasBackgroundShader);
     }
 
-    public void flushPaint(int color) {
-        paint.setColor(color);
+    public void flushPaint() {
+        paint.setColor(getCurrentColor());
     }
 
     public int getCanvasBackgroundImageScale() {
@@ -784,7 +785,7 @@ public final class Editor {
                                             downX < toolBufferPool.getCurrentBitmap().getWidth() &&
                                             downY < toolBufferPool.getCurrentBitmap().getHeight()) {
                                         listPalettes.setCheckedPaletteColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
-                                        flushPaint(listPalettes.getCheckedPaletteColor());
+                                        flushPaint();
                                         switch (paletteFlag) {
                                             case PaletteFlag.BACKGROUND:
                                                 if (listPalettes.getCheckedIndex() == 0) {
@@ -817,11 +818,11 @@ public final class Editor {
                             if (scaleMode) {
                                 newDist = Utils.spacing(event);
                                 if(newDist != 0) {
-                                    if (newDist >= oldDist + ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 16) {
+                                    if (newDist >= oldDist + ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 64) {
                                         setImageScale(imageScale * 2);
                                         oldDist = newDist;
                                     }
-                                    if (newDist <= oldDist - ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 16) {
+                                    if (newDist <= oldDist - ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 64) {
                                         setImageScale(imageScale / 2);
                                         oldDist = newDist;
                                     }
@@ -937,7 +938,7 @@ public final class Editor {
                                                 moveX < toolBufferPool.getCurrentBitmap().getWidth() &&
                                                 moveY < toolBufferPool.getCurrentBitmap().getHeight()) {
                                             listPalettes.setCheckedPaletteColor(toolBufferPool.getCurrentBitmap().getPixel(moveX, moveY));
-                                            flushPaint(listPalettes.getCheckedPaletteColor());
+                                            flushPaint();
                                             switch (paletteFlag) {
                                                 case PaletteFlag.BACKGROUND:
                                                     if (listPalettes.getCheckedIndex() == 0) {
@@ -1526,6 +1527,25 @@ public final class Editor {
         if (canvasView != null) {
             canvasView.invalidate();
         }
+    }
+
+    public Palette getCurrentPalette() {
+        switch (paletteFlag) {
+            case PaletteFlag.BACKGROUND:
+                return backgroundPalette;
+            case PaletteFlag.GRID:
+                return gridPalette;
+            case PaletteFlag.EXTERNAL:
+                if (externalPalette != null) {
+                    return externalPalette;
+                }
+            default:
+                return builtinPalette;
+        }
+    }
+
+    public int getCurrentColor() {
+        return getCurrentPalette().getCurrentColor();
     }
 
 }

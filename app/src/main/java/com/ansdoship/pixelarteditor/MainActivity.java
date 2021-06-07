@@ -846,7 +846,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 listPalettes.setCheckedPaletteColor(dialogTempColor);
-                editor.flushPaint(dialogTempColor);
+                editor.flushPaint();
                 switch (editor.getPaletteFlag()) {
                     case PaletteFlag.BACKGROUND:
                         if (listPalettes.getCheckedIndex() == 0) {
@@ -922,7 +922,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         listPalettes.setPalette(editor.getBuiltinPalette());
                         break;
                 }
-                editor.flushPaint(listPalettes.getCheckedPaletteColor());
+                editor.flushPaint();
                 alertDialog.dismiss();
             }
             @Override
@@ -934,7 +934,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 editor.setPaletteFlag(PaletteFlag.EXTERNAL);
                 listPalettes.setPalette(editor.getExternalPalette());
-                editor.flushPaint(listPalettes.getCheckedPaletteColor());
+                editor.flushPaint();
                 alertDialog.dismiss();
             }
             @Override
@@ -965,7 +965,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 listPalettes.setPalette(editor.getBuiltinPalette());
                                 break;
                         }
-                        editor.flushPaint(listPalettes.getCheckedPaletteColor());
+                        editor.flushPaint();
                     }
                 }, null);
             }
@@ -1927,7 +1927,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgPalette.setOnClickListener(this);
         listPalettes = findViewById(R.id.list_palettes);
         editor.setPaletteList(listPalettes);
-        editor.flushPaint(listPalettes.getCheckedPaletteColor());
         // CanvasView
         canvasView = findViewById(R.id.canvas_view);
         editor.setCanvasView(canvasView);
@@ -2119,12 +2118,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 break;
         }
-        editor.flushPaint(listPalettes.getCheckedPaletteColor());
+        editor.flushPaint();
         // Initial select
         listPalettes.setOnCheckedChangeListener(new PaletteList.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(PaletteList list, int checkedIndex) {
-                editor.flushPaint(listPalettes.getPaletteColor(checkedIndex));
+                editor.flushPaint();
             }
         });
         // Double tap
