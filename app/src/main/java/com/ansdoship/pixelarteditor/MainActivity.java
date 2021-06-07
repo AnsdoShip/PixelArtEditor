@@ -2030,7 +2030,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tvImageStatus = findViewById(R.id.tv_image_status);
         tvImageStatus.setText(editor.getCurrentBitmap().getWidth() + " * " +
                 editor.getCurrentBitmap().getHeight());
-        tvImageStatus.append(" [" + (editor.getImageScale() * 100) + "%" + "]");
+        tvImageStatus.append("\n" + (editor.getImageScale() * 100) + "%");
         imgGrid = findViewById(R.id.img_grid);
         imgUndo = findViewById(R.id.img_undo);
         imgRedo = findViewById(R.id.img_redo);
@@ -2089,7 +2089,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void ImageScaleChanged() {
                 tvImageStatus.setText(editor.getCurrentBitmap().getWidth() + " * " +
                         editor.getCurrentBitmap().getHeight());
-                tvImageStatus.append(" [" + (editor.getImageScale() * 100) + "%" + "]");
+                tvImageStatus.append("\n" + (editor.getImageScale() * 100) + "%");
             }
 
             @Override
@@ -2097,7 +2097,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 tvImageStatus = findViewById(R.id.tv_image_status);
                 tvImageStatus.setText(editor.getCurrentBitmap().getWidth() + " * " +
                         editor.getCurrentBitmap().getHeight());
-                tvImageStatus.append(" [" + (editor.getImageScale() * 100) + "%" + "]");
+                tvImageStatus.append("\n" + (editor.getImageScale() * 100) + "%");
             }
 
         });

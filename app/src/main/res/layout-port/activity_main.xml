@@ -99,16 +99,18 @@
             <TextView
                 android:id="@+id/tv_image_status"
                 android:layout_width="match_parent"
-                android:layout_height="24dp"
+                android:layout_height="?attr/actionBarSize"
                 android:background="?attr/selectableItemBackground"
                 android:drawablePadding="8dp"
                 android:ellipsize="end"
                 android:gravity="start|center_vertical"
+                android:maxLines="2"
                 android:paddingLeft="16dp"
                 android:paddingRight="16dp"
-                android:singleLine="true"
                 android:textColor="@android:color/black"
-                android:textSize="12sp" />
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:drawableLeftCompat="@drawable/ic_baseline_edit_24" />
 
             <View
                 android:layout_width="match_parent"
@@ -124,6 +126,11 @@
             android:layout_alignParentBottom="true"
             android:background="@android:color/white"
             android:orientation="vertical">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
 
             <LinearLayout
                 android:layout_width="match_parent"
