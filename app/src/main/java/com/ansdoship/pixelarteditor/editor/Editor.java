@@ -328,13 +328,14 @@ public final class Editor {
     public static String IMAGE_PATH_DEFAULT() {
         return Utils.getFilesPath("images");
     }
-    public final static int IMAGE_SCALE_DEFAULT = 40;
+    public final static int IMAGE_SCALE_DEFAULT = 20;
+    public final static int IMAGE_SCALE_MAX = 64;
     public final static int IMAGE_TRANSLATION_X_DEFAULT = 0;
     public final static int IMAGE_TRANSLATION_Y_DEFAULT = 0;
     public final static int IMAGE_ORIGIN_X_DEFAULT = 0;
     public final static int IMAGE_ORIGIN_Y_DEFAULT = 0;
-    public final static int IMAGE_WIDTH_DEFAULT = 16;
-    public final static int IMAGE_HEIGHT_DEFAULT = 16;
+    public final static int IMAGE_WIDTH_DEFAULT = 32;
+    public final static int IMAGE_HEIGHT_DEFAULT = 32;
     
     public final static int TOOL_FLAG_DEFAULT = ToolFlag.PAINT;
     public final static int SHAPE_FLAG_DEFAULT = ToolFlag.ShapeFlag.LINE;
@@ -363,8 +364,6 @@ public final class Editor {
 
     public final static boolean SCALE_MODE_DEFAULT = false;
     public final static boolean READ_ONLY_MODE_DEFAULT = false;
-
-    public final static int IMAGE_SCALE_MAX = 64;
 
     public final static boolean SELECTED_DEFAULT = false;
 
@@ -725,6 +724,7 @@ public final class Editor {
                 double newDist = 0;
                 float x;
                 float y;
+
                 @SuppressLint("ClickableViewAccessibility")
                 @Override
                 public boolean onTouch(View view, MotionEvent event) {
@@ -817,11 +817,11 @@ public final class Editor {
                             if (scaleMode) {
                                 newDist = Utils.spacing(event);
                                 if(newDist != 0) {
-                                    if(newDist >= oldDist + 256 * ApplicationUtils.getResources().getDisplayMetrics().density) {
+                                    if(newDist >= oldDist + ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 16) {
                                         setImageScale(imageScale * 2);
                                         oldDist = newDist;
                                     }
-                                    if(newDist <= oldDist - 256 * ApplicationUtils.getResources().getDisplayMetrics().density) {
+                                    if(newDist <= oldDist - ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 16) {
                                         setImageScale(imageScale / 2);
                                         oldDist = newDist;
                                     }

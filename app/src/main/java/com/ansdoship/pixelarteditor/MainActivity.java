@@ -1039,7 +1039,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                         break;
                     case 2:
-                        dialogTempPalette = Palette.createPalette(12);
+                        // FIXME
+                        buildAddPaletteDialog();
                         break;
                 }
                 buildSavePaletteDialog(null);
@@ -1278,7 +1279,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         buildNewImageDialog();
                         break;
                     case 2:
-
+                        // FIXME PASTE IMAGE DIALOG
+                        buildLoadDialog();
                         break;
                 }
             }
@@ -1335,7 +1337,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         EditText etImageHeight = view.findViewById(R.id.et_image_height);
         etImageWidth.setText(Integer.toString(editor.getToolBufferPool().getCurrentBitmap().getWidth()));
         etImageHeight.setText(Integer.toString(editor.getToolBufferPool().getCurrentBitmap().getHeight()));
-        final int[] imageSize = new int[2];
         etImageWidth.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -1343,18 +1344,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (!s.toString().isEmpty()) {
-                    imageSize[0] = Integer.parseInt(s.toString());
-                    imageSize[0] = MathUtils.clamp(imageSize[0], Editor.IMAGE_WIDTH_MIN, Editor.IMAGE_WIDTH_MAX);
+                    if (Integer.parseInt(s.toString()) > Editor.IMAGE_WIDTH_MAX) {
+                        etImageWidth.removeTextChangedListener(this);
+                        etImageWidth.setText(Integer.toString(Editor.IMAGE_WIDTH_MAX));
+                        etImageWidth.setSelection(etImageWidth.getText().length());
+                        etImageWidth.addTextChangedListener(this);
+                    }
                 }
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-                etImageWidth.removeTextChangedListener(this);
-                etImageWidth.setText(Integer.toString(imageSize[0]));
-                etImageWidth.setSelection(etImageWidth.getText().length());
-                etImageWidth.addTextChangedListener(this);
-            }
+            public void afterTextChanged(Editable s) {}
 
         });
         etImageHeight.addTextChangedListener(new TextWatcher() {
@@ -1364,26 +1364,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (!s.toString().isEmpty()) {
-                    imageSize[1] = Integer.parseInt(s.toString());
-                    imageSize[1] = MathUtils.clamp(imageSize[1], Editor.IMAGE_HEIGHT_MIN, Editor.IMAGE_HEIGHT_MAX);
+                    if (Integer.parseInt(s.toString()) > Editor.IMAGE_HEIGHT_MAX) {
+                        etImageHeight.removeTextChangedListener(this);
+                        etImageHeight.setText(Integer.toString(Editor.IMAGE_HEIGHT_MAX));
+                        etImageHeight.setSelection(etImageWidth.getText().length());
+                        etImageHeight.addTextChangedListener(this);
+                    }
                 }
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-                etImageHeight.removeTextChangedListener(this);
-                etImageHeight.setText(Integer.toString(imageSize[1]));
-                etImageHeight.setSelection(etImageHeight.getText().length());
-                etImageHeight.addTextChangedListener(this);
-            }
+            public void afterTextChanged(Editable s) {}
 
         });
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                int width;
+                int height;
+                if (etImageWidth.getText().toString().isEmpty()) {
+                    width = Editor.IMAGE_WIDTH_DEFAULT;
+                }
+                else {
+                    width = Integer.parseInt(etImageWidth.getText().toString());
+                    if (width < Editor.IMAGE_WIDTH_MIN) {
+                        width = Editor.IMAGE_WIDTH_DEFAULT;
+                    }
+                }
+                if (etImageHeight.getText().toString().isEmpty()) {
+                    height = Editor.IMAGE_HEIGHT_DEFAULT;
+                }
+                else {
+                    height = Integer.parseInt(etImageHeight.getText().toString());
+                    if (height < Editor.IMAGE_HEIGHT_MIN) {
+                        height = Editor.IMAGE_HEIGHT_DEFAULT;
+                    }
+                }
                 editor.setImageName(Editor.IMAGE_NAME_DEFAULT());
-                editor.setBitmap(Bitmap.createBitmap(Integer.parseInt(etImageWidth.getText().toString()),
-                        Integer.parseInt(etImageHeight.getText().toString()), Bitmap.Config.ARGB_8888));
+                editor.setBitmap(Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888));
                 editor.setImageTranslationX(Editor.IMAGE_TRANSLATION_X_DEFAULT);
                 editor.setImageTranslationY(Editor.IMAGE_TRANSLATION_Y_DEFAULT);
                 tvImageName.setText("[");
@@ -1910,6 +1928,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgPalette.setOnClickListener(this);
         listPalettes = findViewById(R.id.list_palettes);
         editor.setPaletteList(listPalettes);
+        editor.flushPaint(listPalettes.getCheckedPaletteColor());
         // CanvasView
         canvasView = findViewById(R.id.canvas_view);
         editor.setCanvasView(canvasView);
