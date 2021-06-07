@@ -10,7 +10,6 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
@@ -330,8 +329,8 @@ public final class Editor {
         return Utils.getFilesPath("images");
     }
     public final static int IMAGE_SCALE_DEFAULT = 40;
-    public final static int IMAGE_TRANSLATION_X_DEFAULT = 233;
-    public final static int IMAGE_TRANSLATION_Y_DEFAULT = 233;
+    public final static int IMAGE_TRANSLATION_X_DEFAULT = 0;
+    public final static int IMAGE_TRANSLATION_Y_DEFAULT = 0;
     public final static int IMAGE_ORIGIN_X_DEFAULT = 0;
     public final static int IMAGE_ORIGIN_Y_DEFAULT = 0;
     public final static int IMAGE_WIDTH_DEFAULT = 16;
@@ -694,7 +693,7 @@ public final class Editor {
                             case ToolFlag.SelectionFlag.COPY:
                                 selectionLeft = imageTranslationX +
                                         selectionBitmapDstX * imageScale + selectionPaint1.getStrokeWidth() / 2;
-                                selectionTop = imageTranslationX +
+                                selectionTop = imageTranslationY +
                                         selectionBitmapDstY * imageScale + selectionPaint1.getStrokeWidth() / 2;
                                 selectionRight = selectionLeft + (selectionBitmapDstWidth - 1) * imageScale
                                         + selectionPaint1.getStrokeWidth();
@@ -705,7 +704,7 @@ public final class Editor {
                             default:
                                 selectionLeft = imageTranslationX +
                                         Math.min(downX, moveX) * imageScale + selectionPaint1.getStrokeWidth() / 2;
-                                selectionTop = imageTranslationX +
+                                selectionTop = imageTranslationY +
                                         Math.min(downY, moveY) * imageScale + selectionPaint1.getStrokeWidth() / 2;
                                 selectionRight = imageTranslationX +
                                         Math.max(downX, moveX) * imageScale + selectionPaint1.getStrokeWidth() / 2 * 3;
