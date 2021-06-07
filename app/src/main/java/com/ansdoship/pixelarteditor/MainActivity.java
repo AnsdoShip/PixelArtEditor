@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
@@ -44,6 +45,7 @@ import com.ansdoship.pixelarteditor.editor.buffer.FlipHorizontalBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.FlipVerticalBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.RotateBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.SelectionBuffer;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapChanger;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapDecoder;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapEncoder;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapUtils;
@@ -1332,7 +1334,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @SuppressLint("SetTextI18n")
     private void buildNewImageDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View view = View.inflate(this, R.layout.dialog_new_image, null);
+        View view = View.inflate(this, R.layout.dialog_image_size, null);
         EditText etImageWidth = view.findViewById(R.id.et_image_width);
         EditText etImageHeight = view.findViewById(R.id.et_image_height);
         etImageWidth.setText(Integer.toString(editor.getCurrentBitmap().getWidth()));
@@ -1421,6 +1423,136 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         builder.setView(view);
+        builder.create().show();
+    }
+    // Resize image dialog
+    @SuppressLint("SetTextI18n")
+    private void buildResizeImageDialog(int initialWidth, int initialHeight) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_image_size, null);
+        EditText etImageWidth = view.findViewById(R.id.et_image_width);
+        EditText etImageHeight = view.findViewById(R.id.et_image_height);
+        etImageWidth.setText(Integer.toString(initialWidth));
+        etImageHeight.setText(Integer.toString(initialHeight));
+        etImageWidth.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!s.toString().isEmpty()) {
+                    if (Integer.parseInt(s.toString()) > Editor.IMAGE_WIDTH_MAX) {
+                        etImageWidth.removeTextChangedListener(this);
+                        etImageWidth.setText(Integer.toString(Editor.IMAGE_WIDTH_MAX));
+                        etImageWidth.setSelection(etImageWidth.getText().length());
+                        etImageWidth.addTextChangedListener(this);
+                    }
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+
+        });
+        etImageHeight.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!s.toString().isEmpty()) {
+                    if (Integer.parseInt(s.toString()) > Editor.IMAGE_HEIGHT_MAX) {
+                        etImageHeight.removeTextChangedListener(this);
+                        etImageHeight.setText(Integer.toString(Editor.IMAGE_HEIGHT_MAX));
+                        etImageHeight.setSelection(etImageWidth.getText().length());
+                        etImageHeight.addTextChangedListener(this);
+                    }
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+
+        });
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                int width;
+                int height;
+                if (etImageWidth.getText().toString().isEmpty()) {
+                    width = Editor.IMAGE_WIDTH_MIN;
+                }
+                else {
+                    width = Integer.parseInt(etImageWidth.getText().toString());
+                    if (width < Editor.IMAGE_WIDTH_MIN) {
+                        width = Editor.IMAGE_WIDTH_MIN;
+                    }
+                }
+                if (etImageHeight.getText().toString().isEmpty()) {
+                    height = Editor.IMAGE_HEIGHT_MIN;
+                }
+                else {
+                    height = Integer.parseInt(etImageHeight.getText().toString());
+                    if (height < Editor.IMAGE_HEIGHT_MIN) {
+                        height = Editor.IMAGE_HEIGHT_MIN;
+                    }
+                }
+                if ((width == editor.getCurrentBitmap().getWidth()) &&
+                        (height == editor.getCurrentBitmap().getHeight())) {
+                    dialog.dismiss();
+                    return;
+                }
+                if ((width < editor.getCurrentBitmap().getWidth()) ||
+                height < editor.getCurrentBitmap().getHeight()) {
+                    Utils.hideSoftInputFromView(MainActivity.this, etImageWidth);
+                    Utils.hideSoftInputFromView(MainActivity.this, etImageHeight);
+                    final int finalHeight = height;
+                    final int finalWidth = width;
+                    buildResizeImageWarningDialog(new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            editor.setBitmap(Bitmap.createBitmap(editor.getCurrentBitmap(),
+                                    0, 0, finalWidth, finalHeight));
+                            dialog.dismiss();
+                        }
+                    }, new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            buildResizeImageDialog(finalWidth, finalHeight);
+                        }
+                    });
+                }
+                else {
+                    Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(bitmap);
+                    canvas.drawBitmap(editor.getCurrentBitmap(), 0, 0, editor.getBitmapPaint());
+                    editor.setBitmap(bitmap);
+                    dialog.dismiss();
+                }
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setView(view);
+        builder.create().show();
+    }
+    //
+    private void buildResizeImageWarningDialog(DialogInterface.OnClickListener positiveListener,
+                                         DialogInterface.OnCancelListener cancelListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.warning_resize_image);
+        builder.setPositiveButton(android.R.string.ok, positiveListener);
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(cancelListener);
         builder.create().show();
     }
     // Save dialog
@@ -1740,7 +1872,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 buildImageNameDialog();
                 break;
             case R.id.tv_image_status:
-                // FIXME RESIZE DIALOG
+                buildResizeImageDialog(editor.getCurrentBitmap().getWidth(), editor.getCurrentBitmap().getHeight());
                 break;
             case R.id.img_grid:
                 editor.setGridVisible(!editor.isGridVisible());

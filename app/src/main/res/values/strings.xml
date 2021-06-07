@@ -66,4 +66,5 @@
     <string name="image_height_default" translatable="false">32</string>
     <string name="width">Width</string>
     <string name="height">Height</string>
+    <string name="warning_resize_image">The right-most and bottom-most pixels of the current image will be removed. Are you sure to do this ? This operation cannot be undone.</string>
 </resources>
