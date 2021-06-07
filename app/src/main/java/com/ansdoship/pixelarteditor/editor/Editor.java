@@ -147,7 +147,6 @@ public final class Editor {
         paint.setDither(false);
         paint.setAntiAlias(false);
         paint.setStyle(Paint.Style.STROKE);
-        flushPaint();
         eraser = new Paint();
         eraser.setDither(false);
         eraser.setAntiAlias(false);
@@ -223,6 +222,10 @@ public final class Editor {
         setScaleMode(SCALE_MODE_DEFAULT);
         setReadOnlyMode(READ_ONLY_MODE_DEFAULT);
         setSelected(SELECTED_DEFAULT);
+
+        if (listPalettes != null) {
+            flushPaint(listPalettes.getCheckedPaletteColor());
+        }
 
         if (toolBufferPool == null) {
             String cacheBitmapPathName = getCurrentBitmapPathname();
@@ -563,8 +566,8 @@ public final class Editor {
         canvasBackgroundPaint.setShader(canvasBackgroundShader);
     }
 
-    public void flushPaint() {
-        paint.setColor(getCurrentColor());
+    public void flushPaint(int color) {
+        paint.setColor(color);
     }
 
     public int getCanvasBackgroundImageScale() {
@@ -785,7 +788,7 @@ public final class Editor {
                                             downX < toolBufferPool.getCurrentBitmap().getWidth() &&
                                             downY < toolBufferPool.getCurrentBitmap().getHeight()) {
                                         listPalettes.setCheckedPaletteColor(toolBufferPool.getCurrentBitmap().getPixel(downX, downY));
-                                        flushPaint();
+                                        flushPaint(listPalettes.getCheckedPaletteColor());
                                         switch (paletteFlag) {
                                             case PaletteFlag.BACKGROUND:
                                                 if (listPalettes.getCheckedIndex() == 0) {
@@ -938,7 +941,7 @@ public final class Editor {
                                                 moveX < toolBufferPool.getCurrentBitmap().getWidth() &&
                                                 moveY < toolBufferPool.getCurrentBitmap().getHeight()) {
                                             listPalettes.setCheckedPaletteColor(toolBufferPool.getCurrentBitmap().getPixel(moveX, moveY));
-                                            flushPaint();
+                                            flushPaint(listPalettes.getCheckedPaletteColor());
                                             switch (paletteFlag) {
                                                 case PaletteFlag.BACKGROUND:
                                                     if (listPalettes.getCheckedIndex() == 0) {
@@ -1425,6 +1428,7 @@ public final class Editor {
                 if (listPalettes != null) {
                     if (paletteFlag == PaletteFlag.EXTERNAL) {
                         listPalettes.setPalette(externalPalette);
+                        flushPaint(listPalettes.getCheckedPaletteColor());
                     }
                 }
             }
@@ -1527,25 +1531,6 @@ public final class Editor {
         if (canvasView != null) {
             canvasView.invalidate();
         }
-    }
-
-    public Palette getCurrentPalette() {
-        switch (paletteFlag) {
-            case PaletteFlag.BACKGROUND:
-                return backgroundPalette;
-            case PaletteFlag.GRID:
-                return gridPalette;
-            case PaletteFlag.EXTERNAL:
-                if (externalPalette != null) {
-                    return externalPalette;
-                }
-            default:
-                return builtinPalette;
-        }
-    }
-
-    public int getCurrentColor() {
-        return getCurrentPalette().getCurrentColor();
     }
 
 }

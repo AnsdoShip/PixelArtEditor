@@ -846,7 +846,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 listPalettes.setCheckedPaletteColor(dialogTempColor);
-                editor.flushPaint();
+                editor.flushPaint(listPalettes.getCheckedPaletteColor());
                 switch (editor.getPaletteFlag()) {
                     case PaletteFlag.BACKGROUND:
                         if (listPalettes.getCheckedIndex() == 0) {
@@ -922,7 +922,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         listPalettes.setPalette(editor.getBuiltinPalette());
                         break;
                 }
-                editor.flushPaint();
+                editor.flushPaint(listPalettes.getCheckedPaletteColor());
                 alertDialog.dismiss();
             }
             @Override
@@ -934,7 +934,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 editor.setPaletteFlag(PaletteFlag.EXTERNAL);
                 listPalettes.setPalette(editor.getExternalPalette());
-                editor.flushPaint();
+                editor.flushPaint(listPalettes.getCheckedPaletteColor());
                 alertDialog.dismiss();
             }
             @Override
@@ -965,7 +965,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 listPalettes.setPalette(editor.getBuiltinPalette());
                                 break;
                         }
-                        editor.flushPaint();
+                        editor.flushPaint(listPalettes.getCheckedPaletteColor());
                     }
                 }, null);
             }
@@ -2118,12 +2118,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 break;
         }
-        editor.flushPaint();
-        // Initial select
+        editor.flushPaint(listPalettes.getCheckedPaletteColor());
+        // Flush paint
         listPalettes.setOnCheckedChangeListener(new PaletteList.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(PaletteList list, int checkedIndex) {
-                editor.flushPaint();
+                editor.flushPaint(list.getPaletteColor(checkedIndex));
             }
         });
         // Double tap
