@@ -330,8 +330,8 @@ public final class Editor {
         return Utils.getFilesPath("images");
     }
     public final static int IMAGE_SCALE_DEFAULT = 40;
-    public final static int IMAGE_TRANSLATION_X_DEFAULT = 0;
-    public final static int IMAGE_TRANSLATION_Y_DEFAULT = 0;
+    public final static int IMAGE_TRANSLATION_X_DEFAULT = 233;
+    public final static int IMAGE_TRANSLATION_Y_DEFAULT = 233;
     public final static int IMAGE_ORIGIN_X_DEFAULT = 0;
     public final static int IMAGE_ORIGIN_Y_DEFAULT = 0;
     public final static int IMAGE_WIDTH_DEFAULT = 16;
@@ -812,9 +812,10 @@ public final class Editor {
                             readOnlyMode = true;
                             selectionFlag = ToolFlag.SelectionFlag.NONE;
                             selected = false;
+                            toolBufferPool.clearTempToolBuffers();
                             break;
                         case MotionEvent.ACTION_MOVE:
-                            if(scaleMode) {
+                            if (scaleMode) {
                                 newDist = Utils.spacing(event);
                                 if(newDist != 0) {
                                     if(newDist >= oldDist + 256 * ApplicationUtils.getResources().getDisplayMetrics().density) {

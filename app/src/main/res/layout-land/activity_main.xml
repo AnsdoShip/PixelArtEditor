@@ -77,7 +77,7 @@
                     android:layout_toLeftOf="@id/llayout_topbar_menu"
                     android:background="?attr/selectableItemBackground"
                     android:drawablePadding="8dp"
-                    android:ellipsize="start"
+                    android:ellipsize="end"
                     android:gravity="start|center_vertical"
                     android:paddingLeft="16dp"
                     android:paddingRight="16dp"

@@ -122,12 +122,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         View view = View.inflate(this, R.layout.popup_selection_1, null);
         view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        final PopupWindow window = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
+        final PopupWindow window = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, false);
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         window.setOutsideTouchable(true);
         window.setTouchable(true);
-        int xOffset = upX * imageScale;
-        int yOffset = upY * imageScale;
+        int xOffset = upX * imageScale + editor.getImageTranslationX();
+        int yOffset = upY * imageScale + editor.getImageTranslationY();
         int gravity;
         if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
             gravity = Gravity.START;
@@ -250,12 +251,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         View view = View.inflate(this, R.layout.popup_selection_2, null);
         view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        final PopupWindow window = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
+        final PopupWindow window = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, false);
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         window.setOutsideTouchable(true);
         window.setTouchable(true);
-        int xOffset = upX * imageScale;
-        int yOffset = upY * imageScale;
+        int xOffset = upX * imageScale + editor.getImageTranslationX();
+        int yOffset = upY * imageScale + editor.getImageTranslationY();
         int gravity;
         if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
             gravity = Gravity.START;
@@ -1386,11 +1388,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 editor.setImageName(Editor.IMAGE_NAME_DEFAULT());
                 editor.setBitmap(Bitmap.createBitmap(Integer.parseInt(etImageWidth.getText().toString()),
                         Integer.parseInt(etImageHeight.getText().toString()), Bitmap.Config.ARGB_8888));
-                tvImageName.setText(editor.getImageName());
-                tvImageName.append(" [");
+                editor.setImageTranslationX(Editor.IMAGE_TRANSLATION_X_DEFAULT);
+                editor.setImageTranslationY(Editor.IMAGE_TRANSLATION_Y_DEFAULT);
+                tvImageName.setText("[");
                 tvImageName.append(editor.getToolBufferPool().getCurrentBitmap().getWidth() + " * " +
                         editor.getToolBufferPool().getCurrentBitmap().getHeight());
-                tvImageName.append("]");
+                tvImageName.append("] ");
+                tvImageName.append(editor.getImageName());
                 dialog.dismiss();
             }
         });
@@ -1648,18 +1652,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inJustDecodeBounds = true;
                     Bitmap bounds = BitmapFactory.decodeFile(pathname, options);
-                    if ((bounds.getWidth() <= Editor.IMAGE_WIDTH_MAX) &&
-                    bounds.getHeight() <= Editor.IMAGE_HEIGHT_MAX) {
+                    if ((options.outWidth <= Editor.IMAGE_WIDTH_MAX) &&
+                    options.outHeight <= Editor.IMAGE_HEIGHT_MAX) {
                         BitmapUtils.recycleBitmap(bounds);
                         Bitmap bitmap = BitmapDecoder.decodeFile(pathname);
                         if (bitmap != null) {
                             editor.setImageName(FilenameUtils.getBaseName(name));
-                            tvImageName.setText(editor.getImageName());
-                            tvImageName.append(" [");
+                            tvImageName.setText("[");
                             tvImageName.append(editor.getToolBufferPool().getCurrentBitmap().getWidth() + " * " +
                                     editor.getToolBufferPool().getCurrentBitmap().getHeight());
-                            tvImageName.append("]");
+                            tvImageName.append("] ");
+                            tvImageName.append(editor.getImageName());
                             editor.setBitmap(bitmap);
+                            editor.setImageTranslationX(Editor.IMAGE_TRANSLATION_X_DEFAULT);
+                            editor.setImageTranslationY(Editor.IMAGE_TRANSLATION_Y_DEFAULT);
                             if (loadImageDialog != null) {
                                 loadImageDialog.dismiss();
                             }
@@ -1879,11 +1885,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Get widgets & set listeners
         // TopBar
         tvImageName = findViewById(R.id.tv_image_name);
-        tvImageName.setText(editor.getImageName());
-        tvImageName.append(" [");
+        tvImageName.setText("[");
         tvImageName.append(editor.getToolBufferPool().getCurrentBitmap().getWidth() + " * " +
                 editor.getToolBufferPool().getCurrentBitmap().getHeight());
-        tvImageName.append("]");
+        tvImageName.append("] ");
+        tvImageName.append(editor.getImageName());
         imgGrid = findViewById(R.id.img_grid);
         imgUndo = findViewById(R.id.img_undo);
         imgRedo = findViewById(R.id.img_redo);
