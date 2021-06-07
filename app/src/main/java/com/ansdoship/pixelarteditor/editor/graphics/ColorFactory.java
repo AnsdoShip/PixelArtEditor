@@ -123,20 +123,8 @@ public final class ColorFactory {
         return resetAlpha(ColorUtils.LABToColor(l(color), a(color), b), Color.alpha(color));
     }
 
-    public static @NonNull String colorToHexString (int color, boolean fullSize) {
-        if (fullSize) {
-            return (Integer.toHexString(Color.alpha(color)) + "0").substring(0, 2) +
-                    (Integer.toHexString(Color.red(color)) + "0").substring(0, 2) +
-                    (Integer.toHexString(Color.green(color)) + "0").substring(0, 2) +
-                    (Integer.toHexString(Color.blue(color)) + "0").substring(0, 2);
-        }
-        else {
-            return colorToHexString(color);
-        }
-    }
-
     public static @NonNull String colorToHexString (int color) {
-        return Integer.toHexString(color);
+        return String.format("#%08X", color);
     }
     
 }

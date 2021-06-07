@@ -692,8 +692,10 @@ public final class Editor {
                         switch (selectionFlag) {
                             case ToolFlag.SelectionFlag.CUT:
                             case ToolFlag.SelectionFlag.COPY:
-                                selectionLeft = selectionBitmapDstX * imageScale + selectionPaint1.getStrokeWidth() / 2;
-                                selectionTop = selectionBitmapDstY * imageScale + selectionPaint1.getStrokeWidth() / 2;
+                                selectionLeft = imageTranslationX +
+                                        selectionBitmapDstX * imageScale + selectionPaint1.getStrokeWidth() / 2;
+                                selectionTop = imageTranslationX +
+                                        selectionBitmapDstY * imageScale + selectionPaint1.getStrokeWidth() / 2;
                                 selectionRight = selectionLeft + (selectionBitmapDstWidth - 1) * imageScale
                                         + selectionPaint1.getStrokeWidth();
                                 selectionBottom = selectionTop + (selectionBitmapDstHeight - 1) * imageScale

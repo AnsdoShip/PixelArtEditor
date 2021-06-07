@@ -26,7 +26,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/selectableItemBackground"
             android:contentDescription="@string/rename"
-            app:srcCompat="@drawable/ic_baseline_paint_24" />
+            app:srcCompat="@drawable/ic_baseline_edit_24" />
 
         <ImageButton
             android:id="@+id/img_adapter_delete"

@@ -176,6 +176,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 editor.setSelectionBitmapSrcY(Math.min(downY, moveY));
                 editor.setSelectionBitmapSrcWidth(Math.abs(downX - moveX) + 1);
                 editor.setSelectionBitmapSrcHeight(Math.abs(downY - moveY) + 1);
+                editor.setSelectionBitmapDstX(editor.getSelectionBitmapSrcX());
+                editor.setSelectionBitmapDstY(editor.getSelectionBitmapSrcY());
                 editor.setSelectionBitmapDstWidth(editor.getSelectionBitmapSrcWidth());
                 editor.setSelectionBitmapDstHeight(editor.getSelectionBitmapSrcHeight());
                 editor.setSelectionFlag(ToolFlag.SelectionFlag.CUT);
@@ -190,6 +192,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 editor.setSelectionBitmapSrcY(Math.min(downY, moveY));
                 editor.setSelectionBitmapSrcWidth(Math.abs(downX - moveX) + 1);
                 editor.setSelectionBitmapSrcHeight(Math.abs(downY - moveY) + 1);
+                editor.setSelectionBitmapDstX(editor.getSelectionBitmapSrcX());
+                editor.setSelectionBitmapDstY(editor.getSelectionBitmapSrcY());
                 editor.setSelectionBitmapDstWidth(editor.getSelectionBitmapSrcWidth());
                 editor.setSelectionBitmapDstHeight(editor.getSelectionBitmapSrcHeight());
                 editor.setSelectionFlag(ToolFlag.SelectionFlag.COPY);
@@ -204,6 +208,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 editor.setSelectionBitmapSrcY(Math.min(downY, moveY));
                 editor.setSelectionBitmapSrcWidth(Math.abs(downX - moveX) + 1);
                 editor.setSelectionBitmapSrcHeight(Math.abs(downY - moveY) + 1);
+                editor.setSelectionBitmapDstX(editor.getSelectionBitmapSrcX());
+                editor.setSelectionBitmapDstY(editor.getSelectionBitmapSrcY());
                 editor.setSelectionBitmapDstWidth(editor.getSelectionBitmapSrcWidth());
                 editor.setSelectionBitmapDstHeight(editor.getSelectionBitmapSrcHeight());
                 editor.setSelectionFlag(ToolFlag.SelectionFlag.CLEAR);
@@ -432,6 +438,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             editor.getSelectionBitmapDstX(),
                             editor.getSelectionBitmapDstY(),
                             ToolFlag.SelectionFlag.CLEAR));
+                }
+                else {
+                    editor.getToolBufferPool().clearTempToolBuffers();
                 }
                 editor.setSelectionFlag(ToolFlag.SelectionFlag.NONE);
                 editor.setSelected(false);
@@ -1374,8 +1383,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                editor.setImageName(Editor.IMAGE_NAME_DEFAULT());
                 editor.setBitmap(Bitmap.createBitmap(Integer.parseInt(etImageWidth.getText().toString()),
                         Integer.parseInt(etImageHeight.getText().toString()), Bitmap.Config.ARGB_8888));
+                tvImageName.setText(editor.getImageName());
+                tvImageName.append(" [");
+                tvImageName.append(editor.getToolBufferPool().getCurrentBitmap().getWidth() + " * " +
+                        editor.getToolBufferPool().getCurrentBitmap().getHeight());
+                tvImageName.append("]");
                 dialog.dismiss();
             }
         });
@@ -1640,6 +1655,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         if (bitmap != null) {
                             editor.setImageName(FilenameUtils.getBaseName(name));
                             tvImageName.setText(editor.getImageName());
+                            tvImageName.append(" [");
+                            tvImageName.append(editor.getToolBufferPool().getCurrentBitmap().getWidth() + " * " +
+                                    editor.getToolBufferPool().getCurrentBitmap().getHeight());
+                            tvImageName.append("]");
                             editor.setBitmap(bitmap);
                             if (loadImageDialog != null) {
                                 loadImageDialog.dismiss();
@@ -1684,7 +1703,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Image name dialog
     private void buildImageNameDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(editor.getImageName());
+        builder.setMessage(tvImageName.getText());
         builder.create().show();
     }
     // Permission dialog
@@ -1861,6 +1880,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // TopBar
         tvImageName = findViewById(R.id.tv_image_name);
         tvImageName.setText(editor.getImageName());
+        tvImageName.append(" [");
+        tvImageName.append(editor.getToolBufferPool().getCurrentBitmap().getWidth() + " * " +
+                editor.getToolBufferPool().getCurrentBitmap().getHeight());
+        tvImageName.append("]");
         imgGrid = findViewById(R.id.img_grid);
         imgUndo = findViewById(R.id.img_undo);
         imgRedo = findViewById(R.id.img_redo);
