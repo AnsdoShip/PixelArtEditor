@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
@@ -21,9 +22,13 @@ import androidx.annotation.Nullable;
 
 import com.ansdoship.pixelarteditor.R;
 import com.ansdoship.pixelarteditor.editor.buffer.FillBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.FlipHorizontalBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.FlipVerticalBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.MultiBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.PaintBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.PointBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.RotateBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.SelectionBuffer;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapUtils;
 import com.ansdoship.pixelarteditor.ui.view.CanvasView;
 import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
@@ -306,7 +311,7 @@ public final class Editor {
                         public void onIOException(IOException e) {}
                     });
         }
-        BitmapUtils.recycleBitmaps(cacheBitmap, currentBitmap, canvasBackgroundBitmap, selectedBitmap);
+        BitmapUtils.recycleBitmaps(cacheBitmap, currentBitmap, canvasBackgroundBitmap);
 
         if (externalPalette != null) {
             PaletteFactory.encodeFile(externalPalette, getExternalPalettePathName(getExternalPaletteName()), true);
@@ -369,7 +374,6 @@ public final class Editor {
     private Bitmap cacheBitmap;
     private Bitmap currentBitmap;
     private Bitmap canvasBackgroundBitmap;
-    private Bitmap selectedBitmap;
 
     private Paint gridPaint;
     private Paint canvasBackgroundPaint;
@@ -388,8 +392,31 @@ public final class Editor {
     private PaletteList listPalettes;
 
     private boolean selected;
-    private int selectionBitmapX;
-    private int selectionBitmapY;
+    private int selectionBitmapSrcX;
+    private int selectionBitmapSrcY;
+    private int selectionBitmapSrcWidth;
+    private int selectionBitmapSrcHeight;
+    private int selectionBitmapDstX;
+    private int selectionBitmapDstY;
+    private int selectionBitmapDstWidth;
+    private int selectionBitmapDstHeight;
+    private RotateBuffer selectionBitmapRotateBuffer;
+    private FlipVerticalBuffer selectionBitmapFlipVerticalBuffer;
+    private FlipHorizontalBuffer selectionBitmapFlipHorizontalBuffer;
+
+    public interface Callback {
+        void SelectionCallback();
+    }
+
+    private Callback mCallback;
+
+    public void setCallback(Callback mCallback) {
+        this.mCallback = mCallback;
+    }
+
+    public Callback getCallback() {
+        return mCallback;
+    }
 
     private int downX;
     private int downY;
@@ -470,15 +497,6 @@ public final class Editor {
         }
         Bitmap temp = canvasBackgroundBitmap;
         canvasBackgroundBitmap = newBitmap;
-        BitmapUtils.recycleBitmap(temp);
-    }
-
-    public void replaceSelectedBitmap(Bitmap newBitmap) {
-        if (selectedBitmap == newBitmap) {
-            return;
-        }
-        Bitmap temp = selectedBitmap;
-        selectedBitmap = newBitmap;
         BitmapUtils.recycleBitmap(temp);
     }
 
@@ -669,10 +687,12 @@ public final class Editor {
                         switch (selectionFlag) {
                             case ToolFlag.SelectionFlag.CUT:
                             case ToolFlag.SelectionFlag.COPY:
-                                selectionLeft = selectionBitmapX * imageScale + selectionPaint1.getStrokeWidth() / 2;
-                                selectionTop = selectionBitmapY * imageScale + selectionPaint1.getStrokeWidth() / 2;
-                                selectionRight = selectionLeft + selectedBitmap.getWidth() * imageScale;
-                                selectionBottom = selectionTop + selectedBitmap.getHeight() * imageScale;
+                                selectionLeft = selectionBitmapDstX * imageScale + selectionPaint1.getStrokeWidth() / 2;
+                                selectionTop = selectionBitmapDstY * imageScale + selectionPaint1.getStrokeWidth() / 2;
+                                selectionRight = selectionLeft + (selectionBitmapDstWidth - 1) * imageScale
+                                        + selectionPaint1.getStrokeWidth();
+                                selectionBottom = selectionTop + (selectionBitmapDstHeight - 1) * imageScale
+                                        + selectionPaint1.getStrokeWidth();
                                 break;
                             case ToolFlag.SelectionFlag.CLEAR:
                             default:
@@ -724,9 +744,16 @@ public final class Editor {
                                     switch (selectionFlag) {
                                         case ToolFlag.SelectionFlag.CUT:
                                         case ToolFlag.SelectionFlag.COPY:
-                                            selectionBitmapX = downX - (int)(selectedBitmap.getWidth() * 0.5f);
-                                            selectionBitmapY = downY - (int)(selectedBitmap.getHeight() * 0.5f);
-                                            // FIXME canvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
+                                            selectionBitmapDstX = downX - selectionBitmapDstWidth / 2;
+                                            selectionBitmapDstY = downY - selectionBitmapDstHeight / 2;
+                                            toolBufferPool.clearTempToolBuffers();
+                                            toolBufferPool.addTempToolBuffer(new SelectionBuffer(
+                                                    selectionBitmapSrcX, selectionBitmapSrcY,
+                                                    selectionBitmapSrcWidth, selectionBitmapSrcHeight,
+                                                    selectionBitmapDstX, selectionBitmapDstY,
+                                                    selectionFlag, selectionBitmapRotateBuffer,
+                                                    selectionBitmapFlipVerticalBuffer,
+                                                    selectionBitmapFlipHorizontalBuffer));
                                             selected = true;
                                             break;
                                         case ToolFlag.SelectionFlag.CLEAR:
@@ -768,8 +795,6 @@ public final class Editor {
                                     }
                                     break;
                             }
-                            //currentCanvas.save();
-                            //currentCanvas.restore();
                             canvasView.invalidate();
                             break;
                         case MotionEvent.ACTION_POINTER_DOWN:
@@ -778,7 +803,6 @@ public final class Editor {
                             newDist = oldDist;
                             scaleMode = true;
                             readOnlyMode = true;
-
                             selectionFlag = ToolFlag.SelectionFlag.NONE;
                             selected = false;
                             break;
@@ -941,15 +965,24 @@ public final class Editor {
                                         switch (selectionFlag) {
                                             case ToolFlag.SelectionFlag.CUT:
                                             case ToolFlag.SelectionFlag.COPY:
-                                                selectionBitmapX = moveX - (int)(selectedBitmap.getWidth() * 0.5f);
-                                                selectionBitmapY = moveY - (int)(selectedBitmap.getHeight() * 0.5f);
-                                                //currentCanvas.drawBitmap(selectionBitmap, selectionBitmapX, selectionBitmapY, bitmapPaint);
+                                                selectionBitmapDstX = moveX - selectionBitmapDstWidth / 2;
+                                                selectionBitmapDstY = moveY - selectionBitmapDstHeight / 2;
+                                                toolBufferPool.clearTempToolBuffers();
+                                                toolBufferPool.addTempToolBuffer(new SelectionBuffer(
+                                                        selectionBitmapSrcX,
+                                                        selectionBitmapSrcY,
+                                                        selectionBitmapSrcWidth,
+                                                        selectionBitmapSrcHeight,
+                                                        selectionBitmapDstX,
+                                                        selectionBitmapDstY,
+                                                        selectionFlag,
+                                                        selectionBitmapRotateBuffer,
+                                                        selectionBitmapFlipVerticalBuffer,
+                                                        selectionBitmapFlipHorizontalBuffer));
                                                 break;
                                         }
                                         break;
                                 }
-                                //currentCanvas.save();
-                                //currentCanvas.restore();
                             }
                             canvasView.invalidate();
                             break;
@@ -981,27 +1014,12 @@ public final class Editor {
                                         }
                                         break;
                                     case ToolFlag.SELECTION:
-                                        switch (selectionFlag) {
-                                            case ToolFlag.SelectionFlag.CUT:
-                                            case ToolFlag.SelectionFlag.COPY:
-                                                // Clear canvas
-                                                //currentCanvas.drawPaint(eraser);
-                                                // Draw cache bitmap
-                                                //currentCanvas.drawBitmap(cacheBitmap, 0, 0, bitmapPaint);
-                                                //currentCanvas.save();
-                                                //currentCanvas.restore();
-                                                //buildSelectionPopup2();
-                                                break;
-                                            case ToolFlag.SelectionFlag.CLEAR:
-                                            default:
-                                                //buildSelectionPopup1();
-                                                break;
+                                        if (mCallback != null) {
+                                            mCallback.SelectionCallback();
                                         }
                                         break;
                                 }
                                 if (toolFlag != ToolFlag.SELECTION) {
-                                    //currentCanvas.save();
-                                    //currentCanvas.restore();
                                     canvasView.invalidate();
                                 }
                             }
@@ -1038,10 +1056,6 @@ public final class Editor {
         return canvasBackgroundBitmap;
     }
 
-    public Bitmap getSelectedBitmap() {
-        return selectedBitmap;
-    }
-
     public void setSelected(boolean selected) {
         this.selected = selected;
     }
@@ -1050,20 +1064,98 @@ public final class Editor {
         return selected;
     }
 
-    public void setSelectionBitmapX(int selectionBitmapX) {
-        this.selectionBitmapX = selectionBitmapX;
+    public void setSelectionBitmapSrcX(int selectionBitmapSrcX) {
+        this.selectionBitmapSrcX = selectionBitmapSrcX;
     }
 
-    public int getSelectionBitmapX() {
-        return selectionBitmapX;
+    public int getSelectionBitmapSrcX() {
+        return selectionBitmapSrcX;
     }
 
-    public void setSelectionBitmapY(int selectionBitmapY) {
-        this.selectionBitmapY = selectionBitmapY;
+    public void setSelectionBitmapSrcY(int selectionBitmapSrcY) {
+        this.selectionBitmapSrcY = selectionBitmapSrcY;
     }
 
-    public int getSelectionBitmapY() {
-        return selectionBitmapY;
+    public int getSelectionBitmapSrcY() {
+        return selectionBitmapSrcY;
+    }
+
+    public void setSelectionBitmapSrcWidth(int selectionBitmapSrcWidth) {
+        this.selectionBitmapSrcWidth = selectionBitmapSrcWidth;
+    }
+
+    public int getSelectionBitmapSrcWidth() {
+        return selectionBitmapSrcWidth;
+    }
+
+    public void setSelectionBitmapSrcHeight(int selectionBitmapSrcHeight) {
+        this.selectionBitmapSrcHeight = selectionBitmapSrcHeight;
+    }
+
+    public int getSelectionBitmapSrcHeight() {
+        return selectionBitmapSrcHeight;
+    }
+
+    public void setSelectionBitmapDstX(int selectionBitmapDstX) {
+        this.selectionBitmapDstX = selectionBitmapDstX;
+    }
+
+    public int getSelectionBitmapDstX() {
+        return selectionBitmapDstX;
+    }
+
+    public void setSelectionBitmapDstY(int selectionBitmapDstY) {
+        this.selectionBitmapDstY = selectionBitmapDstY;
+    }
+
+    public int getSelectionBitmapDstY() {
+        return selectionBitmapDstY;
+    }
+
+    public void setSelectionBitmapDstWidth(int selectionBitmapDstWidth) {
+        this.selectionBitmapDstWidth = selectionBitmapDstWidth;
+    }
+
+    public int getSelectionBitmapDstWidth() {
+        return selectionBitmapDstWidth;
+    }
+
+    public void setSelectionBitmapDstHeight(int selectionBitmapDstHeight) {
+        this.selectionBitmapDstHeight = selectionBitmapDstHeight;
+    }
+
+    public int getSelectionBitmapDstHeight() {
+        return selectionBitmapDstHeight;
+    }
+
+    public void swapSelectionBitmapDstWidthHeight() {
+        int tempWidth = getSelectionBitmapDstWidth();
+        setSelectionBitmapDstWidth(getSelectionBitmapDstHeight());
+        setSelectionBitmapDstHeight(tempWidth);
+    }
+
+    public void setSelectionBitmapRotateBuffer(RotateBuffer selectionBitmapRotateBuffer) {
+        this.selectionBitmapRotateBuffer = selectionBitmapRotateBuffer;
+    }
+
+    public RotateBuffer getSelectionBitmapRotateBuffer() {
+        return selectionBitmapRotateBuffer;
+    }
+
+    public void setSelectionBitmapFlipVerticalBuffer(FlipVerticalBuffer selectionBitmapFlipVerticalBuffer) {
+        this.selectionBitmapFlipVerticalBuffer = selectionBitmapFlipVerticalBuffer;
+    }
+
+    public FlipVerticalBuffer getSelectionBitmapFlipVerticalBuffer() {
+        return selectionBitmapFlipVerticalBuffer;
+    }
+
+    public void setSelectionBitmapFlipHorizontalBuffer(FlipHorizontalBuffer selectionBitmapFlipHorizontalBuffer) {
+        this.selectionBitmapFlipHorizontalBuffer = selectionBitmapFlipHorizontalBuffer;
+    }
+
+    public FlipHorizontalBuffer getSelectionBitmapFlipHorizontalBuffer() {
+        return selectionBitmapFlipHorizontalBuffer;
     }
 
     public void setImageName(String imageName) {

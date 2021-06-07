@@ -15,25 +15,17 @@ public class SelectionBuffer extends ToolBuffer {
     private final int mDstY;
     private final int mSelectionFlag;
     private final RotateBuffer mRotateBuffer;
-    private final FlipBuffer mFlipBuffer;
-
-    public SelectionBuffer(@NonNull Rect srcRect, @NonNull Point dstOrigin, int selectionFlag) {
-        this(srcRect, dstOrigin, selectionFlag, null, null);
-    }
-
-    public SelectionBuffer(@NonNull Rect srcRect, @NonNull Point dstOrigin, int selectionFlag,
-                           RotateBuffer rotateBuffer, FlipBuffer flipBuffer) {
-        this(srcRect.left, srcRect.top, srcRect.width(), srcRect.height(), dstOrigin.x, dstOrigin.y,
-                selectionFlag, rotateBuffer, flipBuffer);
-    }
+    private final FlipVerticalBuffer mFlipVerticalBuffer;
+    private final FlipHorizontalBuffer mFlipHorizontalBuffer;
 
     public SelectionBuffer(int srcX, int srcY, int srcWidth, int srcHeight, int dstX, int dstY, int selectionFlag) {
-        this (srcX, srcY, srcWidth, srcHeight, dstX, dstY, selectionFlag, null, null);
+        this (srcX, srcY, srcWidth, srcHeight, dstX, dstY, selectionFlag, null, null, null);
     }
 
     public SelectionBuffer(int srcX, int srcY, int srcWidth, int srcHeight,
                            int dstX, int dstY, int selectionFlag,
-                           RotateBuffer rotateBuffer, FlipBuffer flipBuffer) {
+                           RotateBuffer rotateBuffer, FlipVerticalBuffer flipVerticalBuffer,
+                           FlipHorizontalBuffer flipHorizontalBuffer) {
         mSrcX = srcX;
         mSrcY = srcY;
         mSrcWidth = srcWidth;
@@ -42,7 +34,8 @@ public class SelectionBuffer extends ToolBuffer {
         mDstY = dstY;
         mSelectionFlag = selectionFlag;
         mRotateBuffer = rotateBuffer;
-        mFlipBuffer = flipBuffer;
+        mFlipVerticalBuffer = flipVerticalBuffer;
+        mFlipHorizontalBuffer = flipHorizontalBuffer;
     }
 
     public int getSrcX() {
@@ -77,8 +70,12 @@ public class SelectionBuffer extends ToolBuffer {
         return mRotateBuffer;
     }
 
-    public FlipBuffer getFlipBuffer() {
-        return mFlipBuffer;
+    public FlipVerticalBuffer getFlipVerticalBuffer() {
+        return mFlipVerticalBuffer;
+    }
+
+    public FlipHorizontalBuffer getFlipHorizontalBuffer() {
+        return mFlipHorizontalBuffer;
     }
 
     @Override

@@ -14,16 +14,20 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputFilter;
 import android.text.Spanned;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -35,6 +39,11 @@ import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.ansdoship.pixelarteditor.editor.Editor;
+import com.ansdoship.pixelarteditor.editor.buffer.BufferFlag;
+import com.ansdoship.pixelarteditor.editor.buffer.FlipHorizontalBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.FlipVerticalBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.RotateBuffer;
+import com.ansdoship.pixelarteditor.editor.buffer.SelectionBuffer;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapDecoder;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapEncoder;
 import com.ansdoship.pixelarteditor.editor.graphics.ColorFactory;
@@ -51,6 +60,7 @@ import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.PaletteListAdapte
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.TextViewListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup;
 import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
+import com.ansdoship.pixelarteditor.util.MathUtils;
 import com.ansdoship.pixelarteditor.util.Utils;
 
 import org.apache.commons.io.FileUtils;
@@ -92,6 +102,339 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private CanvasView canvasView;
 
     // POPUPS
+    // Selection popup 1
+    private void buildSelectionPopup1() {
+
+        int downX = editor.getDownX();
+        int downY = editor.getDownY();
+        int moveX = editor.getMoveX();
+        int moveY = editor.getMoveY();
+        int upX = editor.getUpX();
+        int upY = editor.getUpY();
+        int imageScale = editor.getImageScale();
+
+        editor.setSelectionFlag(ToolFlag.SelectionFlag.NONE);
+        View view = View.inflate(this, R.layout.popup_selection_1, null);
+        view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        final PopupWindow window = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
+        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        window.setOutsideTouchable(true);
+        window.setTouchable(true);
+        int xOffset = upX * imageScale;
+        int yOffset = upY * imageScale;
+        int gravity;
+        if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
+            gravity = Gravity.START;
+        }
+        else {
+            gravity = Gravity.END;
+            yOffset -= view.getMeasuredHeight();
+            yOffset += imageScale;
+        }
+        if (xOffset + view.getMeasuredWidth() < canvasView.getWidth()) {
+            gravity = gravity | Gravity.TOP;
+        }
+        else {
+            gravity = gravity | Gravity.BOTTOM;
+            xOffset -= view.getMeasuredWidth();
+            xOffset += imageScale;
+        }
+        switch (gravity) {
+            case Gravity.START | Gravity.TOP:
+                window.setAnimationStyle(R.style.animTranslateInLeftTop);
+                break;
+            case Gravity.END| Gravity.TOP:
+                window.setAnimationStyle(R.style.animTranslateInRightTop);
+                break;
+            case Gravity.START | Gravity.BOTTOM:
+                window.setAnimationStyle(R.style.animTranslateInLeftBottom);
+                break;
+            case Gravity.END | Gravity.BOTTOM:
+                window.setAnimationStyle(R.style.animTranslateInRightBottom);
+                break;
+        }
+        TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
+        yOffset += typedArray.getDimension(0, 0);
+        typedArray.recycle();
+        yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
+                "dimen", "android"));
+        window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
+        ImageButton imgCut = view.findViewById(R.id.img_cut);
+        ImageButton imgCopy = view.findViewById(R.id.img_copy);
+        ImageButton imgClear = view.findViewById(R.id.img_clear);
+        ImageButton imgNone = view.findViewById(R.id.img_none);
+        imgCut.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                editor.setSelectionBitmapSrcX(Math.min(downX, moveX));
+                editor.setSelectionBitmapSrcY(Math.min(downY, moveY));
+                editor.setSelectionBitmapSrcWidth(Math.abs(downX - moveX) + 1);
+                editor.setSelectionBitmapSrcHeight(Math.abs(downY - moveY) + 1);
+                editor.setSelectionBitmapDstWidth(editor.getSelectionBitmapSrcWidth());
+                editor.setSelectionBitmapDstHeight(editor.getSelectionBitmapSrcHeight());
+                editor.setSelectionFlag(ToolFlag.SelectionFlag.CUT);
+                window.dismiss();
+                buildSelectionPopup2();
+            }
+        });
+        imgCopy.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                editor.setSelectionBitmapSrcX(Math.min(downX, moveX));
+                editor.setSelectionBitmapSrcY(Math.min(downY, moveY));
+                editor.setSelectionBitmapSrcWidth(Math.abs(downX - moveX) + 1);
+                editor.setSelectionBitmapSrcHeight(Math.abs(downY - moveY) + 1);
+                editor.setSelectionBitmapDstWidth(editor.getSelectionBitmapSrcWidth());
+                editor.setSelectionBitmapDstHeight(editor.getSelectionBitmapSrcHeight());
+                editor.setSelectionFlag(ToolFlag.SelectionFlag.COPY);
+                window.dismiss();
+                buildSelectionPopup2();
+            }
+        });
+        imgClear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                editor.setSelectionBitmapSrcX(Math.min(downX, moveX));
+                editor.setSelectionBitmapSrcY(Math.min(downY, moveY));
+                editor.setSelectionBitmapSrcWidth(Math.abs(downX - moveX) + 1);
+                editor.setSelectionBitmapSrcHeight(Math.abs(downY - moveY) + 1);
+                editor.setSelectionBitmapDstWidth(editor.getSelectionBitmapSrcWidth());
+                editor.setSelectionBitmapDstHeight(editor.getSelectionBitmapSrcHeight());
+                editor.setSelectionFlag(ToolFlag.SelectionFlag.CLEAR);
+                editor.getToolBufferPool().addToolBuffer(new SelectionBuffer(
+                        editor.getSelectionBitmapSrcX(),
+                        editor.getSelectionBitmapSrcY(),
+                        editor.getSelectionBitmapSrcWidth(),
+                        editor.getSelectionBitmapSrcHeight(),
+                        editor.getSelectionBitmapDstX(),
+                        editor.getSelectionBitmapDstY(),
+                        ToolFlag.SelectionFlag.CLEAR));
+                editor.setSelected(false);
+                editor.invalidateCanvasView();
+                window.dismiss();
+            }
+        });
+        imgNone.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                editor.setSelectionFlag(ToolFlag.SelectionFlag.NONE);
+                editor.setSelected(false);
+                editor.invalidateCanvasView();
+                window.dismiss();
+            }
+        });
+    }
+    // Selection popup 2
+    private void buildSelectionPopup2() {
+
+        int downX = editor.getDownX();
+        int downY = editor.getDownY();
+        int moveX = editor.getMoveX();
+        int moveY = editor.getMoveY();
+        int upX = editor.getUpX();
+        int upY = editor.getUpY();
+        int imageScale = editor.getImageScale();
+
+        View view = View.inflate(this, R.layout.popup_selection_2, null);
+        view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        final PopupWindow window = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
+        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        window.setOutsideTouchable(true);
+        window.setTouchable(true);
+        int xOffset = upX * imageScale;
+        int yOffset = upY * imageScale;
+        int gravity;
+        if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
+            gravity = Gravity.START;
+        }
+        else {
+            gravity = Gravity.END;
+            yOffset -= view.getMeasuredHeight();
+            yOffset += imageScale;
+        }
+        if (xOffset + view.getMeasuredWidth() < canvasView.getWidth()) {
+            gravity = gravity | Gravity.TOP;
+        }
+        else {
+            gravity = gravity | Gravity.BOTTOM;
+            xOffset -= view.getMeasuredWidth();
+            xOffset += imageScale;
+        }
+        switch (gravity) {
+            case Gravity.START | Gravity.TOP:
+                window.setAnimationStyle(R.style.animTranslateInLeftTop);
+                break;
+            case Gravity.END| Gravity.TOP:
+                window.setAnimationStyle(R.style.animTranslateInRightTop);
+                break;
+            case Gravity.START | Gravity.BOTTOM:
+                window.setAnimationStyle(R.style.animTranslateInLeftBottom);
+                break;
+            case Gravity.END | Gravity.BOTTOM:
+                window.setAnimationStyle(R.style.animTranslateInRightBottom);
+                break;
+        }
+        TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
+        yOffset += typedArray.getDimension(0, 0);
+        typedArray.recycle();
+        yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
+                "dimen", "android"));
+        window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
+        ImageButton imgRotateLeft = view.findViewById(R.id.img_rotate_left);
+        ImageButton imgRotateRight = view.findViewById(R.id.img_rotate_right);
+        ImageButton imgFlipHorizontal = view.findViewById(R.id.img_flip_horizontal);
+        ImageButton imgFlipVertical = view.findViewById(R.id.img_flip_vertical);
+        ImageButton imgDone = view.findViewById(R.id.img_done);
+        ImageButton imgNone = view.findViewById(R.id.img_none);
+        imgRotateLeft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int degrees = -90;
+                if (editor.getSelectionBitmapRotateBuffer() != null) {
+                    degrees = degrees + editor.getSelectionBitmapRotateBuffer().getDegrees();
+                }
+                if (degrees <= -360) {
+                    degrees = degrees + 360;
+                }
+                editor.swapSelectionBitmapDstWidthHeight();
+                editor.setSelectionBitmapRotateBuffer(new RotateBuffer(degrees));
+                editor.getToolBufferPool().clearTempToolBuffers();
+                editor.getToolBufferPool().addTempToolBuffer(new SelectionBuffer(
+                        editor.getSelectionBitmapSrcX(),
+                        editor.getSelectionBitmapSrcY(),
+                        editor.getSelectionBitmapSrcWidth(),
+                        editor.getSelectionBitmapSrcHeight(),
+                        editor.getSelectionBitmapDstX(),
+                        editor.getSelectionBitmapDstY(),
+                        editor.getSelectionFlag(),
+                        editor.getSelectionBitmapRotateBuffer(),
+                        editor.getSelectionBitmapFlipVerticalBuffer(),
+                        editor.getSelectionBitmapFlipHorizontalBuffer()
+                ));
+                editor.invalidateCanvasView();
+            }
+        });
+        imgRotateRight.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int degrees = 90;
+                if (editor.getSelectionBitmapRotateBuffer() != null) {
+                    degrees = degrees + editor.getSelectionBitmapRotateBuffer().getDegrees();
+                }
+                if (degrees >= 360) {
+                    degrees = degrees - 360;
+                }
+                editor.swapSelectionBitmapDstWidthHeight();
+                editor.setSelectionBitmapRotateBuffer(new RotateBuffer(degrees));
+                editor.getToolBufferPool().clearTempToolBuffers();
+                editor.getToolBufferPool().addTempToolBuffer(new SelectionBuffer(
+                        editor.getSelectionBitmapSrcX(),
+                        editor.getSelectionBitmapSrcY(),
+                        editor.getSelectionBitmapSrcWidth(),
+                        editor.getSelectionBitmapSrcHeight(),
+                        editor.getSelectionBitmapDstX(),
+                        editor.getSelectionBitmapDstY(),
+                        editor.getSelectionFlag(),
+                        editor.getSelectionBitmapRotateBuffer(),
+                        editor.getSelectionBitmapFlipVerticalBuffer(),
+                        editor.getSelectionBitmapFlipHorizontalBuffer()
+                ));
+                editor.invalidateCanvasView();
+            }
+        });
+        imgFlipHorizontal.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (editor.getSelectionBitmapFlipHorizontalBuffer() == null) {
+                    editor.setSelectionBitmapFlipHorizontalBuffer(new FlipHorizontalBuffer());
+                }
+                else {
+                    editor.setSelectionBitmapFlipHorizontalBuffer(null);
+                }
+                editor.getToolBufferPool().clearTempToolBuffers();
+                editor.getToolBufferPool().addTempToolBuffer(new SelectionBuffer(
+                        editor.getSelectionBitmapSrcX(),
+                        editor.getSelectionBitmapSrcY(),
+                        editor.getSelectionBitmapSrcWidth(),
+                        editor.getSelectionBitmapSrcHeight(),
+                        editor.getSelectionBitmapDstX(),
+                        editor.getSelectionBitmapDstY(),
+                        editor.getSelectionFlag(),
+                        editor.getSelectionBitmapRotateBuffer(),
+                        editor.getSelectionBitmapFlipVerticalBuffer(),
+                        editor.getSelectionBitmapFlipHorizontalBuffer()
+                ));
+                editor.invalidateCanvasView();
+            }
+        });
+        imgFlipVertical.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (editor.getSelectionBitmapFlipVerticalBuffer() == null) {
+                    editor.setSelectionBitmapFlipVerticalBuffer(new FlipVerticalBuffer());
+                }
+                else {
+                    editor.setSelectionBitmapFlipVerticalBuffer(null);
+                }
+                editor.getToolBufferPool().clearTempToolBuffers();
+                editor.getToolBufferPool().addTempToolBuffer(new SelectionBuffer(
+                        editor.getSelectionBitmapSrcX(),
+                        editor.getSelectionBitmapSrcY(),
+                        editor.getSelectionBitmapSrcWidth(),
+                        editor.getSelectionBitmapSrcHeight(),
+                        editor.getSelectionBitmapDstX(),
+                        editor.getSelectionBitmapDstY(),
+                        editor.getSelectionFlag(),
+                        editor.getSelectionBitmapRotateBuffer(),
+                        editor.getSelectionBitmapFlipVerticalBuffer(),
+                        editor.getSelectionBitmapFlipHorizontalBuffer()
+                ));
+                editor.invalidateCanvasView();
+            }
+        });
+        imgDone.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                editor.getToolBufferPool().addToolBuffer(new SelectionBuffer(
+                        editor.getSelectionBitmapSrcX(),
+                        editor.getSelectionBitmapSrcY(),
+                        editor.getSelectionBitmapSrcWidth(),
+                        editor.getSelectionBitmapSrcHeight(),
+                        editor.getSelectionBitmapDstX(),
+                        editor.getSelectionBitmapDstY(),
+                        editor.getSelectionFlag(),
+                        editor.getSelectionBitmapRotateBuffer(),
+                        editor.getSelectionBitmapFlipVerticalBuffer(),
+                        editor.getSelectionBitmapFlipHorizontalBuffer()
+                ));
+                editor.setSelectionFlag(ToolFlag.SelectionFlag.NONE);
+                editor.setSelected(false);
+                editor.invalidateCanvasView();
+                window.dismiss();
+            }
+        });
+        imgNone.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (editor.getSelectionFlag() == ToolFlag.SelectionFlag.CUT) {
+                    editor.getToolBufferPool().addToolBuffer(new SelectionBuffer(
+                            editor.getSelectionBitmapSrcX(),
+                            editor.getSelectionBitmapSrcY(),
+                            editor.getSelectionBitmapSrcWidth(),
+                            editor.getSelectionBitmapSrcHeight(),
+                            editor.getSelectionBitmapDstX(),
+                            editor.getSelectionBitmapDstY(),
+                            ToolFlag.SelectionFlag.CLEAR));
+                }
+                editor.setSelectionFlag(ToolFlag.SelectionFlag.NONE);
+                editor.setSelected(false);
+                editor.invalidateCanvasView();
+                window.dismiss();
+            }
+        });
+    }
     // Menu popup
     private void buildMenuPopup() {
         View view = View.inflate(this, R.layout.popup_menu, null);
@@ -646,7 +989,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         alertDialog.show();
     }
     // Add palette dialog
-    private Palette tempPalette;
+    private Palette dialogTempPalette;
     private void buildAddPaletteDialog () {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         String [] items = {
@@ -659,32 +1002,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
-                        tempPalette = Palette.createPalette(12);
+                        dialogTempPalette = Palette.createPalette(12);
                         break;
                     case 1:
                         switch (editor.getPaletteFlag()) {
                             case PaletteFlag.BACKGROUND:
-                                tempPalette  = Palette.createPalette(editor.getBackgroundPalette(), 12);
+                                dialogTempPalette  = Palette.createPalette(editor.getBackgroundPalette(), 12);
                                 break;
                             case PaletteFlag.GRID:
-                                tempPalette  = Palette.createPalette(editor.getGridPalette(), 12);
+                                dialogTempPalette  = Palette.createPalette(editor.getGridPalette(), 12);
                                 break;
                             case PaletteFlag.INTERNAL:
-                                tempPalette  = Palette.createPalette(editor.getBuiltinPalette());
+                                dialogTempPalette  = Palette.createPalette(editor.getBuiltinPalette());
                                 break;
                             case PaletteFlag.EXTERNAL:
                                 Palette externalPalette = editor.getExternalPalette();
                                 if (externalPalette == null) {
-                                    tempPalette = Palette.createPalette(12);
+                                    dialogTempPalette = Palette.createPalette(12);
                                 }
                                 else {
-                                    tempPalette = Palette.createPalette(externalPalette);
+                                    dialogTempPalette = Palette.createPalette(externalPalette);
                                 }
                                 break;
                         }
                         break;
                     case 2:
-                        tempPalette = Palette.createPalette(12);
+                        dialogTempPalette = Palette.createPalette(12);
                         break;
                 }
                 buildSavePaletteDialog(null);
@@ -740,7 +1083,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onClick(DialogInterface dialog, int which) {
                 dialogTempPaletteName = etPaletteName.getText().toString();
                 dialogTempPaletteSameName = false;
-                PaletteFactory.encodeFile(tempPalette, Editor.getExternalPalettePathName(dialogTempPaletteName),
+                PaletteFactory.encodeFile(dialogTempPalette, Editor.getExternalPalettePathName(dialogTempPaletteName),
                         false,
                         new PaletteFactory.Callback() {
                             @Override
@@ -756,7 +1099,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     buildFileSameNameDialog(new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
-                                            PaletteFactory.encodeFile(tempPalette,
+                                            PaletteFactory.encodeFile(dialogTempPalette,
                                                     Editor.getExternalPalettePathName(dialogTempPaletteName), true);
                                             editor.loadExternalPalette(dialogTempPaletteName);
                                             buildPaletteFlagDialog();
@@ -787,7 +1130,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialog) {
-                tempPalette = null;
+                dialogTempPalette = null;
                 Utils.hideSoftInputFromView(MainActivity.this, etPaletteName);
                 buildAddPaletteDialog();
             }
@@ -1456,6 +1799,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // CanvasView
         canvasView = findViewById(R.id.canvas_view);
         editor.setCanvasView(canvasView);
+        // Editor callback
+        editor.setCallback(new Editor.Callback() {
+            @Override
+            public void SelectionCallback() {
+                switch (editor.getSelectionFlag()) {
+                    case ToolFlag.SelectionFlag.CUT:
+                    case ToolFlag.SelectionFlag.COPY:
+                        buildSelectionPopup2();
+                        break;
+                    case ToolFlag.SelectionFlag.CLEAR:
+                    default:
+                        if (editor.getDownX() >= 0 && editor.getDownY() >= 0 &&
+                                editor.getDownX() <
+                                        editor.getToolBufferPool().getCurrentBitmap().getWidth() &&
+                                editor.getDownY() <
+                                        editor.getToolBufferPool().getCurrentBitmap().getHeight() &&
+                                editor.getMoveX() <
+                                        editor.getToolBufferPool().getCurrentBitmap().getWidth() &&
+                                editor.getMoveY() <
+                                        editor.getToolBufferPool().getCurrentBitmap().getHeight()) {
+                            buildSelectionPopup1();
+                        }
+                        break;
+                }
+            }
+        });
 
         // Set widget hints
         // Set grid visible

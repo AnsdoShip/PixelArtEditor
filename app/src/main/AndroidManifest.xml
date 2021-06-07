@@ -17,7 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true"
-        tools:targetApi="q">
+        android:largeHeap="true">
 
         <activity android:name="com.ansdoship.pixelarteditor.MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|locale|layoutDirection">
