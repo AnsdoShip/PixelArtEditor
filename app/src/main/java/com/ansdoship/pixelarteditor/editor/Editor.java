@@ -368,6 +368,11 @@ public final class Editor {
     public final static int IMAGE_SCALE_MAX = 64;
 
     public final static boolean SELECTED_DEFAULT = false;
+
+    public final static int IMAGE_WIDTH_MIN = 1;
+    public final static int IMAGE_HEIGHT_MIN = 1;
+    public final static int IMAGE_WIDTH_MAX = 2048;
+    public final static int IMAGE_HEIGHT_MAX = 2048;
     
     private final SharedPreferences preferences;
 

@@ -62,4 +62,8 @@
     <string name="warning_delete_file">Delete the file ? This operation cannot be undone.</string>
     <string name="warning_same_name_file">There is a file of the same name. Override ? This operation cannot be undone.</string>
     <string name="warning_permission_denied">Unable to run Pixel Art Editor. Please grant storage permission.</string>
+    <string name="image_width_default" translatable="false">32</string>
+    <string name="image_height_default" translatable="false">32</string>
+    <string name="width">Width</string>
+    <string name="height">Height</string>
 </resources>

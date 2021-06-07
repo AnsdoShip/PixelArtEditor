@@ -58,4 +58,6 @@
     <string name="warning_permission_denied">无法启动像素艺术编辑器。请授予储存权限。</string>
     <string name="palette_name_default">调色盘</string>
     <string name="image_name_default">未命名</string>
+    <string name="width">宽</string>
+    <string name="height">高</string>
 </resources>

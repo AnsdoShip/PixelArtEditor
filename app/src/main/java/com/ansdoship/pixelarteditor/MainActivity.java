@@ -16,6 +16,7 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
@@ -25,8 +26,11 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.InputFilter;
 import android.text.Spanned;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,6 +50,7 @@ import com.ansdoship.pixelarteditor.editor.buffer.RotateBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.SelectionBuffer;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapDecoder;
 import com.ansdoship.pixelarteditor.editor.graphics.BitmapEncoder;
+import com.ansdoship.pixelarteditor.editor.graphics.BitmapUtils;
 import com.ansdoship.pixelarteditor.editor.graphics.ColorFactory;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
@@ -1247,7 +1252,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setOnCancelListener(cancelListener);
         builder.create().show();
     }
-    // Load image dialog
+    // Load dialog
     private void buildLoadDialog () {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         String[] items = {
@@ -1263,7 +1268,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         buildLoadImageDialog();
                         break;
                     case 1:
-
+                        buildNewImageDialog();
                         break;
                     case 2:
 
@@ -1314,7 +1319,82 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         loadImageDialog.show();
     }
-    // Save image dialog
+    // New image dialog
+    @SuppressLint("SetTextI18n")
+    private void buildNewImageDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_new_image, null);
+        EditText etImageWidth = view.findViewById(R.id.et_image_width);
+        EditText etImageHeight = view.findViewById(R.id.et_image_height);
+        etImageWidth.setText(Integer.toString(editor.getToolBufferPool().getCurrentBitmap().getWidth()));
+        etImageHeight.setText(Integer.toString(editor.getToolBufferPool().getCurrentBitmap().getHeight()));
+        final int[] imageSize = new int[2];
+        etImageWidth.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!s.toString().isEmpty()) {
+                    imageSize[0] = Integer.parseInt(s.toString());
+                    imageSize[0] = MathUtils.clamp(imageSize[0], Editor.IMAGE_WIDTH_MIN, Editor.IMAGE_WIDTH_MAX);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                etImageWidth.removeTextChangedListener(this);
+                etImageWidth.setText(Integer.toString(imageSize[0]));
+                etImageWidth.setSelection(etImageWidth.getText().length());
+                etImageWidth.addTextChangedListener(this);
+            }
+
+        });
+        etImageHeight.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!s.toString().isEmpty()) {
+                    imageSize[1] = Integer.parseInt(s.toString());
+                    imageSize[1] = MathUtils.clamp(imageSize[1], Editor.IMAGE_HEIGHT_MIN, Editor.IMAGE_HEIGHT_MAX);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                etImageHeight.removeTextChangedListener(this);
+                etImageHeight.setText(Integer.toString(imageSize[1]));
+                etImageHeight.setSelection(etImageHeight.getText().length());
+                etImageHeight.addTextChangedListener(this);
+            }
+
+        });
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                editor.setBitmap(Bitmap.createBitmap(Integer.parseInt(etImageWidth.getText().toString()),
+                        Integer.parseInt(etImageHeight.getText().toString()), Bitmap.Config.ARGB_8888));
+                dialog.dismiss();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                buildLoadDialog();
+            }
+        });
+        builder.setView(view);
+        builder.create().show();
+    }
+    // Save dialog
     private String dialogTempImageName;
     private void buildSaveDialog () {
         dialogTempLoadImage = false;
@@ -1549,13 +1629,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onFileClick(String name, int position) {
                 if (dialogTempLoadImage) {
-                    Bitmap bitmap = BitmapDecoder.decodeFile(editor.getImagePath() + "/" + name);
-                    if (bitmap != null) {
-                        editor.setImageName(FilenameUtils.getBaseName(name));
-                        tvImageName.setText(editor.getImageName());
-                        editor.setBitmap(bitmap);
-                        if (loadImageDialog != null) {
-                            loadImageDialog.dismiss();
+                    String pathname = editor.getImagePath() + "/" + name;
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    options.inJustDecodeBounds = true;
+                    Bitmap bounds = BitmapFactory.decodeFile(pathname, options);
+                    if ((bounds.getWidth() <= Editor.IMAGE_WIDTH_MAX) &&
+                    bounds.getHeight() <= Editor.IMAGE_HEIGHT_MAX) {
+                        BitmapUtils.recycleBitmap(bounds);
+                        Bitmap bitmap = BitmapDecoder.decodeFile(pathname);
+                        if (bitmap != null) {
+                            editor.setImageName(FilenameUtils.getBaseName(name));
+                            tvImageName.setText(editor.getImageName());
+                            editor.setBitmap(bitmap);
+                            if (loadImageDialog != null) {
+                                loadImageDialog.dismiss();
+                            }
                         }
                     }
                 }
@@ -1746,6 +1834,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         super.onCreate(savedInstanceState);
 
+        dataSaved = false;
+
         // Get permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -1766,7 +1856,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // Load data
         editor.loadData();
-        dataSaved = false;
 
         // Get widgets & set listeners
         // TopBar
