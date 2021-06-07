@@ -817,11 +817,11 @@ public final class Editor {
                             if (scaleMode) {
                                 newDist = Utils.spacing(event);
                                 if(newDist != 0) {
-                                    if(newDist >= oldDist + ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 16) {
+                                    if (newDist >= oldDist + ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 16) {
                                         setImageScale(imageScale * 2);
                                         oldDist = newDist;
                                     }
-                                    if(newDist <= oldDist - ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 16) {
+                                    if (newDist <= oldDist - ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 16) {
                                         setImageScale(imageScale / 2);
                                         oldDist = newDist;
                                     }

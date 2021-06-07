@@ -61,7 +61,6 @@ import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.PaletteListAdapte
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.TextViewListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup;
 import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
-import com.ansdoship.pixelarteditor.util.MathUtils;
 import com.ansdoship.pixelarteditor.util.Utils;
 
 import org.apache.commons.io.FileUtils;
