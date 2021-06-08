@@ -782,27 +782,6 @@ public final class Editor {
                                             break;
                                     }
                                     break;
-                                case ToolFlag.COLORIZE:
-                                    if (downX >=0 && downY >= 0 &&
-                                            downX < getCurrentBitmap().getWidth() &&
-                                            downY < getCurrentBitmap().getHeight()) {
-                                        listPalettes.setCheckedPaletteColor(getCurrentBitmap().getPixel(downX, downY));
-                                        flushPaint(listPalettes.getCheckedPaletteColor());
-                                        switch (paletteFlag) {
-                                            case PaletteFlag.BACKGROUND:
-                                                if (listPalettes.getCheckedIndex() == 0) {
-                                                    setCanvasViewBackgroundColor(getCurrentBitmap().getPixel(downX, downY));
-                                                }
-                                                else {
-                                                    flushCanvasBackgroundPaint();
-                                                }
-                                                break;
-                                            case PaletteFlag.GRID:
-                                                setGridColor(getCurrentBitmap().getPixel(downX, downY));
-                                                break;
-                                        }
-                                    }
-                                    break;
                             }
                             canvasView.invalidate();
                             break;
@@ -935,27 +914,6 @@ public final class Editor {
                                         }
                                         selected = true;
                                         break;
-                                    case ToolFlag.COLORIZE:
-                                        if (moveX >=0 && moveY >= 0 &&
-                                                moveX < getCurrentBitmap().getWidth() &&
-                                                moveY < getCurrentBitmap().getHeight()) {
-                                            listPalettes.setCheckedPaletteColor(getCurrentBitmap().getPixel(moveX, moveY));
-                                            flushPaint(listPalettes.getCheckedPaletteColor());
-                                            switch (paletteFlag) {
-                                                case PaletteFlag.BACKGROUND:
-                                                    if (listPalettes.getCheckedIndex() == 0) {
-                                                        setCanvasViewBackgroundColor(getCurrentBitmap().getPixel(downX, downY));
-                                                    }
-                                                    else {
-                                                        flushCanvasBackgroundPaint();
-                                                    }
-                                                    break;
-                                                case PaletteFlag.GRID:
-                                                    setGridColor(getCurrentBitmap().getPixel(downX, downY));
-                                                    break;
-                                            }
-                                        }
-                                        break;
                                 }
                                 switch (toolFlag) {
                                     // Draw down point
@@ -1026,6 +984,27 @@ public final class Editor {
                                     case ToolFlag.SELECTION:
                                         if (mCallback != null) {
                                             mCallback.SelectionCallback();
+                                        }
+                                        break;
+                                    case ToolFlag.COLORIZE:
+                                        if (upX >=0 && upY >= 0 &&
+                                                upX < getCurrentBitmap().getWidth() &&
+                                                upY < getCurrentBitmap().getHeight()) {
+                                            listPalettes.setCheckedPaletteColor(getCurrentBitmap().getPixel(upX, upY));
+                                            flushPaint(listPalettes.getCheckedPaletteColor());
+                                            switch (paletteFlag) {
+                                                case PaletteFlag.BACKGROUND:
+                                                    if (listPalettes.getCheckedIndex() == 0) {
+                                                        setCanvasViewBackgroundColor(getCurrentBitmap().getPixel(upX, upY));
+                                                    }
+                                                    else {
+                                                        flushCanvasBackgroundPaint();
+                                                    }
+                                                    break;
+                                                case PaletteFlag.GRID:
+                                                    setGridColor(getCurrentBitmap().getPixel(upX, upY));
+                                                    break;
+                                            }
                                         }
                                         break;
                                 }

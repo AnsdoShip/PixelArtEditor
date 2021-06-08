@@ -1021,10 +1021,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     case 1:
                         switch (editor.getPaletteFlag()) {
                             case PaletteFlag.BACKGROUND:
-                                dialogTempPalette  = Palette.createPalette(editor.getBackgroundPalette(), 12);
+                                dialogTempPalette  = Palette.createPalette(editor.getBackgroundPalette(), 12,
+                                        editor.getBackgroundPalette().getIndex());
                                 break;
                             case PaletteFlag.GRID:
-                                dialogTempPalette  = Palette.createPalette(editor.getGridPalette(), 12);
+                                dialogTempPalette  = Palette.createPalette(editor.getGridPalette(), 12,
+                                        editor.getGridPalette().getIndex());
                                 break;
                             case PaletteFlag.INTERNAL:
                                 dialogTempPalette  = Palette.createPalette(editor.getBuiltinPalette());
