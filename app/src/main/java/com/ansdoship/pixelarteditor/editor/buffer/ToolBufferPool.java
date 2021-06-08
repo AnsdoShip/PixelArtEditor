@@ -22,6 +22,7 @@ public final class ToolBufferPool {
     private int index;
     private final int maxSize;
     private final Paint mEraser;
+    private final Paint mBitmapPaint;
 
     private boolean tempMode;
 
@@ -43,6 +44,10 @@ public final class ToolBufferPool {
         mEraser.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         mEraser.setStyle(Paint.Style.FILL_AND_STROKE);
         mEraser.setStrokeJoin(Paint.Join.MITER);
+        mBitmapPaint = new Paint();
+        mBitmapPaint.setAntiAlias(false);
+        mBitmapPaint.setDither(false);
+        mBitmapPaint.setFilterBitmap(false);
     }
 
     @NonNull
@@ -226,7 +231,7 @@ public final class ToolBufferPool {
                 if (selectedBitmap != null) {
                     canvas.drawBitmap(selectedBitmap,
                             ((SelectionBuffer) toolBuffer).getDstX(),
-                            ((SelectionBuffer) toolBuffer).getDstY(), new Paint());
+                            ((SelectionBuffer) toolBuffer).getDstY(), mBitmapPaint);
                     BitmapUtils.recycleBitmap(selectedBitmap);
                     canvas.save();
                     canvas.restore();
