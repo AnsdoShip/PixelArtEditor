@@ -16,7 +16,7 @@ public class BitmapUtils {
         }
     }
 
-    public static void recycleBitmaps(@Nullable Bitmap... bitmaps) {
+    public static void recycleBitmap(@Nullable Bitmap... bitmaps) {
         if (bitmaps == null) {
             return;
         }

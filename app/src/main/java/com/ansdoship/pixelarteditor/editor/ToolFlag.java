@@ -44,8 +44,6 @@ public final class ToolFlag {
 
         public final static int COPY = 1;
 
-        public final static int CLEAR = 2;
-
     }
 
 }

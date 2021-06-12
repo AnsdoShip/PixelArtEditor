@@ -71,6 +71,9 @@ public final class ToolBufferPool {
                 drawToolBuffer(mCacheBitmap, mToolBufferList.get(i));
             }
             replaceCacheBitmap(Bitmap.createBitmap(mCacheBitmap));
+            if (mToolBufferList.get(0).getBufferFlag() == BufferFlag.BITMAP) {
+                BitmapUtils.recycleBitmap(((BitmapBuffer)(mToolBufferList.get(0))).getBitmap());
+            }
             mToolBufferList = mToolBufferList.subList(subIndex, size);
         }
     }
@@ -191,61 +194,71 @@ public final class ToolBufferPool {
                         ((FillBuffer) toolBuffer).getFillColor());
                 break;
             case BufferFlag.SELECTION:
-                Bitmap selectedBitmap = null;
-                if (((SelectionBuffer) toolBuffer).getSelectionFlag() != BufferFlag.SelectionFlag.CLEAR) {
-                    selectedBitmap = Bitmap.createBitmap(bitmap,
-                            ((SelectionBuffer) toolBuffer).getSrcX(),
-                            ((SelectionBuffer) toolBuffer).getSrcY(),
-                            ((SelectionBuffer) toolBuffer).getSrcWidth(),
-                            ((SelectionBuffer) toolBuffer).getSrcHeight());
-                    Bitmap temp;
-                    if (((SelectionBuffer) toolBuffer).getRotateBuffer() != null) {
-                        temp = selectedBitmap;
-                        selectedBitmap = new BitmapChanger(selectedBitmap).
-                                rotateDegrees(((SelectionBuffer) toolBuffer).getRotateBuffer().getDegrees()).change();
-                        BitmapUtils.recycleBitmap(temp);
-                    }
-                    if (((SelectionBuffer) toolBuffer).getFlipVerticalBuffer() != null) {
-                        temp = selectedBitmap;
-                        selectedBitmap = new BitmapChanger(selectedBitmap).flipVertically().change();
-                        BitmapUtils.recycleBitmap(temp);
-                    }
-                    if (((SelectionBuffer) toolBuffer).getFlipHorizontalBuffer() != null) {
-                        temp = selectedBitmap;
-                        selectedBitmap = new BitmapChanger(selectedBitmap).flipHorizontally().change();
-                        BitmapUtils.recycleBitmap(temp);
-                    }
+                Bitmap selectedBitmap = Bitmap.createBitmap(bitmap,
+                        ((SelectionBuffer) toolBuffer).getSrcX(),
+                        ((SelectionBuffer) toolBuffer).getSrcY(),
+                        ((SelectionBuffer) toolBuffer).getSrcWidth(),
+                        ((SelectionBuffer) toolBuffer).getSrcHeight());
+                BitmapChanger selectionChanger = new BitmapChanger(selectedBitmap, false);
+                if (((SelectionBuffer) toolBuffer).getRotateBuffer() != null) {
+                    selectionChanger.rotateDegrees(((SelectionBuffer) toolBuffer).getRotateBuffer().getDegrees());
                 }
-                if (((SelectionBuffer) toolBuffer).getSelectionFlag() != BufferFlag.SelectionFlag.COPY) {
-                    canvas.drawRect(
-                            ((SelectionBuffer) toolBuffer).getSrcX(),
-                            ((SelectionBuffer) toolBuffer).getSrcY(),
-                            ((SelectionBuffer) toolBuffer).getSrcX() +
-                                    ((SelectionBuffer) toolBuffer).getSrcWidth(),
-                            ((SelectionBuffer) toolBuffer).getSrcY() +
-                                    ((SelectionBuffer) toolBuffer).getSrcHeight(),
-                            mEraser);
-                    canvas.save();
-                    canvas.restore();
+                if (((SelectionBuffer) toolBuffer).getFlipVerticalBuffer() != null) {
+                    selectionChanger.flipVertically();
                 }
-                if (selectedBitmap != null) {
-                    canvas.drawBitmap(selectedBitmap,
-                            ((SelectionBuffer) toolBuffer).getDstX(),
-                            ((SelectionBuffer) toolBuffer).getDstY(), mBitmapPaint);
-                    BitmapUtils.recycleBitmap(selectedBitmap);
-                    canvas.save();
-                    canvas.restore();
+                if (((SelectionBuffer) toolBuffer).getFlipHorizontalBuffer() != null) {
+                    selectionChanger.flipHorizontally();
                 }
+                selectedBitmap = selectionChanger.change();
+                canvas.drawBitmap(selectedBitmap,
+                        ((SelectionBuffer) toolBuffer).getDstX(),
+                        ((SelectionBuffer) toolBuffer).getDstY(), mBitmapPaint);
+                BitmapUtils.recycleBitmap(selectedBitmap);
+                canvas.save();
+                canvas.restore();
+                break;
+            case BufferFlag.BITMAP:
+                Bitmap bufferBitmap = ((BitmapBuffer) toolBuffer).getBitmap();
+                Bitmap tempBitmap;
+                BitmapChanger bitmapChanger = new BitmapChanger(bufferBitmap);
+                if (((BitmapBuffer) toolBuffer).getRotateBuffer() != null) {
+                    bitmapChanger.rotateDegrees(((BitmapBuffer) toolBuffer).getRotateBuffer().getDegrees());
+                }
+                if (((BitmapBuffer) toolBuffer).getFlipVerticalBuffer() != null) {
+                    bitmapChanger.flipVertically();
+                }
+                if (((BitmapBuffer) toolBuffer).getFlipHorizontalBuffer() != null) {
+                    bitmapChanger.flipHorizontally();
+                }
+                tempBitmap = bitmapChanger.change();
+                canvas.drawBitmap(tempBitmap,
+                        ((BitmapBuffer) toolBuffer).getX(),
+                        ((BitmapBuffer) toolBuffer).getY(), mBitmapPaint);
+                BitmapUtils.recycleBitmap(tempBitmap);
+                canvas.save();
+                canvas.restore();
+                break;
+            case BufferFlag.CLEAR:
+                canvas.drawRect(
+                        ((ClearBuffer) toolBuffer).getX(),
+                        ((ClearBuffer) toolBuffer).getY(),
+                        ((ClearBuffer) toolBuffer).getX() +
+                                ((ClearBuffer) toolBuffer).getWidth(),
+                        ((ClearBuffer) toolBuffer).getY() +
+                                ((ClearBuffer) toolBuffer).getHeight(),
+                        mEraser);
+                canvas.save();
+                canvas.restore();
                 break;
             case BufferFlag.ROTATE:
-                new BitmapChanger(bitmap, false).
-                        rotateDegrees(((RotateBuffer) toolBuffer).getDegrees());
+                bitmap = new BitmapChanger(bitmap, false).
+                        rotateDegrees(((RotateBuffer) toolBuffer).getDegrees()).change();
                 break;
             case BufferFlag.FLIP_VERTICAL:
-                new BitmapChanger(bitmap, false).flipVertically();
+                bitmap = new BitmapChanger(bitmap, false).flipVertically().change();
                 break;
             case BufferFlag.FLIP_HORIZONTAL:
-                new BitmapChanger(bitmap, false).flipHorizontally();
+                bitmap = new BitmapChanger(bitmap, false).flipHorizontally().change();
                 break;
             case BufferFlag.POINT:
                 canvas.drawPoint(((PointBuffer)toolBuffer).getPointX(), ((PointBuffer)toolBuffer).getPointY(),

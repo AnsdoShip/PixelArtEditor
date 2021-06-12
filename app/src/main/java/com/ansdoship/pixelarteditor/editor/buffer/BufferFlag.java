@@ -16,15 +16,9 @@ public final class BufferFlag {
 
     public final static int POINT = 6;
 
-    public final static class SelectionFlag {
+    public final static int CLEAR = 7;
 
-        public final static int CUT = 0;
-
-        public final static int COPY = 1;
-
-        public final static int CLEAR = 2;
-
-    }
+    public final static int BITMAP = 8;
 
     public final static int MULTIPLE = 100;
 

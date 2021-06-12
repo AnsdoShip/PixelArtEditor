@@ -1,10 +1,5 @@
 package com.ansdoship.pixelarteditor.editor.buffer;
 
-import android.graphics.Point;
-import android.graphics.Rect;
-
-import androidx.annotation.NonNull;
-
 public class SelectionBuffer extends ToolBuffer {
 
     private final int mSrcX;
@@ -13,18 +8,16 @@ public class SelectionBuffer extends ToolBuffer {
     private final int mSrcHeight;
     private final int mDstX;
     private final int mDstY;
-    private final int mSelectionFlag;
     private final RotateBuffer mRotateBuffer;
     private final FlipVerticalBuffer mFlipVerticalBuffer;
     private final FlipHorizontalBuffer mFlipHorizontalBuffer;
 
-    public SelectionBuffer(int srcX, int srcY, int srcWidth, int srcHeight, int dstX, int dstY, int selectionFlag) {
-        this (srcX, srcY, srcWidth, srcHeight, dstX, dstY, selectionFlag, null, null, null);
+    public SelectionBuffer(int srcX, int srcY, int srcWidth, int srcHeight, int dstX, int dstY) {
+        this (srcX, srcY, srcWidth, srcHeight, dstX, dstY, null, null, null);
     }
 
     public SelectionBuffer(int srcX, int srcY, int srcWidth, int srcHeight,
-                           int dstX, int dstY, int selectionFlag,
-                           RotateBuffer rotateBuffer, FlipVerticalBuffer flipVerticalBuffer,
+                           int dstX, int dstY, RotateBuffer rotateBuffer, FlipVerticalBuffer flipVerticalBuffer,
                            FlipHorizontalBuffer flipHorizontalBuffer) {
         mSrcX = srcX;
         mSrcY = srcY;
@@ -32,7 +25,6 @@ public class SelectionBuffer extends ToolBuffer {
         mSrcHeight = srcHeight;
         mDstX = dstX;
         mDstY = dstY;
-        mSelectionFlag = selectionFlag;
         mRotateBuffer = rotateBuffer;
         mFlipVerticalBuffer = flipVerticalBuffer;
         mFlipHorizontalBuffer = flipHorizontalBuffer;
@@ -60,10 +52,6 @@ public class SelectionBuffer extends ToolBuffer {
 
     public int getDstY() {
         return mDstY;
-    }
-
-    public int getSelectionFlag() {
-        return mSelectionFlag;
     }
 
     public RotateBuffer getRotateBuffer() {
