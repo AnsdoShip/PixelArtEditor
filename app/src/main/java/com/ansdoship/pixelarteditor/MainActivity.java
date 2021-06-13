@@ -51,7 +51,6 @@ import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.ansdoship.pixelarteditor.editor.buffer.BitmapBuffer;
-import com.ansdoship.pixelarteditor.editor.buffer.BufferFlag;
 import com.ansdoship.pixelarteditor.editor.buffer.ClearBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.FillBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.FlipHorizontalBuffer;
@@ -317,32 +316,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String cacheBitmapPathname = getCacheBitmapPathname();
         if (cacheBitmapPathname != null) {
             BitmapEncoder.encodeFile(cacheBitmapPathname,
-                    toolBufferPool.getCacheBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100,
-                    new BitmapEncoder.Callback() {
-                        @Override
-                        public void onCreateFailure() {}
-                        @Override
-                        public void onCompressFailure() {}
-                        @Override
-                        public void onFileExists(boolean isDirectory) {}
-                        @Override
-                        public void onIOException(IOException e) {}
-                    });
+                    toolBufferPool.getCacheBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
         }
         String currentBitmapPathname = getCurrentBitmapPathname();
         if (currentBitmapPathname != null) {
             BitmapEncoder.encodeFile(currentBitmapPathname,
-                    getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100,
-                    new BitmapEncoder.Callback() {
-                        @Override
-                        public void onCreateFailure() {}
-                        @Override
-                        public void onCompressFailure() {}
-                        @Override
-                        public void onFileExists(boolean isDirectory) {}
-                        @Override
-                        public void onIOException(IOException e) {}
-                    });
+                    getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
         }
         BitmapUtils.recycleBitmap(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
 
@@ -564,7 +543,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
             flushCanvasBackgroundPaint();
             flushGridPaint();
-            flushImageStatusView();
+            flushImageSizeView();
+            flushImageScaleView();
         }
     }
 
@@ -751,7 +731,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         toolBufferPool = ToolBufferPool.createToolBufferPool(cacheBitmap,
                 MAX_BUFFER_SIZE_DEFAULT, false);
         canvasView.invalidate();
-        flushImageStatusView();
+        flushImageSizeView();
+        flushImageScaleView();
     }
 
     private boolean dataSaved = false;
@@ -760,11 +741,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // WIDGETS
     // TopBar
     private TextView tvImageName;
-    private TextView tvImageStatus;
-    private ImageButton imgGrid;
     private ImageButton imgUndo;
     private ImageButton imgRedo;
     private ImageButton imgMenu;
+    private ImageButton imgRecenter;
+    private ImageButton imgGrid;
+    private TextView tvImageSize;
+    private TextView tvImageScale;
+    private TextView tvPointerCoords;
+    private TextView tvSelectionSize;
     // ToolBar
     private TextView tvPaintWidth;
     private CheckedImageGroup groupTools;
@@ -835,7 +820,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
         TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
-        yOffset += typedArray.getDimension(0, 0);
+        yOffset += typedArray.getDimension(0, 0) * 2;
         typedArray.recycle();
         yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
                 "dimen", "android"));
@@ -974,7 +959,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
         TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
-        yOffset += typedArray.getDimension(0, 0);
+        yOffset += typedArray.getDimension(0, 0) * 2;
         typedArray.recycle();
         yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
                 "dimen", "android"));
@@ -1137,7 +1122,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                buildSaveDialog();
+                buildSaveDialog(imageName);
                 window.dismiss();
             }
         });
@@ -1793,6 +1778,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     dialogTempPaletteSameName = true;
                                 }
                             }
+                            @Override
+                            public void onSuccess() {}
                         });
                 if (dialogTempPaletteSameName) {
                     return;
@@ -2219,7 +2206,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     // Save dialog
     private String dialogTempImageName;
-    private void buildSaveDialog () {
+    private EditText dialogTempEtImageName;
+    private void buildSaveDialog (String initialImageName) {
         dialogTempLoadImage = false;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = View.inflate(this, R.layout.dialog_save_image, null);
@@ -2238,9 +2226,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 });
             }
         });
-        final EditText etImageName = view.findViewById(R.id.et_image_name);
-        etImageName.setText(imageName);
-        etImageName.setFilters(new InputFilter[] {
+        dialogTempEtImageName = view.findViewById(R.id.et_image_name);
+        dialogTempEtImageName.setText(initialImageName);
+        dialogTempEtImageName.setFilters(new InputFilter[] {
                 new InputFilter() {
                     @Override
                     public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
@@ -2256,7 +2244,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                dialogTempImageName = etImageName.getText().toString();
+                dialogTempImageName = dialogTempEtImageName.getText().toString();
                 BitmapEncoder.CompressFormat compressFormat;
                 switch (imageFormat) {
                     case "jpeg":
@@ -2272,7 +2260,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         dialogTempImageName = dialogTempImageName + ".png";
                         break;
                 }
-                Utils.hideSoftInputFromView(MainActivity.this, etImageName);
+                Utils.hideSoftInputFromView(MainActivity.this, dialogTempEtImageName);
                 BitmapEncoder.encodeFile(getImagePathname(dialogTempImageName),
                         getCurrentBitmap(),
                         false, compressFormat, imageQuality,
@@ -2289,13 +2277,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         public void onClick(DialogInterface dialog, int which) {
                                             BitmapEncoder.encodeFile(getImagePathname(dialogTempImageName),
                                                     getCurrentBitmap(), true,
-                                                    compressFormat, imageQuality);
+                                                    compressFormat, imageQuality,
+                                                    new BitmapEncoder.Callback() {
+                                                        @Override
+                                                        public void onCreateFailure() {}
+                                                        @Override
+                                                        public void onCompressFailure() {}
+                                                        @Override
+                                                        public void onFileExists(boolean isDirectory) {}
+                                                        @Override
+                                                        public void onIOException(IOException e) {}
+                                                        @Override
+                                                        public void onSuccess() {
+                                                            imageName = FilenameUtils.getBaseName(dialogTempImageName);
+                                                            flushImageNameView();
+                                                        }
+                                                    });
                                         }
                                     }, new DialogInterface.OnCancelListener() {
                                         @Override
                                         public void onCancel(DialogInterface dialog) {
-                                            Utils.hideSoftInputFromView(MainActivity.this, etImageName);
-                                            buildSaveDialog();
+                                            Utils.hideSoftInputFromView(MainActivity.this, dialogTempEtImageName);
+                                            buildSaveDialog(FilenameUtils.getBaseName(dialogTempImageName));
                                         }
                                     });
                                 }
@@ -2303,6 +2306,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             @Override
                             public void onIOException(IOException e) {
                                 e.printStackTrace();
+                            }
+                            @Override
+                            public void onSuccess() {
+                                imageName = FilenameUtils.getBaseName(dialogTempImageName);
+                                flushImageNameView();
                             }
                         });
             }
@@ -2316,7 +2324,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialog) {
-                Utils.hideSoftInputFromView(MainActivity.this, etImageName);
+                Utils.hideSoftInputFromView(MainActivity.this, dialogTempEtImageName);
             }
         });
         dialogTempRecyclerImageList = view.findViewById(R.id.recycler_images);
@@ -2477,6 +2485,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                     }
                 }
+                else {
+                    dialogTempEtImageName.setText(FilenameUtils.getBaseName(name));
+                }
             }
         });
         return adapter;
@@ -2538,10 +2549,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.tv_image_name:
                 buildImageNameDialog();
                 break;
-            case R.id.tv_image_status:
+            case R.id.tv_image_size:
                 buildResizeImageDialog(getCurrentBitmap().getWidth(), getCurrentBitmap().getHeight());
                 break;
+            case R.id.tv_image_scale:
+                // FIXME SCALE DIALOG
+                break;
+            case R.id.tv_pointer_coords:
+                // FIXME ORIGIN DIALOG
+                break;
+            case R.id.img_recenter:
+                resetImageTranslation();
+                break;
             case R.id.img_grid:
+                // FIXME GRID DIALOG
                 gridVisible = !gridVisible;
                 if (gridVisible) {
                     imgGrid.setImageDrawable(VectorDrawableCompat.create(getResources(),
@@ -2692,17 +2713,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Get widgets & set listeners
         // TopBar
         tvImageName = findViewById(R.id.tv_image_name);
-        tvImageStatus = findViewById(R.id.tv_image_status);
-        imgGrid = findViewById(R.id.img_grid);
         imgUndo = findViewById(R.id.img_undo);
         imgRedo = findViewById(R.id.img_redo);
         imgMenu = findViewById(R.id.img_menu);
+        imgRecenter = findViewById(R.id.img_recenter);
+        imgGrid = findViewById(R.id.img_grid);
+        tvImageSize = findViewById(R.id.tv_image_size);
+        tvImageScale = findViewById(R.id.tv_image_scale);
+        tvPointerCoords = findViewById(R.id.tv_pointer_coords);
+        flushPointerCoordsView(0, 0);
+        tvSelectionSize = findViewById(R.id.tv_selection_size);
+        flushSelectionSizeView(1, 1);
         tvImageName.setOnClickListener(this);
-        tvImageStatus.setOnClickListener(this);
-        imgGrid.setOnClickListener(this);
         imgUndo.setOnClickListener(this);
         imgRedo.setOnClickListener(this);
         imgMenu.setOnClickListener(this);
+        imgRecenter.setOnClickListener(this);
+        imgGrid.setOnClickListener(this);
+        tvImageSize.setOnClickListener(this);
+        tvImageScale.setOnClickListener(this);
+        tvPointerCoords.setOnClickListener(this);
         // ToolBar
         tvPaintWidth = findViewById(R.id.tv_paint_width);
         groupTools = findViewById(R.id.group_tools);
@@ -2830,7 +2860,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         x = event.getX(0);
                         y = event.getY(0);
                         selected = false;
-                        // Draw current bitmap
                         downX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
                         downY = (int) Math.floor((event.getY(0) - imageTranslationY) / imageScale);
                         moveX = downX;
@@ -2879,6 +2908,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 break;
                         }
                         canvasView.invalidate();
+                        flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
+                        flushPointerCoordsView(downX - imageOriginX, downY - imageOriginY);
                         break;
                     case MotionEvent.ACTION_POINTER_DOWN:
                         // Record initial distance
@@ -3010,7 +3041,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     break;
                             }
                             switch (toolFlag) {
-                                // Draw down point
                                 case ToolFlag.PAINT:
                                     toolBufferPool.addTempToolBuffer(
                                             new MultiBuffer(new PointBuffer(paint, downX, downY), new PaintBuffer(paint, path)));
@@ -3022,7 +3052,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 case ToolFlag.SHAPE:
                                     toolBufferPool.addTempToolBuffer(new PaintBuffer(paint, path));
                                     break;
-                                // Draw selection bmp
                                 case ToolFlag.SELECTION:
                                     switch (selectionFlag) {
                                         case ToolFlag.SelectionFlag.CUT:
@@ -3044,6 +3073,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             }
                         }
                         canvasView.invalidate();
+                        flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
+                        flushPointerCoordsView(moveX - imageOriginX, moveY - imageOriginY);
                         break;
                     case MotionEvent.ACTION_UP:
                         upX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
@@ -3052,7 +3083,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             readOnlyMode = false;
                         }
                         else {
-                            // Draw current bitmap
                             switch (toolFlag) {
                                 case ToolFlag.PAINT:
                                     toolBufferPool.addToolBuffer(
@@ -3100,6 +3130,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     break;
                             }
                             if (toolFlag != ToolFlag.SELECTION) {
+                                flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
+                                flushPointerCoordsView(upX - imageOriginX, upY - imageOriginY);
                                 canvasView.invalidate();
                             }
                         }
@@ -3296,10 +3328,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @SuppressLint("SetTextI18n")
-    private void flushImageStatusView() {
-        tvImageStatus.setText(getCurrentBitmap().getWidth() + " * " +
+    private void flushImageSizeView() {
+        tvImageSize.setText(getCurrentBitmap().getWidth() + "x" +
                 getCurrentBitmap().getHeight());
-        tvImageStatus.append("\n" + (imageScale * 100) + "%");
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void flushImageScaleView() {
+        tvImageScale.setText((imageScale * 100) + "%");
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void flushPointerCoordsView(int x, int y) {
+        tvPointerCoords.setText(x + "," + y);
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void flushSelectionSizeView(int width, int height) {
+        tvSelectionSize.setText(width + "x" + height);
     }
 
     private void flushImageNameView() {

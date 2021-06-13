@@ -61,4 +61,5 @@
     <string name="width">宽</string>
     <string name="height">高</string>
     <string name="warning_resize_image">当前图片最右侧和最底部的部分像素将被移除。你确定要这么做吗？此操作无法被撤销。</string>
+    <string name="recenter">重定位</string>
 </resources>

@@ -30,6 +30,7 @@ public final class BitmapEncoder {
 		void onCompressFailure();
 		void onFileExists(boolean isDirectory);
 		void onIOException(IOException e);
+		void onSuccess();
 	}
 
 	public static @Nullable byte[] encodeByteArray (@NonNull Bitmap bitmap,
@@ -95,6 +96,10 @@ public final class BitmapEncoder {
 				e.printStackTrace();
 				result[0] = false;
 			}
+			@Override
+			public void onSuccess() {
+				result[0] = true;
+			}
 		});
 		return result[0];
 	}
@@ -158,7 +163,10 @@ public final class BitmapEncoder {
 				}
 				fileOS.flush();
 				fileOS.close();
-				if(!result) {
+				if(result) {
+					callback.onSuccess();
+				}
+				else {
 					callback.onCompressFailure();
 				}
 			}

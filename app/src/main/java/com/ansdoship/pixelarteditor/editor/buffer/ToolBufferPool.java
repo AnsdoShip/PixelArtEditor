@@ -188,10 +188,10 @@ public final class ToolBufferPool {
                 canvas.restore();
                 break;
             case BufferFlag.FILL:
-                new BitmapChanger(bitmap, false).fill(
+                bitmap = new BitmapChanger(bitmap, false).fill(
                         ((FillBuffer) toolBuffer).getFillX(),
                         ((FillBuffer) toolBuffer).getFillY(),
-                        ((FillBuffer) toolBuffer).getFillColor());
+                        ((FillBuffer) toolBuffer).getFillColor()).change();
                 break;
             case BufferFlag.SELECTION:
                 Bitmap selectedBitmap = Bitmap.createBitmap(bitmap,

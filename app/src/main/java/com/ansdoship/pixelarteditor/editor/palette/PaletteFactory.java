@@ -18,6 +18,7 @@ public final class PaletteFactory {
         void onCreateFile(boolean isSuccess);
         void onException(Exception e);
         void onFileExists(boolean isDirectory);
+        void onSuccess();
     }
 
     public @Nullable static Palette decodeFile(@NonNull String pathname) {
@@ -68,6 +69,7 @@ public final class PaletteFactory {
             try {
                 callback.onCreateFile(file.createNewFile());
                 JSONCodec.encodeFile(palette2JSON(palette), file);
+                callback.onSuccess();
             }
             catch (IOException | JSONException e) {
                 callback.onException(e);
@@ -98,6 +100,10 @@ public final class PaletteFactory {
             @Override
             public void onFileExists(boolean isDirectory) {
                 result[0] = false;
+            }
+            @Override
+            public void onSuccess() {
+                result[0] = true;
             }
         });
         return result[0];
