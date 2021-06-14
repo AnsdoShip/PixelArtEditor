@@ -42,14 +42,17 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
+import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TabHost;
 import android.widget.TextView;
 
+import com.ansdoship.pixelarteditor.editor.OriginFlag;
 import com.ansdoship.pixelarteditor.editor.buffer.BitmapBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.ClearBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.FillBuffer;
@@ -95,7 +98,6 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     // DATA
-
     public final static String PREFERENCES_NAME = "app_data";
 
     public final static String KEY_IMAGE_NAME = "image_name";
@@ -112,10 +114,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int imageTranslationX;
     public final static String KEY_IMAGE_TRANSLATION_Y = "image_translation_y";
     private int imageTranslationY;
-    public final static String KEY_IMAGE_ORIGIN_X = "image_origin_x";
-    private int imageOriginX;
-    public final static String KEY_IMAGE_ORIGIN_Y = "image_origin_y";
-    private int imageOriginY;
+
+    public final static String KEY_ORIGIN_FLAG_HORIZONTAL = "origin_flag_horizontal";
+    private int originFlagHorizontal;
+    public final static String KEY_ORIGIN_FLAG_VERTICAL = "origin_flag_vertical";
+    private int originFlagVertical;
 
     public final static String KEY_TOOL_FLAG = "tool_flag";
     private int toolFlag;
@@ -267,8 +270,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 canvasView.invalidate();
             }
         });
-        imageOriginX = preferences.getInt(KEY_IMAGE_ORIGIN_X, IMAGE_ORIGIN_X_DEFAULT);
-        imageOriginY = preferences.getInt(KEY_IMAGE_ORIGIN_Y, IMAGE_ORIGIN_Y_DEFAULT);
+        originFlagHorizontal = preferences.getInt(KEY_ORIGIN_FLAG_HORIZONTAL, ORIGIN_FLAG_HORIZONTAL_DEFAULT);
+        originFlagVertical = preferences.getInt(KEY_ORIGIN_FLAG_VERTICAL, ORIGIN_FLAG_VERTICAL_DEFAULT);
         toolFlag = preferences.getInt(KEY_TOOL_FLAG, TOOL_FLAG_DEFAULT);
         shapeFlag = preferences.getInt(KEY_SHAPE_FLAG, SHAPE_FLAG_DEFAULT);
         setPaintFlag(preferences.getInt(KEY_PAINT_FLAG, PAINT_FLAG_DEFAULT));
@@ -297,8 +300,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         editor.putInt(KEY_IMAGE_SCALE, imageScale);
         editor.putInt(KEY_IMAGE_TRANSLATION_X, imageTranslationX);
         editor.putInt(KEY_IMAGE_TRANSLATION_Y, imageTranslationY);
-        editor.putInt(KEY_IMAGE_ORIGIN_X, imageOriginX);
-        editor.putInt(KEY_IMAGE_ORIGIN_Y, imageOriginY);
+        editor.putInt(KEY_ORIGIN_FLAG_HORIZONTAL, originFlagHorizontal);
+        editor.putInt(KEY_ORIGIN_FLAG_VERTICAL, originFlagVertical);
         editor.putInt(KEY_TOOL_FLAG, toolFlag);
         editor.putInt(KEY_SHAPE_FLAG, shapeFlag);
         editor.putInt(KEY_PAINT_FLAG, paintFlag);
@@ -350,8 +353,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int IMAGE_TRANSLATION_Y_DEFAULT() {
         return canvasView.getHeight() / 2 - getCurrentBitmap().getHeight() * imageScale / 2;
     }
-    public final static int IMAGE_ORIGIN_X_DEFAULT = 0;
-    public final static int IMAGE_ORIGIN_Y_DEFAULT = 0;
+    public final static int ORIGIN_FLAG_HORIZONTAL_DEFAULT = OriginFlag.LEFT;
+    public final static int ORIGIN_FLAG_VERTICAL_DEFAULT = OriginFlag.TOP;
     public final static int IMAGE_WIDTH_DEFAULT = 32;
     public final static int IMAGE_HEIGHT_DEFAULT = 32;
 
@@ -543,8 +546,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
             flushCanvasBackgroundPaint();
             flushGridPaint();
-            flushImageSizeView();
             flushImageScaleView();
+            canvasView.invalidate();
         }
     }
 
@@ -612,6 +615,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void setGridHeight(int gridHeight) {
+        this.gridHeight = gridHeight;
+        flushGridPaint();
+    }
+
+    private void setGridSize(int gridWidth, int gridHeight) {
+        this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
         flushGridPaint();
     }
@@ -733,6 +742,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         canvasView.invalidate();
         flushImageSizeView();
         flushImageScaleView();
+        flushPointerCoordsView(upX - getOriginX(), upY - getOriginY());
     }
 
     private boolean dataSaved = false;
@@ -1217,6 +1227,118 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onClick(DialogInterface dialogInterface, int i) {}
         });
         builder.create().show();
+    }
+    // Paint width dialog
+    private int dialogTempImageScale;
+    @SuppressLint("SetTextI18n")
+    private void buildImageScaleDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_image_scale, null);
+        SeekBar barImageScaleValue = view.findViewById(R.id.bar_image_scale_value);
+        final TextView tvImageScaleValue = view.findViewById(R.id.tv_image_scale_value);
+        barImageScaleValue.setProgress((int) MathUtils.log(imageScale, 2));
+        tvImageScaleValue.setText(imageScale * 100 + "%");
+        barImageScaleValue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                dialogTempImageScale = (int) Math.pow(2, progress);
+                tvImageScaleValue.setText(dialogTempImageScale * 100 + "%");
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                setImageScale(dialogTempImageScale);
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {}
+        });
+        builder.create().show();
+    }
+    private int dialogTempOriginFlagHorizontal;
+    private int dialogTempOriginFlagVertical;
+    private void buildOriginFlagDialog () {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_origin, null);
+        RadioGroup groupOriginFlagHorizontal = view.findViewById(R.id.group_origin_flag_horizontal);
+        RadioGroup groupOriginFlagVertical = view.findViewById(R.id.group_origin_flag_vertical);
+        switch (originFlagHorizontal) {
+            case OriginFlag.LEFT:
+                groupOriginFlagHorizontal.check(R.id.btn_origin_flag_horizontal_left);
+                break;
+            case OriginFlag.CENTER:
+                groupOriginFlagHorizontal.check(R.id.btn_origin_flag_horizontal_center);
+                break;
+            case OriginFlag.RIGHT:
+                groupOriginFlagHorizontal.check(R.id.btn_origin_flag_horizontal_right);
+                break;
+        }
+        switch (originFlagVertical) {
+            case OriginFlag.TOP:
+                groupOriginFlagVertical.check(R.id.btn_origin_flag_vertical_top);
+                break;
+            case OriginFlag.CENTER:
+                groupOriginFlagVertical.check(R.id.btn_origin_flag_vertical_center);
+                break;
+            case OriginFlag.BOTTOM:
+                groupOriginFlagVertical.check(R.id.btn_origin_flag_vertical_bottom);
+                break;
+        }
+        groupOriginFlagHorizontal.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @SuppressLint("NonConstantResourceId")
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                switch (checkedId) {
+                    case R.id.btn_origin_flag_horizontal_left:
+                        dialogTempOriginFlagHorizontal = OriginFlag.LEFT;
+                        break;
+                    case R.id.btn_origin_flag_horizontal_center:
+                        dialogTempOriginFlagHorizontal = OriginFlag.CENTER;
+                        break;
+                    case R.id.btn_origin_flag_horizontal_right:
+                        dialogTempOriginFlagHorizontal = OriginFlag.RIGHT;
+                        break;
+                }
+            }
+        });
+        groupOriginFlagVertical.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @SuppressLint("NonConstantResourceId")
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                switch (checkedId) {
+                    case R.id.btn_origin_flag_vertical_top:
+                        dialogTempOriginFlagVertical = OriginFlag.TOP;
+                        break;
+                    case R.id.btn_origin_flag_vertical_center:
+                        dialogTempOriginFlagVertical = OriginFlag.CENTER;
+                        break;
+                    case R.id.btn_origin_flag_vertical_bottom:
+                        dialogTempOriginFlagVertical = OriginFlag.BOTTOM;
+                        break;
+                }
+            }
+        });
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                originFlagHorizontal = dialogTempOriginFlagHorizontal;
+                originFlagVertical = dialogTempOriginFlagVertical;
+                flushPointerCoordsView(upX - getOriginX(), upY - getOriginY());
+            }
+        }).setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {}
+        }).create().show();
     }
     // Shape flag dialog
     private void buildShapeFlagDialog () {
@@ -1999,7 +2121,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (Integer.parseInt(s.toString()) > IMAGE_WIDTH_MAX) {
                         etImageWidth.removeTextChangedListener(this);
                         etImageWidth.setText(Integer.toString(IMAGE_WIDTH_MAX));
-                        etImageWidth.setSelection(etImageWidth.getText().length());
                         etImageWidth.addTextChangedListener(this);
                     }
                 }
@@ -2019,7 +2140,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (Integer.parseInt(s.toString()) > IMAGE_HEIGHT_MAX) {
                         etImageHeight.removeTextChangedListener(this);
                         etImageHeight.setText(Integer.toString(IMAGE_HEIGHT_MAX));
-                        etImageHeight.setSelection(etImageWidth.getText().length());
                         etImageHeight.addTextChangedListener(this);
                     }
                 }
@@ -2093,7 +2213,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (Integer.parseInt(s.toString()) > IMAGE_WIDTH_MAX) {
                         etImageWidth.removeTextChangedListener(this);
                         etImageWidth.setText(Integer.toString(IMAGE_WIDTH_MAX));
-                        etImageWidth.setSelection(etImageWidth.getText().length());
                         etImageWidth.addTextChangedListener(this);
                     }
                 }
@@ -2113,7 +2232,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (Integer.parseInt(s.toString()) > IMAGE_HEIGHT_MAX) {
                         etImageHeight.removeTextChangedListener(this);
                         etImageHeight.setText(Integer.toString(IMAGE_HEIGHT_MAX));
-                        etImageHeight.setSelection(etImageWidth.getText().length());
                         etImageHeight.addTextChangedListener(this);
                     }
                 }
@@ -2528,6 +2646,87 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setMessage(tvImageName.getText());
         builder.create().show();
     }
+    @SuppressLint("SetTextI18n")
+    private void buildGridDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.dialog_grid, null);
+        CheckBox boxShowGrid = view.findViewById(R.id.box_show_grid);
+        boxShowGrid.setChecked(gridVisible);
+        EditText etGridWidth = view.findViewById(R.id.et_grid_width);
+        EditText etGridHeight = view.findViewById(R.id.et_grid_height);
+        etGridWidth.setText(Integer.toString(gridWidth));
+        etGridHeight.setText(Integer.toString(gridHeight));
+        etGridWidth.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!s.toString().isEmpty()) {
+                    if (Integer.parseInt(s.toString()) > IMAGE_WIDTH_MAX) {
+                        etGridWidth.removeTextChangedListener(this);
+                        etGridWidth.setText(Integer.toString(IMAGE_WIDTH_MAX));
+                        etGridWidth.addTextChangedListener(this);
+                    }
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+
+        });
+        etGridHeight.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!s.toString().isEmpty()) {
+                    if (Integer.parseInt(s.toString()) > IMAGE_HEIGHT_MAX) {
+                        etGridHeight.removeTextChangedListener(this);
+                        etGridHeight.setText(Integer.toString(IMAGE_HEIGHT_MAX));
+                        etGridHeight.addTextChangedListener(this);
+                    }
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+
+        });
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                int width;
+                int height;
+                if (etGridWidth.getText().toString().isEmpty()) {
+                    width = GRID_WIDTH_DEFAULT;
+                }
+                else {
+                    width = Integer.parseInt(etGridWidth.getText().toString());
+                    if (width < IMAGE_WIDTH_MIN) {
+                        width = GRID_WIDTH_DEFAULT;
+                    }
+                }
+                if (etGridHeight.getText().toString().isEmpty()) {
+                    height = GRID_HEIGHT_DEFAULT;
+                }
+                else {
+                    height = Integer.parseInt(etGridHeight.getText().toString());
+                    if (height < IMAGE_HEIGHT_MIN) {
+                        height = GRID_HEIGHT_DEFAULT;
+                    }
+                }
+                setGridSize(width, height);
+                setGridVisible(boxShowGrid.isChecked());
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {}
+        });
+        builder.setView(view).create().show();
+    }
     // Permission dialog
     private void buildPermissionDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -2553,26 +2752,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 buildResizeImageDialog(getCurrentBitmap().getWidth(), getCurrentBitmap().getHeight());
                 break;
             case R.id.tv_image_scale:
-                // FIXME SCALE DIALOG
+                buildImageScaleDialog();
                 break;
             case R.id.tv_pointer_coords:
-                // FIXME ORIGIN DIALOG
+                buildOriginFlagDialog();
                 break;
             case R.id.img_recenter:
                 resetImageTranslation();
                 break;
             case R.id.img_grid:
-                // FIXME GRID DIALOG
-                gridVisible = !gridVisible;
-                if (gridVisible) {
-                    imgGrid.setImageDrawable(VectorDrawableCompat.create(getResources(),
-                            R.drawable.ic_baseline_grid_off_24, getTheme()));
-                }
-                else {
-                    imgGrid.setImageDrawable(VectorDrawableCompat.create(getResources(),
-                            R.drawable.ic_baseline_grid_24, getTheme()));
-                }
-                canvasView.invalidate();
+                buildGridDialog();
                 break;
             case R.id.img_undo:
                 toolBufferPool.undo();
@@ -2909,7 +3098,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                         canvasView.invalidate();
                         flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
-                        flushPointerCoordsView(downX - imageOriginX, downY - imageOriginY);
+                        flushPointerCoordsView(downX - getOriginX(), downY - getOriginY());
                         break;
                     case MotionEvent.ACTION_POINTER_DOWN:
                         // Record initial distance
@@ -3074,7 +3263,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                         canvasView.invalidate();
                         flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
-                        flushPointerCoordsView(moveX - imageOriginX, moveY - imageOriginY);
+                        flushPointerCoordsView(moveX - getOriginX(), moveY - getOriginY());
                         break;
                     case MotionEvent.ACTION_UP:
                         upX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
@@ -3131,7 +3320,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             }
                             if (toolFlag != ToolFlag.SELECTION) {
                                 flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
-                                flushPointerCoordsView(upX - imageOriginX, upY - imageOriginY);
+                                flushPointerCoordsView(upX - getOriginX(), upY - getOriginY());
                                 canvasView.invalidate();
                             }
                         }
@@ -3150,15 +3339,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
 
         // Set widget hints
-        // Set grid visible
-        if (gridVisible) {
-            imgGrid.setImageDrawable(VectorDrawableCompat.create(getResources(),
-                    R.drawable.ic_baseline_grid_off_24, getTheme()));
-        }
-        else {
-            imgGrid.setImageDrawable(VectorDrawableCompat.create(getResources(),
-                    R.drawable.ic_baseline_grid_24, getTheme()));
-        }
         // Set paint width text
         tvPaintWidth.setText(Integer.toString(paintWidth));
         // Set shape ImageButton image
@@ -3339,7 +3519,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @SuppressLint("SetTextI18n")
-    private void flushPointerCoordsView(int x, int y) {
+    private void flushPointerCoordsView(float x, float y) {
         tvPointerCoords.setText(x + "," + y);
     }
 
@@ -3356,6 +3536,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imageTranslationX = IMAGE_TRANSLATION_X_DEFAULT();
         imageTranslationY = IMAGE_TRANSLATION_Y_DEFAULT();
         canvasView.invalidate();
+    }
+
+    private float getOriginX() {
+        switch (originFlagHorizontal) {
+            case OriginFlag.LEFT:
+                return 0;
+            case OriginFlag.CENTER:
+                return getCurrentBitmap().getWidth() * 0.5f - 1;
+            case OriginFlag.RIGHT:
+                return getCurrentBitmap().getWidth() - 1;
+        }
+        return 0;
+    }
+
+    private float getOriginY() {
+        switch (originFlagVertical) {
+            case OriginFlag.TOP:
+                return 0;
+            case OriginFlag.CENTER:
+                return getCurrentBitmap().getHeight() * 0.5f - 1;
+            case OriginFlag.BOTTOM:
+                return getCurrentBitmap().getHeight() - 1;
+        }
+        return 0;
     }
 
 }

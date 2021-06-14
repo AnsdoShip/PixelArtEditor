@@ -22,7 +22,6 @@
     <string name="load">加载</string>
     <string name="grid">网格</string>
     <string name="show_grid">显示网格</string>
-    <string name="hide_grid">隐藏网格</string>
     <string name="exit">退出</string>
     <string name="rotate_left">向左旋转</string>
     <string name="rotate_right">向右旋转</string>
@@ -62,4 +61,9 @@
     <string name="height">高</string>
     <string name="warning_resize_image">当前图片最右侧和最底部的部分像素将被移除。你确定要这么做吗？此操作无法被撤销。</string>
     <string name="recenter">重定位</string>
+    <string name="left">左</string>
+    <string name="right">右</string>
+    <string name="top">上</string>
+    <string name="bottom">下</string>
+    <string name="center">中</string>
 </resources>

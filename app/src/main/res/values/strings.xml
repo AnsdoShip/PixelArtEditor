@@ -21,7 +21,6 @@
     <string name="load">Load</string>
     <string name="grid">Grid</string>
     <string name="show_grid">Show Grid</string>
-    <string name="hide_grid">Hide Grid</string>
     <string name="exit">Exit</string>
     <string name="rotate_left">Rotate Left</string>
     <string name="rotate_right">Rotate Right</string>
@@ -68,4 +67,11 @@
     <string name="height">Height</string>
     <string name="warning_resize_image">The right-most and bottom-most pixels of the current image will be removed. Are you sure to do this ? This operation cannot be undone.</string>
     <string name="recenter">Recenter</string>
+    <string name="left">Left</string>
+    <string name="right">Right</string>
+    <string name="top">Top</string>
+    <string name="bottom">Bottom</string>
+    <string name="center">Center</string>
+    <string name="grid_width_default" translatable="false">1</string>
+    <string name="grid_height_default" translatable="false">1</string>
 </resources>

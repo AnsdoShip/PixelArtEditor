@@ -5,7 +5,7 @@
     android:orientation="vertical">
 
     <TextView
-        android:id="@+id/tv_paint_width_value"
+        android:id="@+id/tv_image_scale_value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
@@ -15,7 +15,7 @@
         android:textSize="18sp" />
 
     <SeekBar
-        android:id="@+id/bar_paint_width_value"
+        android:id="@+id/bar_image_scale_value"
         style="@style/Widget.AppCompat.SeekBar.Discrete"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -25,5 +25,5 @@
         android:layout_marginEnd="10dp"
         android:layout_marginRight="10dp"
         android:layout_marginBottom="20dp"
-        android:max="15" />
+        android:max="6" />
 </LinearLayout>

@@ -2,22 +2,36 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical">
+
+    <CheckBox
+        android:id="@+id/box_show_grid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="10dp"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:text="@string/show_grid"
+        android:textSize="18sp" />
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp">
+        android:layout_height="wrap_content">
 
         <EditText
-            android:id="@+id/et_image_width"
+            android:id="@+id/et_grid_width"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:layout_toEndOf="@id/tv_image_width"
-            android:layout_toRightOf="@id/tv_image_width"
+            android:layout_toEndOf="@id/tv_grid_width"
+            android:layout_toRightOf="@id/tv_grid_width"
             android:gravity="start|center_vertical"
-            android:hint="@string/image_width_default"
+            android:hint="@string/grid_width_default"
             android:inputType="number"
             android:maxLength="256"
             android:paddingStart="16dp"
@@ -29,7 +43,7 @@
             tools:ignore="Autofill" />
 
         <TextView
-            android:id="@+id/tv_image_width"
+            android:id="@+id/tv_grid_width"
             android:layout_width="wrap_content"
             android:layout_height="?attr/actionBarSize"
             android:layout_alignParentStart="true"
@@ -48,13 +62,13 @@
         android:layout_height="match_parent">
 
         <EditText
-            android:id="@+id/et_image_height"
+            android:id="@+id/et_grid_height"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:layout_toEndOf="@id/tv_image_height"
-            android:layout_toRightOf="@id/tv_image_height"
+            android:layout_toEndOf="@id/tv_grid_height"
+            android:layout_toRightOf="@id/tv_grid_height"
             android:gravity="start|center_vertical"
-            android:hint="@string/image_height_default"
+            android:hint="@string/grid_height_default"
             android:inputType="number"
             android:maxLength="256"
             android:paddingStart="16dp"
@@ -66,7 +80,7 @@
             tools:ignore="Autofill" />
 
         <TextView
-            android:id="@+id/tv_image_height"
+            android:id="@+id/tv_grid_height"
             android:layout_width="wrap_content"
             android:layout_height="?attr/actionBarSize"
             android:layout_alignParentStart="true"
