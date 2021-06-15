@@ -74,4 +74,6 @@
     <string name="center">Center</string>
     <string name="grid_width_default" translatable="false">1</string>
     <string name="grid_height_default" translatable="false">1</string>
+    <string name="info_saved_successfully">Saved successfully !</string>
+    <string name="error_image_too_large">Too large to load</string>
 </resources>

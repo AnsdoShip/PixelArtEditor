@@ -6,14 +6,49 @@ import android.os.Environment;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.core.os.EnvironmentCompat;
+
+import com.ansdoship.pixelarteditor.R;
 
 import java.io.File;
 
 public final class Utils {
+
+    public static void showLongToast(@NonNull Context context, @StringRes int textResId) {
+        showToast(context, textResId, Toast.LENGTH_LONG);
+    }
+
+    public static void showLongToast(@NonNull Context context, CharSequence text) {
+        showToast(context, text, Toast.LENGTH_LONG);
+    }
+
+    public static void showShortToast(@NonNull Context context, @StringRes int textResId) {
+        showToast(context, textResId, Toast.LENGTH_SHORT);
+    }
+
+    public static void showShortToast(@NonNull Context context, CharSequence text) {
+        showToast(context, text, Toast.LENGTH_SHORT);
+    }
+
+    public static void showToast(@NonNull Context context, @StringRes int textResId, int duration) {
+        showToast(context, context.getString(textResId), duration);
+    }
+
+    public static void showToast(@NonNull Context context, CharSequence text, int duration) {
+        View view = View.inflate(context, R.layout.toast, null);
+        TextView tvToast = view.findViewById(R.id.tv_toast);
+        tvToast.setText(text);
+        Toast toast = new Toast(context);
+        toast.setDuration(duration);
+        toast.setView(view);
+        toast.show();
+    }
 
     public static void hideSoftInputFromView(@NonNull Context context, @NonNull View view) {
         ((InputMethodManager) (context.getSystemService(Context.INPUT_METHOD_SERVICE)))

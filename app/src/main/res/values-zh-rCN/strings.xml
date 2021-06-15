@@ -66,4 +66,6 @@
     <string name="top">上</string>
     <string name="bottom">下</string>
     <string name="center">中</string>
+    <string name="info_saved_successfully">保存成功！</string>
+    <string name="error_image_too_large">图片过大</string>
 </resources>

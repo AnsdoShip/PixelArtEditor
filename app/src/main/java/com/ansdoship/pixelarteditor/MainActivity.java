@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -82,6 +83,7 @@ import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.TextViewListAdapt
 import com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup;
 import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
 import com.ansdoship.pixelarteditor.util.ApplicationUtils;
+import com.ansdoship.pixelarteditor.util.CrashHandler;
 import com.ansdoship.pixelarteditor.util.MathUtils;
 import com.ansdoship.pixelarteditor.util.Utils;
 
@@ -93,6 +95,8 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -255,21 +259,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 builtinPalette = Palette.createPalette(BUILTIN_PALETTE_COLORS_DEFAULT);
             }
         }
+        externalPaletteName = preferences.getString(KEY_EXTERNAL_PALETTE_NAME, EXTERNAL_PALETTE_NAME_DEFAULT);
+        loadExternalPalette(externalPaletteName);
 
         imageName = preferences.getString(KEY_IMAGE_NAME, IMAGE_NAME_DEFAULT());
         flushImageNameView();
         imageFormat = preferences.getString(KEY_IMAGE_FORMAT, IMAGE_FORMAT_DEFAULT);
         setImageQuality(preferences.getInt(KEY_IMAGE_QUALITY, IMAGE_QUALITY_DEFAULT));
         imagePath = preferences.getString(KEY_IMAGE_PATH, IMAGE_PATH_DEFAULT());
-        setImageScale(preferences.getInt(KEY_IMAGE_SCALE, IMAGE_SCALE_DEFAULT));
-        canvasView.post(new Runnable() {
-            @Override
-            public void run() {
-                imageTranslationX = preferences.getInt(KEY_IMAGE_TRANSLATION_X, IMAGE_TRANSLATION_X_DEFAULT());
-                imageTranslationY = preferences.getInt(KEY_IMAGE_TRANSLATION_Y, IMAGE_TRANSLATION_Y_DEFAULT());
-                canvasView.invalidate();
-            }
-        });
         originFlagHorizontal = preferences.getInt(KEY_ORIGIN_FLAG_HORIZONTAL, ORIGIN_FLAG_HORIZONTAL_DEFAULT);
         originFlagVertical = preferences.getInt(KEY_ORIGIN_FLAG_VERTICAL, ORIGIN_FLAG_VERTICAL_DEFAULT);
         toolFlag = preferences.getInt(KEY_TOOL_FLAG, TOOL_FLAG_DEFAULT);
@@ -277,11 +274,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setPaintFlag(preferences.getInt(KEY_PAINT_FLAG, PAINT_FLAG_DEFAULT));
         selectionFlag = SELECTION_FLAG_DEFAULT;
         setPaletteFlag(preferences.getInt(KEY_PALETTE_FLAG, PALETTE_FLAG_DEFAULT));
-        externalPaletteName = preferences.getString(KEY_EXTERNAL_PALETTE_NAME, EXTERNAL_PALETTE_NAME_DEFAULT);
         setPaintWidth(preferences.getInt(KEY_PAINT_WIDTH, PAINT_WIDTH_DEFAULT));
         setGridVisible(preferences.getBoolean(KEY_GRID_VISIBLE, GRID_VISIBLE_DEFAULT));
         setGridWidth(preferences.getInt(KEY_GRID_WIDTH, GRID_WIDTH_DEFAULT));
         setGridHeight(preferences.getInt(KEY_GRID_HEIGHT, GRID_HEIGHT_DEFAULT));
+        canvasView.post(new Runnable() {
+            @Override
+            public void run() {
+                setImageScale(preferences.getInt(KEY_IMAGE_SCALE, IMAGE_SCALE_DEFAULT), false);
+                imageTranslationX = preferences.getInt(KEY_IMAGE_TRANSLATION_X, IMAGE_TRANSLATION_X_DEFAULT());
+                imageTranslationY = preferences.getInt(KEY_IMAGE_TRANSLATION_Y, IMAGE_TRANSLATION_Y_DEFAULT());
+                canvasView.invalidate();
+            }
+        });
         scaleMode = SCALE_MODE_DEFAULT;
         readOnlyMode = READ_ONLY_MODE_DEFAULT;
         selected = SELECTED_DEFAULT;
@@ -367,6 +372,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public final static String EXTERNAL_PALETTE_NAME_DEFAULT = null;
 
     public final static int PAINT_WIDTH_DEFAULT = 1;
+
+    public final static int CANVAS_WIDTH_DEFAULT = 0;
+    public final static int CANVAS_HEIGHT_DEFAULT = 0;
 
     public final static boolean GRID_VISIBLE_DEFAULT = false;
     public final static int GRID_WIDTH_DEFAULT = 1;
@@ -539,16 +547,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.imageQuality = MathUtils.clamp(imageQuality, IMAGE_QUALITY_MIN, IMAGE_QUALITY_MAX);
     }
 
-    private void setImageScale(int imageScale) {
-        if(imageScale >= 1 && imageScale <= IMAGE_SCALE_MAX) {
-            this.imageScale = imageScale;
-            selectionPaint1.setStrokeWidth(imageScale * 0.5f + 0.5f);
-            selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
-            flushCanvasBackgroundPaint();
-            flushGridPaint();
-            flushImageScaleView();
-            canvasView.invalidate();
+    private void setImageScale(int imageScale, boolean translate) {
+        int newScale = MathUtils.clamp(imageScale, IMAGE_SCALE_MIN, IMAGE_SCALE_MAX);
+        int offset = this.imageScale - newScale;
+        this.imageScale = newScale;
+        if (translate) {
+            imageTranslationX += offset * getCurrentBitmap().getWidth() * 0.5f;
+            imageTranslationY += offset * getCurrentBitmap().getHeight() * 0.5f;
         }
+        selectionPaint1.setStrokeWidth(imageScale * 0.5f + 0.5f);
+        selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
+        flushCanvasBackgroundPaint();
+        flushGridPaint();
+        flushImageScaleView();
+        canvasView.invalidate();
     }
 
     private void setPaintFlag(int paintFlag) {
@@ -576,7 +588,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 listPalettes.setPalette(builtinPalette);
                 break;
             case PaletteFlag.EXTERNAL:
-                listPalettes.setPalette(externalPalette);
+                if (externalPalette == null) {
+                    this.paletteFlag = PALETTE_FLAG_DEFAULT;
+                    listPalettes.setPalette(builtinPalette);
+                }
+                else {
+                    listPalettes.setPalette(externalPalette);
+                }
                 break;
         }
     }
@@ -1255,7 +1273,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                setImageScale(dialogTempImageScale);
+                setImageScale(dialogTempImageScale, true);
             }
         });
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -1759,6 +1777,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             if (paletteFlag == PaletteFlag.EXTERNAL) {
                                 paletteFlag = PaletteFlag.INTERNAL;
                                 removeExternalPalette();
+                                listPalettes.setPalette(builtinPalette);
                             }
                         }
                         catch (IOException e) {
@@ -1813,8 +1832,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                         break;
                     case 2:
-                        // FIXME
-                        buildAddPaletteDialog();
+                        int originalColor = listPalettes.getCheckedPaletteColor();
+                        float originalValue = ColorFactory.value(originalColor);
+                        List<Float> valueList = new ArrayList<>();
+                        for (float value = originalValue; value > 0.0f; value -= 0.1f) {
+                            valueList.add(value);
+                        }
+                        valueList.add(0.0f);
+                        Collections.reverse(valueList);
+                        for (float value = originalValue; value < 1.0f; value += 0.1f) {
+                            valueList.add(value);
+                        }
+                        valueList.add(1.0f);
+                        Collections.reverse(valueList);
+                        Iterator<Float> iterator = valueList.iterator();
+                        List<Float> tempList = new ArrayList<>();
+                        while (iterator.hasNext()) {
+                            Float next = iterator.next();
+                            if (!tempList.contains(next)) {
+                                tempList.add(next);
+                            }
+                        }
+                        valueList = tempList;
+                        int[] colors = new int[12];
+                        for (int i = 0; i < valueList.size(); i ++) {
+                            colors[i] = ColorFactory.resetValue(originalColor, valueList.get(i));
+                        }
+                        dialogTempPalette = Palette.createPalette(colors, valueList.indexOf(originalValue));
                         break;
                 }
                 buildSavePaletteDialog(null);
@@ -2409,6 +2453,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                         public void onSuccess() {
                                                             imageName = FilenameUtils.getBaseName(dialogTempImageName);
                                                             flushImageNameView();
+                                                            Utils.showLongToast(MainActivity.this,
+                                                                    getString(R.string.info_saved_successfully) + "\n" +
+                                                                            getImagePathname(dialogTempImageName));
                                                         }
                                                     });
                                         }
@@ -2429,6 +2476,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             public void onSuccess() {
                                 imageName = FilenameUtils.getBaseName(dialogTempImageName);
                                 flushImageNameView();
+                                Utils.showLongToast(MainActivity.this,
+                                        getString(R.string.info_saved_successfully) + "\n" +
+                                                getImagePathname(dialogTempImageName));
                             }
                         });
             }
@@ -2601,6 +2651,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 loadImageDialog.dismiss();
                             }
                         }
+                    }
+                    else {
+                        Utils.showLongToast(MainActivity.this, R.string.error_image_too_large);
                     }
                 }
                 else {
@@ -2893,6 +2946,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
 
+        CrashHandler.getInstance().init(this);
+
         // Set content view
         setContentView(R.layout.activity_main);
 
@@ -3115,11 +3170,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             newDist = Utils.spacing(event);
                             if(newDist != 0) {
                                 if (newDist >= oldDist + ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 64) {
-                                    setImageScale(imageScale * 2);
+                                    setImageScale(imageScale * 2, true);
                                     oldDist = newDist;
                                 }
                                 if (newDist <= oldDist - ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 64) {
-                                    setImageScale(imageScale / 2);
+                                    setImageScale(imageScale / 2, true);
                                     oldDist = newDist;
                                 }
                             }

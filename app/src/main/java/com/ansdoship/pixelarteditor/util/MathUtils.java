@@ -108,12 +108,12 @@ public final class MathUtils {
         return rad * 180 / Math.PI;
     }
 
-    public static double log (double antilogarithm, double base) {
-        return Math.log(antilogarithm) / Math.log(base);
+    public static double log (double antilog, double base) {
+        return Math.log(antilog) / Math.log(base);
     }
 
-    public static float log (float antilogarithm, float base) {
-        return (float)(Math.log(antilogarithm) / Math.log(base));
+    public static float log (float antilog, float base) {
+        return (float)(Math.log(antilog) / Math.log(base));
     }
 
 }
