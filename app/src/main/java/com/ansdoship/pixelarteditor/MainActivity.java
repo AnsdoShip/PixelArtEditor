@@ -1314,7 +1314,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                paintWidth = dialogTempPaintWidth;
+                setPaintWidth(dialogTempPaintWidth);
                 tvPaintWidth.setText(Integer.toString(paintWidth));
                 tvPaintWidth.requestLayout();
             }
