@@ -18,5 +18,5 @@
 
 <resources>
     <dimen name="DP_VALUE_1">1dp</dimen>
-    <dimen name="text_size">18sp</dimen>
+    <dimen name="text_size">16sp</dimen>
 </resources>

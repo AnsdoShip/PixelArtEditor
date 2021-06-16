@@ -1190,19 +1190,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // DIALOGS
     // Help dialog
     private void buildHelpDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         builder.setMessage(R.string.help_content);
         AlertDialog dialog = builder.create();
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(18);
+            tvMessage.setTextSize(16);
             tvMessage.invalidate();
         }
     }
     // Info dialog
     private void buildInfoDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this).setView(R.layout.dialog_info);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme).setView(R.layout.dialog_info);
         builder.setNegativeButton(R.string.copyright, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -1225,7 +1225,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     // Copyright dialog
     private void buildCopyrightDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         builder.setMessage(Copyright.getCopyright());
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
@@ -1237,17 +1237,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(18);
+            tvMessage.setTextSize(16);
             tvMessage.invalidate();
         }
     }
+    // Donate dialog
     private void buildDonateDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
+        ImageView imageView = new ImageView(this);
+        imageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.alipay_qrcode));
+        builder.setView(imageView);
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                buildInfoDialog();
+            }
+        });
         builder.create().show();
     }
     // Paint flag dialog
     private void buildPaintFlagDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         String [] items = {
                 getString(R.string.replace),
                 getString(R.string.override)
@@ -1281,7 +1291,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int dialogTempPaintWidth;
     @SuppressLint("SetTextI18n")
     private void buildPaintWidthDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_paint_width, null);
         SeekBar barPaintWidthValue = view.findViewById(R.id.bar_paint_width_value);
         final TextView tvPaintWidthValue = view.findViewById(R.id.tv_paint_width_value);
@@ -1319,7 +1329,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int dialogTempImageScale;
     @SuppressLint("SetTextI18n")
     private void buildImageScaleDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_image_scale, null);
         SeekBar barImageScaleValue = view.findViewById(R.id.bar_image_scale_value);
         final TextView tvImageScaleValue = view.findViewById(R.id.tv_image_scale_value);
@@ -1354,7 +1364,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int dialogTempOriginFlagHorizontal;
     private int dialogTempOriginFlagVertical;
     private void buildOriginFlagDialog () {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_origin, null);
         RadioGroup groupOriginFlagHorizontal = view.findViewById(R.id.group_origin_flag_horizontal);
         RadioGroup groupOriginFlagVertical = view.findViewById(R.id.group_origin_flag_vertical);
@@ -1429,7 +1439,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     // Shape flag dialog
     private void buildShapeFlagDialog () {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_recycler_view, null);
         builder.setView(view);
         final AlertDialog alertDialog = builder.create();
@@ -1504,7 +1514,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private float dialogTempColorV;
     @SuppressLint("SetTextI18n")
     private void buildColorPickerDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_palette, null);
         TabHost tabHost = view.findViewById(R.id.tabhost_palette);
         tabHost.setup();
@@ -1731,7 +1741,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     // Palette flag dialog
     private void buildPaletteFlagDialog () {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_recycler_view, null);
         builder.setView(view);
         builder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
@@ -1864,7 +1874,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Add palette dialog
     private Palette dialogTempPalette;
     private void buildAddPaletteDialog () {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         String [] items = {
                 getString(R.string.empty_palette),
                 getString(R.string.copy_current_palette),
@@ -1948,7 +1958,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private String dialogTempPaletteName;
     private boolean dialogTempPaletteSameName;
     private void buildSavePaletteDialog (String etText) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_save_palette, null);
         final EditText etPaletteName = view.findViewById(R.id.et_palette_name);
         etPaletteName.setFilters(new InputFilter[] {
@@ -2043,7 +2053,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     // Rename palette dialog
     private void buildRenamePaletteDialog (@NonNull final String oldName, @NonNull String showName) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_save_palette, null);
         final EditText etPaletteName = view.findViewById(R.id.et_palette_name);
         etPaletteName.setFilters(new InputFilter[] {
@@ -2139,7 +2149,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Reset palette dialog
     private void buildResetPaletteDialog(DialogInterface.OnClickListener positiveListener,
                                          DialogInterface.OnCancelListener cancelListener) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         builder.setMessage(R.string.warning_reset_palette);
         builder.setPositiveButton(android.R.string.ok, positiveListener);
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -2153,13 +2163,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(18);
+            tvMessage.setTextSize(16);
             tvMessage.invalidate();
         }
     }
     // Load dialog
     private void buildLoadDialog () {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         String[] items = {
                 getString(R.string.load_image),
                 getString(R.string.new_image),
@@ -2190,7 +2200,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean dialogTempLoadImage;
     private void buildLoadImageDialog (boolean isPaste) {
         dialogTempLoadImage = true;
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_load_image, null);
         builder.setView(view);
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -2226,7 +2236,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // New image dialog
     @SuppressLint("SetTextI18n")
     private void buildNewImageDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_image_size, null);
         EditText etImageWidth = view.findViewById(R.id.et_image_width);
         EditText etImageHeight = view.findViewById(R.id.et_image_height);
@@ -2318,7 +2328,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Resize image dialog
     @SuppressLint("SetTextI18n")
     private void buildResizeImageDialog(int initialWidth, int initialHeight) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_image_size, null);
         EditText etImageWidth = view.findViewById(R.id.et_image_width);
         EditText etImageHeight = view.findViewById(R.id.et_image_height);
@@ -2431,7 +2441,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Resize dialog
     private void buildResizeImageWarningDialog(DialogInterface.OnClickListener positiveListener,
                                          DialogInterface.OnCancelListener cancelListener) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         builder.setMessage(R.string.warning_resize_image);
         builder.setPositiveButton(android.R.string.ok, positiveListener);
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -2445,7 +2455,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(18);
+            tvMessage.setTextSize(16);
             tvMessage.invalidate();
         }
     }
@@ -2454,7 +2464,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private EditText dialogTempEtImageName;
     private void buildSaveDialog (String initialImageName) {
         dialogTempLoadImage = false;
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_save_image, null);
         final TextView tvImageFormat = view.findViewById(R.id.tv_image_format);
         tvImageFormat.setText(".");
@@ -2604,7 +2614,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     private int dialogTempImageQuality;
     private void buildImageFormatDialog (DialogInterface.OnCancelListener listener) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_image_format, null);
         final TabHost tabHost = view.findViewById(R.id.tabhost_image_format);
         tabHost.setup();
@@ -2749,7 +2759,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Delete file dialog
     private void buildDeleteFileDialog(DialogInterface.OnClickListener positiveListener,
                                        DialogInterface.OnCancelListener cancelListener) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         builder.setMessage(R.string.warning_delete_file);
         builder.setPositiveButton(android.R.string.ok, positiveListener);
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -2763,14 +2773,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(18);
+            tvMessage.setTextSize(16);
             tvMessage.invalidate();
         }
     }
     // File same name dialog
     private void buildFileSameNameDialog(DialogInterface.OnClickListener positiveListener,
                                          DialogInterface.OnCancelListener cancelListener) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         builder.setMessage(R.string.warning_same_name_file);
         builder.setPositiveButton(android.R.string.ok, positiveListener);
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -2784,25 +2794,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(18);
+            tvMessage.setTextSize(16);
             tvMessage.invalidate();
         }
     }
     // Image name dialog
     private void buildImageNameDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         builder.setMessage(tvImageName.getText());
         AlertDialog dialog = builder.create();
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(18);
+            tvMessage.setTextSize(16);
             tvMessage.invalidate();
         }
     }
     @SuppressLint("SetTextI18n")
     private void buildGridDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_grid, null);
         CheckBox boxShowGrid = view.findViewById(R.id.box_show_grid);
         boxShowGrid.setChecked(gridVisible);
@@ -2883,7 +2893,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     // Permission dialog
     private void buildPermissionDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         builder.setMessage(R.string.warning_permission_denied);
         builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
@@ -2895,7 +2905,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(18);
+            tvMessage.setTextSize(16);
             tvMessage.invalidate();
         }
     }

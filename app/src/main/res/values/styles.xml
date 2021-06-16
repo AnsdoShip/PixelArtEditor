@@ -23,10 +23,10 @@
         <item name="colorAccent">@color/colorTheme</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
-        <item name="dialogTheme">@style/AppDialogTheme</item>
     </style>
 
     <style name="AppDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorAccent">@color/colorTheme</item>
         <item name="android:textSize">@dimen/text_size</item>
     </style>
 
