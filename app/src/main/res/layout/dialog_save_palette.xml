@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) 2021 AnsdoShip Studio
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>
+  -->
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -20,7 +37,7 @@
             android:paddingRight="16dp"
             android:text="@string/extension_palette"
             android:textColor="@android:color/black"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_size"
             android:textStyle="bold" />
 
         <EditText
@@ -40,7 +57,7 @@
             android:singleLine="true"
             android:text="@string/palette_name_default"
             android:textColor="@android:color/black"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_size"
             tools:ignore="Autofill" />
 
     </RelativeLayout>

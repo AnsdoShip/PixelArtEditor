@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2021 AnsdoShip Studio
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package com.ansdoship.pixelarteditor;
 
 import androidx.annotation.NonNull;
@@ -15,10 +32,9 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapShader;
@@ -33,6 +49,7 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
@@ -114,10 +131,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private String imagePath;
     public final static String KEY_IMAGE_SCALE = "image_scale";
     private int imageScale;
-    public final static String KEY_IMAGE_TRANSLATION_X = "image_translation_x";
-    private int imageTranslationX;
-    public final static String KEY_IMAGE_TRANSLATION_Y = "image_translation_y";
-    private int imageTranslationY;
+    public final static String KEY_IMAGE_TO_CENTER_X = "image_to_center_x";
+    private int imageToCenterX;
+    public final static String KEY_IMAGE_TO_CENTER_Y = "image_to_center_y";
+    private int imageToCenterY;
 
     public final static String KEY_ORIGIN_FLAG_HORIZONTAL = "origin_flag_horizontal";
     private int originFlagHorizontal;
@@ -267,6 +284,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imageFormat = preferences.getString(KEY_IMAGE_FORMAT, IMAGE_FORMAT_DEFAULT);
         setImageQuality(preferences.getInt(KEY_IMAGE_QUALITY, IMAGE_QUALITY_DEFAULT));
         imagePath = preferences.getString(KEY_IMAGE_PATH, IMAGE_PATH_DEFAULT());
+        preSetImageScale(preferences.getInt(KEY_IMAGE_SCALE, IMAGE_SCALE_DEFAULT));
+        imageToCenterX = preferences.getInt(KEY_IMAGE_TO_CENTER_X, IMAGE_TO_CENTER_X_DEFAULT());
+        imageToCenterY = preferences.getInt(KEY_IMAGE_TO_CENTER_Y, IMAGE_TO_CENTER_Y_DEFAULT());
         originFlagHorizontal = preferences.getInt(KEY_ORIGIN_FLAG_HORIZONTAL, ORIGIN_FLAG_HORIZONTAL_DEFAULT);
         originFlagVertical = preferences.getInt(KEY_ORIGIN_FLAG_VERTICAL, ORIGIN_FLAG_VERTICAL_DEFAULT);
         toolFlag = preferences.getInt(KEY_TOOL_FLAG, TOOL_FLAG_DEFAULT);
@@ -278,15 +298,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setGridVisible(preferences.getBoolean(KEY_GRID_VISIBLE, GRID_VISIBLE_DEFAULT));
         setGridWidth(preferences.getInt(KEY_GRID_WIDTH, GRID_WIDTH_DEFAULT));
         setGridHeight(preferences.getInt(KEY_GRID_HEIGHT, GRID_HEIGHT_DEFAULT));
-        canvasView.post(new Runnable() {
-            @Override
-            public void run() {
-                setImageScale(preferences.getInt(KEY_IMAGE_SCALE, IMAGE_SCALE_DEFAULT), false);
-                imageTranslationX = preferences.getInt(KEY_IMAGE_TRANSLATION_X, IMAGE_TRANSLATION_X_DEFAULT());
-                imageTranslationY = preferences.getInt(KEY_IMAGE_TRANSLATION_Y, IMAGE_TRANSLATION_Y_DEFAULT());
-                canvasView.invalidate();
-            }
-        });
         scaleMode = SCALE_MODE_DEFAULT;
         readOnlyMode = READ_ONLY_MODE_DEFAULT;
         selected = SELECTED_DEFAULT;
@@ -303,8 +314,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         editor.putInt(KEY_IMAGE_QUALITY, imageQuality);
         editor.putString(KEY_IMAGE_PATH, imagePath);
         editor.putInt(KEY_IMAGE_SCALE, imageScale);
-        editor.putInt(KEY_IMAGE_TRANSLATION_X, imageTranslationX);
-        editor.putInt(KEY_IMAGE_TRANSLATION_Y, imageTranslationY);
+        editor.putInt(KEY_IMAGE_TO_CENTER_X, imageToCenterX);
+        editor.putInt(KEY_IMAGE_TO_CENTER_Y, imageToCenterY);
         editor.putInt(KEY_ORIGIN_FLAG_HORIZONTAL, originFlagHorizontal);
         editor.putInt(KEY_ORIGIN_FLAG_VERTICAL, originFlagVertical);
         editor.putInt(KEY_TOOL_FLAG, toolFlag);
@@ -352,11 +363,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public final static int IMAGE_SCALE_DEFAULT = 16;
     public final static int IMAGE_SCALE_MIN = 1;
     public final static int IMAGE_SCALE_MAX = 64;
-    private int IMAGE_TRANSLATION_X_DEFAULT() {
-        return canvasView.getWidth() / 2 - getCurrentBitmap().getWidth() * imageScale / 2;
+    private int IMAGE_TO_CENTER_X_DEFAULT() {
+        return - getCurrentBitmap().getWidth() * imageScale / 2;
     }
-    private int IMAGE_TRANSLATION_Y_DEFAULT() {
-        return canvasView.getHeight() / 2 - getCurrentBitmap().getHeight() * imageScale / 2;
+    private int IMAGE_TO_CENTER_Y_DEFAULT() {
+        return - getCurrentBitmap().getHeight() * imageScale / 2;
     }
     public final static int ORIGIN_FLAG_HORIZONTAL_DEFAULT = OriginFlag.LEFT;
     public final static int ORIGIN_FLAG_VERTICAL_DEFAULT = OriginFlag.TOP;
@@ -372,9 +383,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public final static String EXTERNAL_PALETTE_NAME_DEFAULT = null;
 
     public final static int PAINT_WIDTH_DEFAULT = 1;
-
-    public final static int CANVAS_WIDTH_DEFAULT = 0;
-    public final static int CANVAS_HEIGHT_DEFAULT = 0;
 
     public final static boolean GRID_VISIBLE_DEFAULT = false;
     public final static int GRID_WIDTH_DEFAULT = 1;
@@ -547,14 +555,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.imageQuality = MathUtils.clamp(imageQuality, IMAGE_QUALITY_MIN, IMAGE_QUALITY_MAX);
     }
 
-    private void setImageScale(int imageScale, boolean translate) {
+    private void setImageScale(int imageScale) {
         int newScale = MathUtils.clamp(imageScale, IMAGE_SCALE_MIN, IMAGE_SCALE_MAX);
         int offset = this.imageScale - newScale;
         this.imageScale = newScale;
-        if (translate) {
-            imageTranslationX += offset * getCurrentBitmap().getWidth() * 0.5f;
-            imageTranslationY += offset * getCurrentBitmap().getHeight() * 0.5f;
-        }
+        imageToCenterX += offset * getCurrentBitmap().getWidth() / 2;
+        imageToCenterY += offset * getCurrentBitmap().getHeight() / 2;
+        selectionPaint1.setStrokeWidth(imageScale * 0.5f + 0.5f);
+        selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
+        flushCanvasBackgroundPaint();
+        flushGridPaint();
+        flushImageScaleView();
+        canvasView.invalidate();
+    }
+
+    private void preSetImageScale(int imageScale) {
+        this.imageScale = MathUtils.clamp(imageScale, IMAGE_SCALE_MIN, IMAGE_SCALE_MAX);
         selectionPaint1.setStrokeWidth(imageScale * 0.5f + 0.5f);
         selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
         flushCanvasBackgroundPaint();
@@ -814,8 +830,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         window.setOutsideTouchable(true);
         window.setTouchable(true);
-        int xOffset = upX * imageScale + imageTranslationX;
-        int yOffset = upY * imageScale + imageTranslationY;
+        int xOffset = upX * imageScale + getImageTranslationX();
+        int yOffset = upY * imageScale + getImageTranslationY();
         int gravity;
         if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
             gravity = Gravity.START;
@@ -847,9 +863,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 window.setAnimationStyle(R.style.animTranslateInRightBottom);
                 break;
         }
-        TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
-        yOffset += typedArray.getDimension(0, 0) * 2;
-        typedArray.recycle();
         yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
                 "dimen", "android"));
         window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
@@ -953,8 +966,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         window.setOutsideTouchable(true);
         window.setTouchable(true);
-        int xOffset = upX * imageScale + imageTranslationX;
-        int yOffset = upY * imageScale + imageTranslationY;
+        int xOffset = upX * imageScale + getImageTranslationX();
+        int yOffset = upY * imageScale + getImageTranslationY();
         int gravity;
         if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
             gravity = Gravity.START;
@@ -986,9 +999,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 window.setAnimationStyle(R.style.animTranslateInRightBottom);
                 break;
         }
-        TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
-        yOffset += typedArray.getDimension(0, 0) * 2;
-        typedArray.recycle();
         yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
                 "dimen", "android"));
         window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
@@ -1157,13 +1167,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgHelp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //FIXME HELP DIALOG
+                buildHelpDialog();
+                window.dismiss();
             }
         });
         imgInfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //FIXME INFO DIALOG
+                buildInfoDialog();
+                window.dismiss();
             }
         });
         imgExit.setOnClickListener(new View.OnClickListener() {
@@ -1176,6 +1188,63 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     // DIALOGS
+    // Help dialog
+    private void buildHelpDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.help_content);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        TextView tvMessage = Utils.getMessageView(dialog);
+        if (tvMessage != null) {
+            tvMessage.setTextSize(18);
+            tvMessage.invalidate();
+        }
+    }
+    // Info dialog
+    private void buildInfoDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this).setView(R.layout.dialog_info);
+        builder.setNegativeButton(R.string.copyright, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                buildCopyrightDialog();
+            }
+        });
+        builder.setPositiveButton(R.string.donate, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                buildDonateDialog();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        TextView tvSourceCodeUrl = dialog.findViewById(R.id.tv_source_code_url);
+        if (tvSourceCodeUrl != null) {
+            tvSourceCodeUrl.setOnClickListener(view ->
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.source_code_url)))));
+        }
+    }
+    // Copyright dialog
+    private void buildCopyrightDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(Copyright.getCopyright());
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                buildInfoDialog();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        TextView tvMessage = Utils.getMessageView(dialog);
+        if (tvMessage != null) {
+            tvMessage.setTextSize(18);
+            tvMessage.invalidate();
+        }
+    }
+    private void buildDonateDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.create().show();
+    }
     // Paint flag dialog
     private void buildPaintFlagDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -1273,7 +1342,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                setImageScale(dialogTempImageScale, true);
+                setImageScale(dialogTempImageScale);
             }
         });
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -1846,19 +1915,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         valueList.add(1.0f);
                         Collections.reverse(valueList);
                         Iterator<Float> iterator = valueList.iterator();
-                        List<Float> tempList = new ArrayList<>();
+                        List<Integer> colorList = new ArrayList<>();
                         while (iterator.hasNext()) {
                             Float next = iterator.next();
-                            if (!tempList.contains(next)) {
-                                tempList.add(next);
+                            int color = ColorFactory.resetValue(originalColor, next);
+                            if (!colorList.contains(color)) {
+                                colorList.add(color);
                             }
                         }
-                        valueList = tempList;
                         int[] colors = new int[12];
-                        for (int i = 0; i < valueList.size(); i ++) {
-                            colors[i] = ColorFactory.resetValue(originalColor, valueList.get(i));
+                        for (int i = 0; i < colorList.size(); i ++) {
+                            colors[i] = colorList.get(i);
                         }
-                        dialogTempPalette = Palette.createPalette(colors, valueList.indexOf(originalValue));
+                        originalColor = ColorFactory.resetValue(originalColor, originalValue);
+                        dialogTempPalette = Palette.createPalette(colors,
+                                colorList.indexOf(originalColor));
                         break;
                 }
                 buildSavePaletteDialog(null);
@@ -2078,7 +2149,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         builder.setOnCancelListener(cancelListener);
-        builder.create().show();
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        TextView tvMessage = Utils.getMessageView(dialog);
+        if (tvMessage != null) {
+            tvMessage.setTextSize(18);
+            tvMessage.invalidate();
+        }
     }
     // Load dialog
     private void buildLoadDialog () {
@@ -2364,7 +2441,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         builder.setOnCancelListener(cancelListener);
-        builder.create().show();
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        TextView tvMessage = Utils.getMessageView(dialog);
+        if (tvMessage != null) {
+            tvMessage.setTextSize(18);
+            tvMessage.invalidate();
+        }
     }
     // Save dialog
     private String dialogTempImageName;
@@ -2676,7 +2759,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         builder.setOnCancelListener(cancelListener);
-        builder.create().show();
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        TextView tvMessage = Utils.getMessageView(dialog);
+        if (tvMessage != null) {
+            tvMessage.setTextSize(18);
+            tvMessage.invalidate();
+        }
     }
     // File same name dialog
     private void buildFileSameNameDialog(DialogInterface.OnClickListener positiveListener,
@@ -2691,13 +2780,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         builder.setOnCancelListener(cancelListener);
-        builder.create().show();
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        TextView tvMessage = Utils.getMessageView(dialog);
+        if (tvMessage != null) {
+            tvMessage.setTextSize(18);
+            tvMessage.invalidate();
+        }
     }
     // Image name dialog
     private void buildImageNameDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(tvImageName.getText());
-        builder.create().show();
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        TextView tvMessage = Utils.getMessageView(dialog);
+        if (tvMessage != null) {
+            tvMessage.setTextSize(18);
+            tvMessage.invalidate();
+        }
     }
     @SuppressLint("SetTextI18n")
     private void buildGridDialog() {
@@ -2790,7 +2891,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 finish();
             }
         });
-        builder.create().show();
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        TextView tvMessage = Utils.getMessageView(dialog);
+        if (tvMessage != null) {
+            tvMessage.setTextSize(18);
+            tvMessage.invalidate();
+        }
     }
 
     // ON CLICK
@@ -3010,13 +3117,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 canvas.restore();
                 // Set matrix
                 matrix.setTranslate(
-                        (float)(imageTranslationX) / imageScale,
-                        (float)(imageTranslationY) / imageScale);
+                        (float)(getImageTranslationX()) / imageScale,
+                        (float)(getImageTranslationY()) / imageScale);
                 matrix.postScale(imageScale, imageScale);
                 // Draw background
                 canvas.drawColor(getCanvasViewBackgroundColor());
                 canvasBackgroundMatrix.reset();
-                canvasBackgroundMatrix.setTranslate(imageTranslationX, imageTranslationY);
+                canvasBackgroundMatrix.setTranslate(getImageTranslationX(), getImageTranslationY());
                 canvas.setMatrix(canvasBackgroundMatrix);
                 canvas.drawRect(0, 0,
                         getCurrentBitmap().getWidth() * imageScale,
@@ -3036,17 +3143,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         int height = getCurrentBitmap().getHeight();
                         for (int i = 0; i <= width; i += gridWidth) {
                             canvas.drawLine(
-                                    imageTranslationX + i * imageScale,
-                                    imageTranslationY,
-                                    imageTranslationX + i * imageScale,
-                                    imageTranslationY + height * imageScale, gridPaint);
+                                    getImageTranslationX() + i * imageScale,
+                                    getImageTranslationY(),
+                                    getImageTranslationX() + i * imageScale,
+                                    getImageTranslationY() + height * imageScale, gridPaint);
                         }
                         for (int i = 0; i <= height; i += gridHeight) {
                             canvas.drawLine(
-                                    imageTranslationX,
-                                    imageTranslationY + i * imageScale,
-                                    imageTranslationX + width * imageScale,
-                                    imageTranslationY + i * imageScale, gridPaint);
+                                    getImageTranslationX(),
+                                    getImageTranslationY() + i * imageScale,
+                                    getImageTranslationX() + width * imageScale,
+                                    getImageTranslationY() + i * imageScale, gridPaint);
                         }
                         canvas.save();
                         canvas.restore();
@@ -3062,9 +3169,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     switch (selectionFlag) {
                         case ToolFlag.SelectionFlag.CUT:
                         case ToolFlag.SelectionFlag.COPY:
-                            selectionLeft = imageTranslationX +
+                            selectionLeft = getImageTranslationX() +
                                     selectionBitmapDstX * imageScale + selectionPaint1.getStrokeWidth() / 2;
-                            selectionTop = imageTranslationY +
+                            selectionTop = getImageTranslationY() +
                                     selectionBitmapDstY * imageScale + selectionPaint1.getStrokeWidth() / 2;
                             selectionRight = selectionLeft + (selectionBitmapDstWidth - 1) * imageScale
                                     + selectionPaint1.getStrokeWidth();
@@ -3072,13 +3179,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     + selectionPaint1.getStrokeWidth();
                             break;
                         default:
-                            selectionLeft = imageTranslationX +
+                            selectionLeft = getImageTranslationX() +
                                     Math.min(downX, moveX) * imageScale + selectionPaint1.getStrokeWidth() / 2;
-                            selectionTop = imageTranslationY +
+                            selectionTop = getImageTranslationY() +
                                     Math.min(downY, moveY) * imageScale + selectionPaint1.getStrokeWidth() / 2;
-                            selectionRight = imageTranslationX +
+                            selectionRight = getImageTranslationX() +
                                     Math.max(downX, moveX) * imageScale + selectionPaint1.getStrokeWidth() / 2 * 3;
-                            selectionBottom = imageTranslationY +
+                            selectionBottom = getImageTranslationY() +
                                     Math.max(downY, moveY) * imageScale + selectionPaint1.getStrokeWidth() / 2 * 3;
                             break;
                     }
@@ -3104,8 +3211,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         x = event.getX(0);
                         y = event.getY(0);
                         selected = false;
-                        downX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
-                        downY = (int) Math.floor((event.getY(0) - imageTranslationY) / imageScale);
+                        downX = (int) Math.floor((event.getX(0) - getImageTranslationX()) / imageScale);
+                        downY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
                         moveX = downX;
                         moveY = downY;
                         path.moveTo(downX, downY);
@@ -3170,23 +3277,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             newDist = Utils.spacing(event);
                             if(newDist != 0) {
                                 if (newDist >= oldDist + ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 64) {
-                                    setImageScale(imageScale * 2, true);
+                                    setImageScale(imageScale * 2);
                                     oldDist = newDist;
                                 }
                                 if (newDist <= oldDist - ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 64) {
-                                    setImageScale(imageScale / 2, true);
+                                    setImageScale(imageScale / 2);
                                     oldDist = newDist;
                                 }
                             }
-                            imageTranslationX += event.getX(0) - x;
-                            imageTranslationY += event.getY(0) - y;
+                            imageToCenterX += event.getX(0) - x;
+                            imageToCenterY += event.getY(0) - y;
                             x = event.getX(0);
                             y = event.getY(0);
                         }
                         else if (!readOnlyMode) {
                             // Current path
-                            moveX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
-                            moveY = (int) Math.floor((event.getY(0) - imageTranslationY) / imageScale);
+                            moveX = (int) Math.floor((event.getX(0) - getImageTranslationX()) / imageScale);
+                            moveY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
                             switch (toolFlag) {
                                 case ToolFlag.PAINT:
                                 case ToolFlag.ERASER:
@@ -3321,8 +3428,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         flushPointerCoordsView(moveX - getOriginX(), moveY - getOriginY());
                         break;
                     case MotionEvent.ACTION_UP:
-                        upX = (int) Math.floor((event.getX(0) - imageTranslationX) / imageScale);
-                        upY = (int) Math.floor((event.getY(0) - imageTranslationY) / imageScale);
+                        upX = (int) Math.floor((event.getX(0) - getImageTranslationX()) / imageScale);
+                        upY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
                         if (readOnlyMode) {
                             readOnlyMode = false;
                         }
@@ -3587,9 +3694,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tvImageName.setText(imageName);
     }
 
+    private int getImageTranslationX() {
+        return canvasView.getWidth() / 2 + imageToCenterX;
+    }
+
+    private int getImageTranslationY() {
+        return canvasView.getHeight() / 2 + imageToCenterY;
+    }
+
     private void resetImageTranslation() {
-        imageTranslationX = IMAGE_TRANSLATION_X_DEFAULT();
-        imageTranslationY = IMAGE_TRANSLATION_Y_DEFAULT();
+        imageToCenterX = IMAGE_TO_CENTER_X_DEFAULT();
+        imageToCenterY = IMAGE_TO_CENTER_Y_DEFAULT();
         canvasView.invalidate();
     }
 

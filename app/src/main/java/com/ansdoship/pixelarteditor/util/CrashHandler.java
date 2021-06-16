@@ -1,37 +1,51 @@
+/*
+ * Copyright (C) 2021 AnsdoShip Studio
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package com.ansdoship.pixelarteditor.util;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.text.format.Time;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.ansdoship.pixelarteditor.R;
+
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Field;
-import java.util.Properties;
-import java.util.TimeZone;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
     private Context mContext;
 
     public static final String TAG = "CrashHandler";
-
-    private Properties mDeviceCrashInfo;
-    private Thread.UncaughtExceptionHandler mDefaultHandler;
-
-    private static final String VERSION_NAME = "versionName";
-    private static final String VERSION_CODE = "versionCode";
 
     public static final String CRASH_EXTENSION = ".crash";
 
@@ -52,9 +66,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
     public void init(@NonNull Context context) {
         mContext = context;
-        mDeviceCrashInfo = new Properties();
         Thread.setDefaultUncaughtExceptionHandler(this);
-        mDefaultHandler = Thread.getDefaultUncaughtExceptionHandler();
     }
 
     public void init() {
@@ -63,26 +75,33 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
     @Override
     public void uncaughtException(@NonNull Thread thread, @NonNull Throwable exception) {
-        if (!handleException(exception)) {
-            mDefaultHandler.uncaughtException(thread, exception);
-        }
-        else {
-            android.os.Process.killProcess(android.os.Process.myPid());
-            System.exit(1);
+        String filePathname = handleException(exception);
+        if (filePathname != null) {
+            new Thread() {
+                @Override
+                public void run() {
+                    Looper.prepare();
+                    Utils.showLongToast(mContext, mContext.getString(R.string.error_app_crashed) + "\n" + filePathname);
+                    Looper.loop();
+                }
+            }.start();
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                    System.exit(1);
+                }
+            }, 3500);
         }
     }
 
-    private boolean handleException(@NonNull Throwable exception) {
+    @Nullable
+    private String handleException(@NonNull Throwable exception) {
         String message = exception.getLocalizedMessage();
-        if (message == null) {
-            return false;
+        if (message != null) {
+            return saveCrashInfoToFile(exception);
         }
-        collectCrashDeviceInfo();
-        String fileName = saveCrashInfoToFile(exception);
-        if (fileName != null) {
-            Utils.showLongToast(mContext, fileName);
-        }
-        return true;
+        return null;
     }
 
     @Nullable
@@ -95,6 +114,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
                 new String[] {CRASH_EXTENSION}, false).toArray(new File[0]);
     }
 
+    @SuppressLint("SimpleDateFormat")
     @Nullable
     private String saveCrashInfoToFile(@NonNull Throwable exception) {
         Writer info = new StringWriter();
@@ -107,54 +127,32 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
         }
         String result = info.toString();
         printWriter.close();
-        mDeviceCrashInfo.put("EXCEPTION", result);
         try {
             String crashDir = getCrashDir();
             if (crashDir == null) {
                 return null;
             }
-            Time time = new Time(TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT));
-            time.setToNow();
-            String date = time.year + "-" + (time.month + 1) + "-" + time.monthDay;
-            String currentTime = time.hour + "-" + time.minute + "-" + time.second;
-            String fileName = date + "-" + currentTime + CRASH_EXTENSION;
-            FileOutputStream trace = new FileOutputStream(new File(crashDir + "/" + fileName));
-            mDeviceCrashInfo.store(trace, "");
-            trace.flush();
-            trace.close();
-            return fileName;
-        }
-        catch (Exception e) {
-            Log.e(TAG, "Error while writing report file", e);
-        }
-        return null;
-    }
-
-    private void collectCrashDeviceInfo() {
-        try {
+            Date date = new Date();
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
+            String filePathname = crashDir + "/" + formatter.format(date) + CRASH_EXTENSION;
+            File file = new File(filePathname);
+            FileUtils.write(file, "# " + date.toString(), "UTF-8", false);
+            FileUtils.write(file, "\n\n# ANDROID_SDK_INT=" + Build.VERSION.SDK_INT, "UTF-8", true);
             PackageManager pm = mContext.getPackageManager();
             PackageInfo pi = pm.getPackageInfo(
                     mContext.getPackageName(),
                     PackageManager.GET_ACTIVITIES);
             if (pi != null) {
-                mDeviceCrashInfo.put(VERSION_NAME, pi.versionName + "");
-                mDeviceCrashInfo.put(VERSION_CODE, Integer.toString(pi.versionCode));
+                FileUtils.write(file, "\n\n# APP_VERSION_NAME=" + pi.versionName +
+                        "\n# APP_VERSION_CODE=" + pi.versionCode, "UTF-8", true);
             }
+            FileUtils.write(file, "\n\n" + result, "UTF-8", true);
+            return filePathname;
         }
-        catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Error while collecting package info", e);
+        catch (Exception e) {
+            Log.e(TAG, "Error while writing report file", e);
         }
-        Field[] fields = Build.class.getDeclaredFields();
-        for (Field field : fields) {
-            try {
-                field.setAccessible(true);
-                Object fieldObject = field.get(null);
-                mDeviceCrashInfo.put(field.getName(), fieldObject + "");
-            }
-            catch (Exception e) {
-                Log.e(TAG, "Error while collecting crash info", e);
-            }
-        }
+        return null;
     }
 
     @Nullable

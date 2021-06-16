@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) 2021 AnsdoShip Studio
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>
+  -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingLeft="?attr/dialogPreferredPadding"
+    android:paddingRight="?attr/dialogPreferredPadding">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="32dp"
+        android:paddingRight="32dp"
+        app:srcCompat="@drawable/ansdoship_logo"
+        tools:ignore="ContentDescription" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="7sp"
+        android:layout_marginLeft="7sp"
+        android:layout_marginEnd="7sp"
+        android:layout_marginRight="7sp"
+        android:gravity="center_horizontal"
+        android:text="@string/copyright_info"
+        android:textColor="@android:color/black"
+        android:textSize="@dimen/text_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="7sp"
+        android:layout_marginLeft="7sp"
+        android:layout_marginTop="9sp"
+        android:layout_marginEnd="7sp"
+        android:layout_marginRight="7sp"
+        android:gravity="center_horizontal"
+        android:text="@string/author"
+        android:textColor="@android:color/black"
+        android:textSize="@dimen/text_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="7sp"
+        android:layout_marginLeft="7sp"
+        android:layout_marginTop="9sp"
+        android:layout_marginEnd="7sp"
+        android:layout_marginRight="7sp"
+        android:gravity="center_horizontal"
+        android:text="@string/open_source_info"
+        android:textColor="@android:color/black"
+        android:textSize="@dimen/text_size" />
+
+    <TextView
+        android:id="@+id/tv_source_code_url"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="7sp"
+        android:layout_marginLeft="7sp"
+        android:layout_marginEnd="7sp"
+        android:layout_marginRight="7sp"
+        android:layout_marginBottom="?attr/dialogPreferredPadding"
+        android:gravity="center_horizontal"
+        android:text="@string/source_code_url_underlined"
+        android:textColor="@color/colorTheme"
+        android:textSize="@dimen/text_size" />
+</LinearLayout>
