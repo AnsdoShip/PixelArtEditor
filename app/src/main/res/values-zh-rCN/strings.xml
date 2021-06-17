@@ -88,6 +88,5 @@
     <string name="error_app_crashed">程序崩溃</string>
     <string name="copyright">版权信息</string>
     <string name="donate">捐赠作者</string>
-    <string name="alipay">支付宝</string>
     <string name="color_picker">取色器</string>
 </resources>

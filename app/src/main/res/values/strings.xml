@@ -95,9 +95,6 @@
     <string name="info_saved_successfully">Saved successfully !</string>
     <string name="error_image_too_large">Too large to load</string>
     <string name="error_app_crashed">Application crashed</string>
-    <string name="source_code_url" translatable="false">https://github.com/Ansdoship/PixelArtEditor</string>
-    <string name="source_code_url_underlined" translatable="false"><u>https://github.com/Ansdoship/PixelArtEditor</u></string>
     <string name="copyright">Copyright</string>
     <string name="donate">Donate</string>
-    <string name="alipay">Alipay</string>
 </resources>

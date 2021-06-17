@@ -1,4 +1,4 @@
-**PixelArtEditor**
+**Pixel Art Editor**
 ```
 Copyright (C) 2021 AnsdoShip Studio
 This program is free software: you can redistribute it and/or modify

@@ -488,6 +488,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         canvasBackgroundPaint.setShader(canvasBackgroundShader);
         listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
                 getCanvasBackgroundColor2());
+        canvasView.invalidate();
     }
 
     private void flushPaint(int color) {
@@ -1193,7 +1194,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme).setView(R.layout.dialog_markdown);
         AlertDialog dialog = builder.create();
         dialog.show();
-        MarkdownUtils.loadIntoWithAssets(dialog.findViewById(R.id.dialog_markdown), "help.md",true);
+        TextView tvMarkdown = dialog.findViewById(R.id.dialog_markdown);
+        if (tvMarkdown != null) {
+            MarkdownUtils.loadIntoWithAssets(tvMarkdown, "help.md",true);
+        }
     }
     // Info dialog
     private void buildInfoDialog() {
@@ -1212,7 +1216,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         AlertDialog dialog = builder.create();
         dialog.show();
-        MarkdownUtils.loadIntoWithAssets(dialog.findViewById(R.id.dialog_markdown), "info.md",true);
+        TextView tvMarkdown = dialog.findViewById(R.id.dialog_markdown);
+        if (tvMarkdown != null) {
+            MarkdownUtils.loadIntoWithAssets(tvMarkdown, "info.md",true);
+        }
     }
     // Copyright dialog
     private void buildCopyrightDialog() {
@@ -1225,7 +1232,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         AlertDialog dialog = builder.create();
         dialog.show();
-        MarkdownUtils.loadIntoWithAssets(dialog.findViewById(R.id.dialog_markdown),"copyright.md",false);
+        TextView tvMarkdown = dialog.findViewById(R.id.dialog_markdown);
+        if (tvMarkdown != null) {
+            MarkdownUtils.loadIntoWithAssets(tvMarkdown, "copyright.md",false);
+        }
     }
     // Donate dialog
     private void buildDonateDialog() {
@@ -1262,10 +1272,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onClick(final DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
-                        paintFlag = ToolFlag.PaintFlag.REPLACE;
+                        setPaintFlag(ToolFlag.PaintFlag.REPLACE);
                         break;
                     case 1:
-                        paintFlag = ToolFlag.PaintFlag.OVERRIDE;
+                        setPaintFlag(ToolFlag.PaintFlag.OVERRIDE);
                         break;
                 }
                 dialog.dismiss();
@@ -2174,7 +2184,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(16);
+            tvMessage.setTextSize(15);
             tvMessage.invalidate();
         }
     }
@@ -2466,7 +2476,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(16);
+            tvMessage.setTextSize(15);
             tvMessage.invalidate();
         }
     }
@@ -2784,7 +2794,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(16);
+            tvMessage.setTextSize(15);
             tvMessage.invalidate();
         }
     }
@@ -2805,7 +2815,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(16);
+            tvMessage.setTextSize(15);
             tvMessage.invalidate();
         }
     }
@@ -2817,7 +2827,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(16);
+            tvMessage.setTextSize(15);
             tvMessage.invalidate();
         }
     }
@@ -2916,7 +2926,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(16);
+            tvMessage.setTextSize(15);
             tvMessage.invalidate();
         }
     }
