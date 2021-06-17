@@ -48,4 +48,6 @@ dependencies {
     implementation 'androidx.preference:preference:1.1.1'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'org.apache.commons.io:commonsIO:2.5.0'
+    implementation project(path: ':colorpicker')
+    implementation 'io.noties.markwon:core:4.6.2'
 }

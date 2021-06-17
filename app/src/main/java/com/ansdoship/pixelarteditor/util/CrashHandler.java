@@ -99,6 +99,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     private String handleException(@NonNull Throwable exception) {
         String message = exception.getLocalizedMessage();
         if (message != null) {
+
             return saveCrashInfoToFile(exception);
         }
         return null;

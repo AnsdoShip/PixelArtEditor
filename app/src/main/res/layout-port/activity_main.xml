@@ -120,6 +120,7 @@
                         android:layout_height="?attr/actionBarSize"
                         android:background="?attr/selectableItemBackground"
                         android:contentDescription="@string/recenter"
+                        android:tint="@color/colorPrimaryText"
                         app:srcCompat="@drawable/ic_baseline_recenter_24" />
 
                     <ImageButton
@@ -128,6 +129,7 @@
                         android:layout_height="?attr/actionBarSize"
                         android:background="?attr/selectableItemBackground"
                         android:contentDescription="@string/grid"
+                        android:tint="@color/colorPrimaryText"
                         app:srcCompat="@drawable/ic_baseline_grid_24" />
 
                 </LinearLayout>
@@ -147,7 +149,7 @@
                         android:background="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:maxLines="2"
-                        android:textColor="@android:color/black"
+                        android:textColor="@color/colorSecondaryText"
                         android:textSize="@dimen/text_size"
                         android:textStyle="bold" />
 
@@ -159,7 +161,7 @@
                         android:background="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:maxLines="2"
-                        android:textColor="@android:color/black"
+                        android:textColor="@color/colorSecondaryText"
                         android:textSize="@dimen/text_size"
                         android:textStyle="bold" />
 
@@ -171,7 +173,7 @@
                         android:background="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:maxLines="2"
-                        android:textColor="@android:color/black"
+                        android:textColor="@color/colorSecondaryText"
                         android:textSize="@dimen/text_size"
                         android:textStyle="bold" />
 
@@ -183,7 +185,7 @@
                         android:background="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:maxLines="2"
-                        android:textColor="@android:color/black"
+                        android:textColor="@color/colorSecondaryText"
                         android:textSize="@dimen/text_size"
                         android:textStyle="bold" />
 
@@ -225,9 +227,10 @@
                     android:gravity="center"
                     android:paddingLeft="16dp"
                     android:paddingRight="16dp"
-                    android:textColor="@android:color/black"
+                    android:textColor="@color/colorSecondaryText"
                     android:textSize="@dimen/text_size"
                     android:textStyle="bold"
+                    android:tint="@color/colorPrimaryText"
                     app:drawableLeftCompat="@drawable/ic_baseline_line_width_24" />
 
                 <View
@@ -250,6 +253,7 @@
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
+                            android:tint="@color/colorPrimaryText"
                             app:srcCompat="@drawable/ic_baseline_paint_24" />
 
                         <com.ansdoship.pixelarteditor.ui.view.CheckedImageView
@@ -257,6 +261,7 @@
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
+                            android:tint="@color/colorPrimaryText"
                             app:srcCompat="@drawable/ic_outline_circle_24" />
 
                         <com.ansdoship.pixelarteditor.ui.view.CheckedImageView
@@ -264,6 +269,7 @@
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
+                            android:tint="@color/colorPrimaryText"
                             app:srcCompat="@drawable/ic_baseline_eraser_24" />
 
                         <com.ansdoship.pixelarteditor.ui.view.CheckedImageView
@@ -271,6 +277,7 @@
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
+                            android:tint="@color/colorPrimaryText"
                             app:srcCompat="@drawable/ic_baseline_color_fill_24" />
 
                         <com.ansdoship.pixelarteditor.ui.view.CheckedImageView
@@ -278,6 +285,7 @@
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
+                            android:tint="@color/colorPrimaryText"
                             app:srcCompat="@drawable/ic_baseline_selection_24" />
 
                         <com.ansdoship.pixelarteditor.ui.view.CheckedImageView
@@ -285,6 +293,7 @@
                             android:layout_width="?attr/actionBarSize"
                             android:layout_height="?attr/actionBarSize"
                             android:background="?attr/selectableItemBackground"
+                            android:tint="@color/colorPrimaryText"
                             app:srcCompat="@drawable/ic_baseline_colorize_24" />
                     </com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup>
                 </HorizontalScrollView>
@@ -307,6 +316,7 @@
                     android:layout_height="?attr/actionBarSize"
                     android:background="?attr/selectableItemBackground"
                     android:contentDescription="@string/palette"
+                    android:tint="@color/colorPrimaryText"
                     app:srcCompat="@drawable/ic_baseline_palette_24" />
 
                 <View

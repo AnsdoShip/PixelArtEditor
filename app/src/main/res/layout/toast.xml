@@ -34,4 +34,5 @@
         android:layout_marginBottom="10dp"
         android:textColor="@android:color/black"
         android:textSize="@dimen/text_size" />
+
 </androidx.cardview.widget.CardView>

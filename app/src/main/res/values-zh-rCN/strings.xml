@@ -17,7 +17,7 @@
   -->
 
 <resources>
-    <string name="app_name">像素编辑器</string>
+    <string name="app_name">纸板像素</string>
     <string name="paint">笔触</string>
     <string name="eraser">橡皮</string>
     <string name="fill">填充</string>
@@ -86,15 +86,8 @@
     <string name="info_saved_successfully">保存成功！</string>
     <string name="error_image_too_large">图片过大</string>
     <string name="error_app_crashed">程序崩溃</string>
-    <string name="help_content">-双指移动和缩放图片。
-        \n\n-界面上的绝大多数控件都可以点击，分别对应不同的功能。
-        \n例如：点击左上角的图片名会显示一个包含图片全名的提示框。
-        \n\n-工具栏的部分工具有扩展功能，需要二次点击。
-        \n例如：二次点击调色盘会打开调色界面。</string>
-    <string name="copyright_info">版权所有 © 2021 答舟工作室。保留一切权利。</string>
-    <string name="open_source_info">《像素编辑器》 是开源的。你可以在 GitHub 找到源码。</string>
-    <string name="author">作者：碳酸天剑</string>
     <string name="copyright">版权信息</string>
     <string name="donate">捐赠作者</string>
     <string name="alipay">支付宝</string>
+    <string name="color_picker">取色器</string>
 </resources>

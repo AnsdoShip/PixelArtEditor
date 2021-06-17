@@ -32,7 +32,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -49,7 +48,6 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
@@ -92,6 +90,7 @@ import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
 import com.ansdoship.pixelarteditor.editor.ToolFlag;
 import com.ansdoship.pixelarteditor.ui.view.CanvasView;
 import com.ansdoship.pixelarteditor.ui.view.CheckedImageView;
+import com.ansdoship.pixelarteditor.ui.view.ColorPickerView;
 import com.ansdoship.pixelarteditor.ui.view.PaletteView;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.FileListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.ImageViewListAdapter;
@@ -101,6 +100,7 @@ import com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup;
 import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
 import com.ansdoship.pixelarteditor.util.ApplicationUtils;
 import com.ansdoship.pixelarteditor.util.CrashHandler;
+import com.ansdoship.pixelarteditor.util.MarkdownUtils;
 import com.ansdoship.pixelarteditor.util.MathUtils;
 import com.ansdoship.pixelarteditor.util.Utils;
 
@@ -1190,19 +1190,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // DIALOGS
     // Help dialog
     private void buildHelpDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
-        builder.setMessage(R.string.help_content);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme).setView(R.layout.dialog_markdown);
         AlertDialog dialog = builder.create();
         dialog.show();
-        TextView tvMessage = Utils.getMessageView(dialog);
-        if (tvMessage != null) {
-            tvMessage.setTextSize(16);
-            tvMessage.invalidate();
-        }
+        MarkdownUtils.loadIntoWithAssets(dialog.findViewById(R.id.dialog_markdown), "help.md",true);
     }
     // Info dialog
     private void buildInfoDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme).setView(R.layout.dialog_info);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme).setView(R.layout.dialog_markdown);
         builder.setNegativeButton(R.string.copyright, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -1217,16 +1212,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         AlertDialog dialog = builder.create();
         dialog.show();
-        TextView tvSourceCodeUrl = dialog.findViewById(R.id.tv_source_code_url);
-        if (tvSourceCodeUrl != null) {
-            tvSourceCodeUrl.setOnClickListener(view ->
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.source_code_url)))));
-        }
+        MarkdownUtils.loadIntoWithAssets(dialog.findViewById(R.id.dialog_markdown), "info.md",true);
     }
     // Copyright dialog
     private void buildCopyrightDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
-        builder.setMessage(Copyright.getCopyright());
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme).setView(R.layout.dialog_markdown);
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialog) {
@@ -1235,11 +1225,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         AlertDialog dialog = builder.create();
         dialog.show();
-        TextView tvMessage = Utils.getMessageView(dialog);
-        if (tvMessage != null) {
-            tvMessage.setTextSize(16);
-            tvMessage.invalidate();
-        }
+        MarkdownUtils.loadIntoWithAssets(dialog.findViewById(R.id.dialog_markdown),"copyright.md",false);
     }
     // Donate dialog
     private void buildDonateDialog() {
@@ -1518,6 +1504,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         View view = View.inflate(this, R.layout.dialog_palette, null);
         TabHost tabHost = view.findViewById(R.id.tabhost_palette);
         tabHost.setup();
+        TabHost.TabSpec picker = tabHost.newTabSpec("picker");
+        picker.setIndicator("RECT");
+        picker.setContent(R.id.ambilwarna_dialogView);
+        tabHost.addTab(picker);
         TabHost.TabSpec rgb = tabHost.newTabSpec("rgb");
         rgb.setIndicator("RGB");
         rgb.setContent(R.id.ll_palette_rgb);
@@ -1532,6 +1522,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 getCanvasBackgroundColor1(),
                 getCanvasBackgroundColor2());
         final TextView tvPaletteColorValue = view.findViewById(R.id.tv_palette_color_value);
+
+        final ColorPickerView colorPicker = view.findViewById(R.id.tab_picker);
         final TextView tvColorA = view.findViewById(R.id.tv_color_a);
         final TextView tvColorR = view.findViewById(R.id.tv_color_r);
         final TextView tvColorG = view.findViewById(R.id.tv_color_g);
@@ -1550,6 +1542,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialogTempColorH = (int) ColorFactory.hue(dialogTempColor);
         dialogTempColorS = ColorFactory.saturation(dialogTempColor);
         dialogTempColorV = ColorFactory.value(dialogTempColor);
+
+        colorPicker.setOrdinalColor(dialogTempColor);
         tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
         tvColorA.setText("A: " + Color.alpha(dialogTempColor));
         tvColorR.setText("R: " + Color.red(dialogTempColor));
@@ -1566,6 +1560,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         barColorH.setProgress((int) ColorFactory.hue(dialogTempColor));
         barColorS.setProgress((int) (ColorFactory.saturation(dialogTempColor) * 100));
         barColorV.setProgress((int) (ColorFactory.value(dialogTempColor) * 100));
+
+        colorPicker.setOnColorPickedListener(new ColorPickerView.OnColorPickedListener() {
+            @Override
+            public void onUpdate(ColorPickerView view, int color) {
+                dialogTempColor = Color.argb(Color.alpha(dialogTempColor),Color.red(color),Color.green(color),Color.blue(color));
+                tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+                barColorH.setProgress((int) ColorFactory.hue(dialogTempColor));
+                barColorS.setProgress((int) ColorFactory.saturation(dialogTempColor) * 100);
+                barColorV.setProgress((int) ColorFactory.value(dialogTempColor) * 100);
+                barColorR.setProgress(Color.red(dialogTempColor));
+                barColorG.setProgress(Color.green(dialogTempColor));
+                barColorB.setProgress(Color.blue(dialogTempColor));
+                palette.setPaletteColor(color);
+            }
+        });
+
         barColorA.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -1723,6 +1733,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         builder.create().show();
     }
+
     private void flushColors(int paintColor) {
         flushPaint(paintColor);
         switch (paletteFlag) {

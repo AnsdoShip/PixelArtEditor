@@ -45,6 +45,7 @@
     <string name="flip_horizontal">Flip Horizontal</string>
     <string name="replace">Replace</string>
     <string name="override">Override</string>
+    <string name="color_picker">Picker</string>
     <string name="menu">Menu</string>
     <string name="info">Info</string>
     <string name="help">Help</string>
@@ -94,14 +95,6 @@
     <string name="info_saved_successfully">Saved successfully !</string>
     <string name="error_image_too_large">Too large to load</string>
     <string name="error_app_crashed">Application crashed</string>
-    <string name="help_content">-Move and zoom image with two fingers.
-        \n\n-Most of widgets on the interface can be clicked, each corresponding to a function.
-        \nFor example: Click the \"image name\" widget will show a dialog containing full name of the image.
-        \n\n-Some tools have extensions that requires a second click.
-        \nFor example: Click the color palette twice will open the color picker dialog.</string>
-    <string name="copyright_info">Copyright © 2021 AnsdoShip Studio. All rights reserved.</string>
-    <string name="open_source_info">Pixel Art Editor is open source. You can find the source code in GitHub.</string>
-    <string name="author">Author: Tianscar</string>
     <string name="source_code_url" translatable="false">https://github.com/Ansdoship/PixelArtEditor</string>
     <string name="source_code_url_underlined" translatable="false"><u>https://github.com/Ansdoship/PixelArtEditor</u></string>
     <string name="copyright">Copyright</string>

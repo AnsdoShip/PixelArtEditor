@@ -1,0 +1,11 @@
+-Double finger zoom, drag the sketchpad
+-Part of the information in the information bar can be set by clicking
+-Second click on widget to trigger expansion function
+    -Brush: cover (fluorescent pen effect), replace (do not retain the original color, apply new color)
+    -Shape: more shapes, ellipses, squares, etc
+    -Palette: color selector, support visualization, RGB, HSV color
+-Palette function
+    -Background palette to set the global background color
+    -Grid palette, setting grid colors
+    -Built in palette, palette for painting, 12 basic colors
+-Users can create multiple palette files, store their own palette, and support automatic generation of gradient palette

@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.View;
 import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
@@ -130,8 +131,8 @@ public class PaletteList extends LinearLayout implements View.OnClickListener {
         super(context, attrs, defStyleAttr);
         mContext = context;
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.PaletteList, defStyleAttr, 0);
-        mPaletteWidth = typedArray.getDimensionPixelSize(R.styleable.PaletteList_paletteWidth, 0);
-        mPaletteHeight = typedArray.getDimensionPixelSize(R.styleable.PaletteList_paletteHeight, 0);
+        mPaletteWidth = measureSizeWithMargin(typedArray.getDimensionPixelSize(R.styleable.PaletteList_paletteWidth, 0),12);
+        mPaletteHeight = measureSizeWithMargin(typedArray.getDimensionPixelSize(R.styleable.PaletteList_paletteHeight, 0),12);
         int size = typedArray.getInt(R.styleable.PaletteList_size, 1);
         for (int i = 0; i < size; i ++) {
             PaletteView paletteView = new PaletteView(context);
@@ -145,6 +146,7 @@ public class PaletteList extends LinearLayout implements View.OnClickListener {
         }
         checkIndex(typedArray.getInt(R.styleable.PaletteList_checkedIndex, 0));
         typedArray.recycle();
+        setGravity(Gravity.CENTER_VERTICAL);
     }
 
     public void setSize (int size) {
@@ -166,6 +168,11 @@ public class PaletteList extends LinearLayout implements View.OnClickListener {
             addView(paletteView);
         }
         checkIndex(index);
+    }
+
+    public int measureSizeWithMargin(int ordinalValue,int marginDPValue){
+        float scale = mContext.getResources().getDisplayMetrics().density;
+        return (int)Math.abs(ordinalValue-(marginDPValue * scale + 0.5f));
     }
 
     public int getSize () {

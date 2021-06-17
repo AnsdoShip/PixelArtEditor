@@ -114,6 +114,11 @@
                         android:layout_height="wrap_content">
 
                         <include
+                            layout="@layout/tab_picker"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"/>
+
+                        <include
                             layout="@layout/tab_rgb"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent" />
@@ -122,6 +127,7 @@
                             layout="@layout/tab_hsv"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent" />
+
 
                     </FrameLayout>
 
