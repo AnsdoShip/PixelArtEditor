@@ -211,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         gridPaint.setAntiAlias(false);
         gridPaint.setDither(false);
         gridPaint.setStyle(Paint.Style.STROKE);
-        gridPaint.setStrokeWidth(1);
+        gridPaint.setStrokeWidth(1.25f);
         canvasBackgroundPaint = new Paint();
         canvasBackgroundPaint.setAntiAlias(false);
         canvasBackgroundPaint.setDither(false);
@@ -488,7 +488,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         canvasBackgroundPaint.setShader(canvasBackgroundShader);
         listPalettes.setPaletteBackgroundColors(getCanvasBackgroundColor1(),
                 getCanvasBackgroundColor2());
-        canvasView.invalidate();
     }
 
     private void flushPaint(int color) {
@@ -647,17 +646,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void setGridWidth(int gridWidth) {
         this.gridWidth = gridWidth;
         flushGridPaint();
+        canvasView.invalidate();
     }
 
     private void setGridHeight(int gridHeight) {
         this.gridHeight = gridHeight;
         flushGridPaint();
+        canvasView.invalidate();
     }
 
     private void setGridSize(int gridWidth, int gridHeight) {
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
         flushGridPaint();
+        canvasView.invalidate();
     }
 
     private void setGridColor(int gridColor) {
@@ -1753,6 +1755,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 else {
                     flushCanvasBackgroundPaint();
+                    canvasView.invalidate();
                 }
                 break;
             case PaletteFlag.GRID:
