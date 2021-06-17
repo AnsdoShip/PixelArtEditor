@@ -1,33 +1,38 @@
-<!--
-  ~ Copyright (C) 2021 AnsdoShip Studio
-  ~
-  ~ This program is free software: you can redistribute it and/or modify
-  ~ it under the terms of the GNU General Public License as published by
-  ~ the Free Software Foundation, either version 3 of the License, or
-  ~ (at your option) any later version.
-  ~
-  ~ This program is distributed in the hope that it will be useful,
-  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  ~ GNU General Public License for more details.
-  ~
-  ~ You should have received a copy of the GNU General Public License
-  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>
-  -->
-
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-  <group android:scaleX="2.25"
-      android:scaleY="2.25">
-    <group
-        android:translateX="12"
-        android:translateY="12">
-      <path
-          android:fillColor="@android:color/white"
-          android:pathData="M7,14c-1.66,0 -3,1.34 -3,3 0,1.31 -1.16,2 -2,2 0.92,1.22 2.49,2 4,2 2.21,0 4,-1.79 4,-4 0,-1.66 -1.34,-3 -3,-3zM20.71,4.63l-1.34,-1.34c-0.39,-0.39 -1.02,-0.39 -1.41,0L9,12.25 11.75,15l8.96,-8.96c0.39,-0.39 0.39,-1.02 0,-1.41z"/>
-    </group>
+  <group android:scaleX="0.0421875"
+      android:scaleY="0.0421875"
+      android:translateX="32.4"
+      android:translateY="32.4">
+    <path
+        android:pathData="M306.4,190.4h172.8v208.8H306.4z"
+        android:fillColor="@color/colorTheme"/>
+    <path
+        android:pathData="M306.4,130.4h172.8v60.8H306.4z"
+        android:fillColor="@color/colorTheme"/>
+    <path
+        android:pathData="M479.2,64.8c0,-24.8 -20,-44.8 -44.8,-44.8H350.4c-24.8,0 -44.8,20 -44.8,44.8v65.6h172.8l0.8,-65.6z"
+        android:fillColor="#FFEC17"/>
+    <path
+        android:pathData="M548.8,182.4h172.8l-43.2,-82.4H592.8z"
+        android:fillColor="@color/colorTheme"/>
+    <path
+        android:pathData="M592.8,100h81.6l-39.2,-80z"
+        android:fillColor="#B3B3B3"/>
+    <path
+        android:pathData="M548.8,182.4h172.8V400H548.8z"
+        android:fillColor="@color/colorTheme"/>
+    <path
+        android:pathData="M697.6,1004h-368c-47.2,0 -84.8,-38.4 -84.8,-84.8v-520h537.6v519.2c0.8,47.2 -37.6,85.6 -84.8,85.6z"
+        android:fillColor="@color/colorTheme"/>
+    <path
+        android:pathData="M285.6,379.2h-40.8c-11.2,0 -20,8.8 -20,20v519.2c0,58.4 47.2,105.6 105.6,105.6h368c58.4,0 105.6,-47.2 105.6,-105.6L804,399.2c0,-11.2 -8.8,-20 -20,-20h-40.8L743.2,182.4c0,-3.2 -0.8,-6.4 -2.4,-9.6L653.6,10.4C649.6,4 643.2,0 635.2,0s-14.4,4 -17.6,10.4L531.2,172c-1.6,3.2 -2.4,6.4 -2.4,9.6v196.8h-28.8L500,64.8c0,-36 -28.8,-64.8 -64.8,-64.8L350.4,0c-36,0 -64.8,28.8 -64.8,64.8v314.4zM604.8,120.8h61.6l21.6,40.8L583.2,161.6l21.6,-40.8zM635.2,64l8.8,16h-17.6l8.8,-16zM568.8,202.4h132v176.8L568.8,379.2L568.8,202.4zM326.4,150.4h132v20L326.4,170.4v-20zM326.4,64.8c0,-13.6 11.2,-24 24,-24h84c13.6,0 24,11.2 24,24v44.8L326.4,109.6L326.4,64.8zM326.4,211.2h132v168L326.4,379.2v-168zM762.4,420v499.2c0,35.2 -28.8,64.8 -64.8,64.8h-368c-35.2,0 -64.8,-28.8 -64.8,-64.8L264.8,420h497.6z"
+        android:fillColor="#603813"/>
+    <path
+        android:pathData="M556.8,448.8H312.8c-11.2,0 -20,8.8 -20,20s8.8,20 20,20h244c11.2,0 20,-8.8 20,-20 0.8,-11.2 -8.8,-20 -20,-20zM632,448.8h-8.8c-11.2,0 -20,8.8 -20,20s8.8,20 20,20H632c11.2,0 20,-8.8 20,-20 0.8,-11.2 -8.8,-20 -20,-20z"
+        android:fillColor="#603813"/>
   </group>
 </vector>
