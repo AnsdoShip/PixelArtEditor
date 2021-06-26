@@ -19,7 +19,7 @@ package com.ansdoship.pixelarteditor.editor.palette;
 
 import androidx.annotation.NonNull;
 
-import com.ansdoship.pixelarteditor.util.MathUtils;
+import com.tianscar.module.MathUtils;
 
 public final class Palette {
 

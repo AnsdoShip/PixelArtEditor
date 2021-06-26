@@ -15,31 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package com.ansdoship.pixelarteditor.editor.graphics;
+package com.ansdoship.pixelarteditor.editor;
 
-import android.graphics.Bitmap;
+public final class SelectionPopupFlag {
 
-import androidx.annotation.Nullable;
+    public final static int LEFT = 0;
 
-public class BitmapUtils {
+    public final static int RIGHT = 1;
 
-    private BitmapUtils (){}
+    public final static int TOP = 2;
 
-    public static void recycleBitmap(Bitmap bitmap) {
-        if (bitmap != null) {
-            if (!bitmap.isRecycled()) {
-                bitmap.recycle();
-            }
-        }
-    }
-
-    public static void recycleBitmap(@Nullable Bitmap... bitmaps) {
-        if (bitmaps == null) {
-            return;
-        }
-        for (Bitmap bitmap : bitmaps) {
-            recycleBitmap(bitmap);
-        }
-    }
+    public final static int BOTTOM = 3;
 
 }

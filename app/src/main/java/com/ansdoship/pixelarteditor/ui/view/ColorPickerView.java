@@ -47,7 +47,7 @@ public class ColorPickerView extends LinearLayout {
     private View viewNewColor;
     private View viewAlphaOverlay;
     private ImageView viewAlphaCheckered;
-    private float[] currentColorHsv = new float[3];
+    private final float[] currentColorHsv = new float[3];
     int alpha;
 
     public ColorPickerView(Context context) {

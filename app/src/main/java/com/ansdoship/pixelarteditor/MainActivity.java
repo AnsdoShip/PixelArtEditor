@@ -34,6 +34,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapShader;
@@ -69,6 +70,7 @@ import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.ansdoship.pixelarteditor.editor.OriginFlag;
+import com.ansdoship.pixelarteditor.editor.SelectionPopupFlag;
 import com.ansdoship.pixelarteditor.editor.buffer.BitmapBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.ClearBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.FillBuffer;
@@ -80,10 +82,6 @@ import com.ansdoship.pixelarteditor.editor.buffer.PointBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.RotateBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.SelectionBuffer;
 import com.ansdoship.pixelarteditor.editor.buffer.ToolBufferPool;
-import com.ansdoship.pixelarteditor.editor.graphics.BitmapDecoder;
-import com.ansdoship.pixelarteditor.editor.graphics.BitmapEncoder;
-import com.ansdoship.pixelarteditor.editor.graphics.BitmapUtils;
-import com.ansdoship.pixelarteditor.editor.graphics.ColorFactory;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFactory;
 import com.ansdoship.pixelarteditor.editor.palette.PaletteFlag;
@@ -98,11 +96,16 @@ import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.PaletteListAdapte
 import com.ansdoship.pixelarteditor.ui.viewAdapter.recycleView.TextViewListAdapter;
 import com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup;
 import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
-import com.ansdoship.pixelarteditor.util.ApplicationUtils;
 import com.ansdoship.pixelarteditor.util.CrashHandler;
 import com.ansdoship.pixelarteditor.util.MarkdownUtils;
-import com.ansdoship.pixelarteditor.util.MathUtils;
 import com.ansdoship.pixelarteditor.util.Utils;
+import com.tianscar.module.ActivityUtils;
+import com.tianscar.module.ApplicationUtils;
+import com.tianscar.module.ColorFactory;
+import com.tianscar.module.MathUtils;
+import com.tianscar.simplebitmap.BitmapDecoder;
+import com.tianscar.simplebitmap.BitmapEncoder;
+import com.tianscar.simplebitmap.BitmapUtils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -147,7 +150,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int shapeFlag;
     public final static String KEY_PAINT_FLAG = "paint_flag";
     private int paintFlag;
-    private int selectionFlag;
+    private int selectionFlag = SELECTION_FLAG_DEFAULT;
     public final static String KEY_PALETTE_FLAG = "palette_flag";
     private int paletteFlag;
 
@@ -292,7 +295,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         toolFlag = preferences.getInt(KEY_TOOL_FLAG, TOOL_FLAG_DEFAULT);
         shapeFlag = preferences.getInt(KEY_SHAPE_FLAG, SHAPE_FLAG_DEFAULT);
         setPaintFlag(preferences.getInt(KEY_PAINT_FLAG, PAINT_FLAG_DEFAULT));
-        selectionFlag = SELECTION_FLAG_DEFAULT;
         setPaletteFlag(preferences.getInt(KEY_PALETTE_FLAG, PALETTE_FLAG_DEFAULT));
         setPaintWidth(preferences.getInt(KEY_PAINT_WIDTH, PAINT_WIDTH_DEFAULT));
         setGridVisible(preferences.getBoolean(KEY_GRID_VISIBLE, GRID_VISIBLE_DEFAULT));
@@ -300,7 +302,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setGridHeight(preferences.getInt(KEY_GRID_HEIGHT, GRID_HEIGHT_DEFAULT));
         scaleMode = SCALE_MODE_DEFAULT;
         readOnlyMode = READ_ONLY_MODE_DEFAULT;
-        selected = SELECTED_DEFAULT;
+        selectionPopupFlagHorizontal = SELECTION_POPUP_FLAG_HORIZONTAL_DEFAULT;
+        selectionPopupFlagVertical = SELECTION_POPUP_FLAG_VERTICAL_DEFAULT;
 
         flushPaint(listPalettes.getCheckedPaletteColor());
 
@@ -342,7 +345,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             BitmapEncoder.encodeFile(currentBitmapPathname,
                     getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
         }
-        BitmapUtils.recycleBitmap(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
+        BitmapUtils.recycle(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
 
         if (externalPalette != null) {
             PaletteFactory.encodeFile(externalPalette, getExternalPalettePathname(externalPaletteName), true);
@@ -402,7 +405,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public final static boolean SCALE_MODE_DEFAULT = false;
     public final static boolean READ_ONLY_MODE_DEFAULT = false;
 
-    public final static boolean SELECTED_DEFAULT = false;
+    public final static int SELECTION_POPUP_FLAG_HORIZONTAL_DEFAULT = SelectionPopupFlag.LEFT;
+    public final static int SELECTION_POPUP_FLAG_VERTICAL_DEFAULT = SelectionPopupFlag.TOP;
 
     public final static int IMAGE_WIDTH_MIN = 1;
     public final static int IMAGE_HEIGHT_MIN = 1;
@@ -427,7 +431,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Path path;
 
-    private boolean selected;
+    private boolean selected = false;
     private int selectionBitmapSrcX;
     private int selectionBitmapSrcY;
     private int selectionBitmapSrcWidth;
@@ -439,6 +443,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private RotateBuffer selectionBitmapRotateBuffer;
     private FlipVerticalBuffer selectionBitmapFlipVerticalBuffer;
     private FlipHorizontalBuffer selectionBitmapFlipHorizontalBuffer;
+    private int selectionPopupFlagHorizontal;
+    private int selectionPopupFlagVertical;
 
     private int downX;
     private int downY;
@@ -453,7 +459,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         Bitmap temp = cacheBitmap;
         cacheBitmap = newBitmap;
-        BitmapUtils.recycleBitmap(temp);
+        BitmapUtils.recycle(temp);
     }
 
     private void replaceCanvasBackgroundBitmap(Bitmap newBitmap) {
@@ -462,7 +468,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         Bitmap temp = canvasBackgroundBitmap;
         canvasBackgroundBitmap = newBitmap;
-        BitmapUtils.recycleBitmap(temp);
+        BitmapUtils.recycle(temp);
     }
 
     private void flushGridPaint() {
@@ -561,8 +567,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.imageScale = newScale;
         imageToCenterX += offset * getCurrentBitmap().getWidth() / 2;
         imageToCenterY += offset * getCurrentBitmap().getHeight() / 2;
-        selectionPaint1.setStrokeWidth(imageScale * 0.5f + 0.5f);
-        selectionPaint2.setStrokeWidth(imageScale * 0.25f + 0.25f);
+        selectionPaint1.setStrokeWidth(this.imageScale * 0.5f + 0.5f);
+        selectionPaint2.setStrokeWidth(this.imageScale * 0.25f + 0.25f);
         flushCanvasBackgroundPaint();
         flushGridPaint();
         flushImageScaleView();
@@ -833,8 +839,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         window.setOutsideTouchable(true);
         window.setTouchable(true);
-        int xOffset = upX * imageScale + getImageTranslationX();
-        int yOffset = upY * imageScale + getImageTranslationY();
+        flushSelectionBitmapStatus();
+        int xOffset = getSelectionPopupXOffset();
+        int yOffset = getSelectionPopupYOffset();
         int gravity;
         if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
             gravity = Gravity.START;
@@ -842,15 +849,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         else {
             gravity = Gravity.END;
             yOffset -= view.getMeasuredHeight();
-            yOffset += imageScale;
         }
-        if (xOffset + view.getMeasuredWidth() < canvasView.getWidth()) {
-            gravity = gravity | Gravity.TOP;
-        }
-        else {
-            gravity = gravity | Gravity.BOTTOM;
-            xOffset -= view.getMeasuredWidth();
-            xOffset += imageScale;
+        switch (selectionPopupFlagHorizontal) {
+            case SelectionPopupFlag.LEFT:
+                xOffset -= view.getMeasuredWidth();
+                if (xOffset >= 0) {
+                    gravity = gravity | Gravity.BOTTOM;
+                }
+                else {
+                    gravity = gravity | Gravity.TOP;
+                    xOffset -= view.getMeasuredWidth();
+                    xOffset += imageScale;
+                }
+                break;
+            case SelectionPopupFlag.RIGHT:
+                if (xOffset + view.getMeasuredWidth() < canvasView.getWidth()) {
+                    gravity = gravity | Gravity.TOP;
+                }
+                else {
+                    gravity = gravity | Gravity.BOTTOM;
+                }
+                break;
         }
         switch (gravity) {
             case Gravity.START | Gravity.TOP:
@@ -866,6 +885,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 window.setAnimationStyle(R.style.animTranslateInRightBottom);
                 break;
         }
+        TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
+        yOffset += (typedArray.getDimension(0, 0) * 2);
+        typedArray.recycle();
         yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
                 "dimen", "android"));
         window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
@@ -876,7 +898,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgCut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                flushSelectionBitmapStatus();
                 selectionFlag = ToolFlag.SelectionFlag.CUT;
                 flushSelectedBitmap();
                 toolBufferPool.addToolBuffer(getClearBuffer());
@@ -887,7 +908,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgCopy.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                flushSelectionBitmapStatus();
                 selectionFlag = ToolFlag.SelectionFlag.COPY;
                 window.dismiss();
                 buildSelectionPopup2();
@@ -896,7 +916,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                flushSelectionBitmapStatus();
                 selectionFlag = ToolFlag.SelectionFlag.NONE;
                 toolBufferPool.addToolBuffer(getClearBuffer());
                 selected = false;
@@ -959,6 +978,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 selectionBitmapFlipHorizontalBuffer
         );
     }
+
+    private int getSelectionPopupXOffset() {
+        int xOffset = selectionBitmapDstX;
+        if (selectionPopupFlagHorizontal == SelectionPopupFlag.RIGHT) {
+            xOffset += selectionBitmapDstWidth;
+        }
+        xOffset *= imageScale;
+        xOffset += getImageTranslationX();
+        return xOffset;
+    }
+
+    private int getSelectionPopupYOffset() {
+        int yOffset = selectionBitmapDstY;
+        if (selectionPopupFlagVertical == SelectionPopupFlag.BOTTOM) {
+            yOffset += selectionBitmapDstHeight;
+        }
+        yOffset *= imageScale;
+        yOffset += getImageTranslationY();
+        return yOffset;
+    }
+
     // Selection popup 2
     private void buildSelectionPopup2() {
         View view = View.inflate(this, R.layout.popup_selection_2, null);
@@ -969,24 +1009,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         window.setOutsideTouchable(true);
         window.setTouchable(true);
-        int xOffset = upX * imageScale + getImageTranslationX();
-        int yOffset = upY * imageScale + getImageTranslationY();
         int gravity;
+        int xOffset = getSelectionPopupXOffset();
+        int yOffset = getSelectionPopupYOffset();
         if (yOffset + view.getMeasuredHeight() < canvasView.getHeight()) {
             gravity = Gravity.START;
         }
         else {
             gravity = Gravity.END;
             yOffset -= view.getMeasuredHeight();
-            yOffset += imageScale;
         }
-        if (xOffset + view.getMeasuredWidth() < canvasView.getWidth()) {
-            gravity = gravity | Gravity.TOP;
-        }
-        else {
-            gravity = gravity | Gravity.BOTTOM;
-            xOffset -= view.getMeasuredWidth();
-            xOffset += imageScale;
+        switch (selectionPopupFlagHorizontal) {
+            case SelectionPopupFlag.LEFT:
+                xOffset -= view.getMeasuredWidth();
+                if (xOffset >= 0) {
+                    gravity = gravity | Gravity.BOTTOM;
+                }
+                else {
+                    gravity = gravity | Gravity.TOP;
+                    xOffset -= view.getMeasuredWidth();
+                    xOffset += imageScale;
+                }
+                break;
+            case SelectionPopupFlag.RIGHT:
+                if (xOffset + view.getMeasuredWidth() < canvasView.getWidth()) {
+                    gravity = gravity | Gravity.TOP;
+                }
+                else {
+                    gravity = gravity | Gravity.BOTTOM;
+                }
+                break;
         }
         switch (gravity) {
             case Gravity.START | Gravity.TOP:
@@ -1002,6 +1054,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 window.setAnimationStyle(R.style.animTranslateInRightBottom);
                 break;
         }
+        TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
+        yOffset += (typedArray.getDimension(0, 0) * 2);
+        typedArray.recycle();
         yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
                 "dimen", "android"));
         window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
@@ -1022,6 +1077,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     degrees = degrees + 360;
                 }
                 swapSelectionBitmapDstWidthHeight();
+                flushSelectionSizeView(selectionBitmapDstWidth, selectionBitmapDstHeight);
                 selectionBitmapRotateBuffer = new RotateBuffer(degrees);
                 toolBufferPool.clearTempToolBuffers();
                 switch (selectionFlag) {
@@ -1046,6 +1102,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     degrees = degrees - 360;
                 }
                 swapSelectionBitmapDstWidthHeight();
+                flushSelectionSizeView(selectionBitmapDstWidth, selectionBitmapDstHeight);
                 selectionBitmapRotateBuffer = new RotateBuffer(degrees);
                 toolBufferPool.clearTempToolBuffers();
                 switch (selectionFlag) {
@@ -1125,7 +1182,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View v) {
                 toolBufferPool.clearTempToolBuffers();
-                BitmapUtils.recycleBitmap(selectedBitmap);
+                BitmapUtils.recycle(selectedBitmap);
                 selectionFlag = ToolFlag.SelectionFlag.NONE;
                 selectionBitmapRotateBuffer = null;
                 selectionBitmapFlipVerticalBuffer = null;
@@ -1333,6 +1390,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         final TextView tvImageScaleValue = view.findViewById(R.id.tv_image_scale_value);
         barImageScaleValue.setProgress((int) MathUtils.log(imageScale, 2));
         tvImageScaleValue.setText(imageScale * 100 + "%");
+        dialogTempImageScale = imageScale;
         barImageScaleValue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -2031,7 +2089,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             @Override
                             public void onFileExists(boolean isDirectory) {
                                 if (!isDirectory) {
-                                    Utils.hideSoftInputFromView(MainActivity.this, etPaletteName);
+                                    ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
                                     buildFileSameNameDialog(new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
@@ -2055,7 +2113,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (dialogTempPaletteSameName) {
                     return;
                 }
-                Utils.hideSoftInputFromView(MainActivity.this, etPaletteName);
+                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
                 buildPaletteFlagDialog();
             }
         });
@@ -2069,7 +2127,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onCancel(DialogInterface dialog) {
                 dialogTempPalette = null;
-                Utils.hideSoftInputFromView(MainActivity.this, etPaletteName);
+                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
                 buildAddPaletteDialog();
             }
         });
@@ -2164,7 +2222,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialog) {
-                Utils.hideSoftInputFromView(MainActivity.this, etPaletteName);
+                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
                 buildPaletteFlagDialog();
             }
         });
@@ -2426,8 +2484,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 if ((width < getCurrentBitmap().getWidth()) ||
                 height < getCurrentBitmap().getHeight()) {
-                    Utils.hideSoftInputFromView(MainActivity.this, etImageWidth);
-                    Utils.hideSoftInputFromView(MainActivity.this, etImageHeight);
+                    ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
                     final int finalHeight = height;
                     final int finalWidth = width;
                     buildResizeImageWarningDialog(new DialogInterface.OnClickListener() {
@@ -2539,7 +2596,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         dialogTempImageName = dialogTempImageName + ".png";
                         break;
                 }
-                Utils.hideSoftInputFromView(MainActivity.this, dialogTempEtImageName);
+                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
                 BitmapEncoder.encodeFile(getImagePathname(dialogTempImageName),
                         getCurrentBitmap(),
                         false, compressFormat, imageQuality,
@@ -2579,7 +2636,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     }, new DialogInterface.OnCancelListener() {
                                         @Override
                                         public void onCancel(DialogInterface dialog) {
-                                            Utils.hideSoftInputFromView(MainActivity.this, dialogTempEtImageName);
+                                            ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
                                             buildSaveDialog(FilenameUtils.getBaseName(dialogTempImageName));
                                         }
                                     });
@@ -2609,7 +2666,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialog) {
-                Utils.hideSoftInputFromView(MainActivity.this, dialogTempEtImageName);
+                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
             }
         });
         dialogTempRecyclerImageList = view.findViewById(R.id.recycler_images);
@@ -2749,7 +2806,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Bitmap bounds = BitmapFactory.decodeFile(pathname, options);
                     if ((options.outWidth <= IMAGE_WIDTH_MAX) &&
                     options.outHeight <= IMAGE_HEIGHT_MAX) {
-                        BitmapUtils.recycleBitmap(bounds);
+                        BitmapUtils.recycle(bounds);
                         Bitmap bitmap = BitmapDecoder.decodeFile(pathname);
                         if (bitmap != null) {
                             if (isPaste) {
@@ -3232,303 +3289,376 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         canvasView.setOnTouchListener(new View.OnTouchListener() {
 
-            double oldDist = 0;
-            double newDist = 0;
-            float x;
-            float y;
+            double scaleModeTouchDistRecord;
+            float scaleModeRecordX;
+            float scaleModeRecordY;
+            boolean pointer0Changed = true;
+
+            int oldDownX;
+            int oldDownY;
+            int oldMoveX;
+            int oldMoveY;
 
             @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(View view, MotionEvent event) {
-                switch (event.getActionMasked()) {
-                    case MotionEvent.ACTION_DOWN:
-                        x = event.getX(0);
-                        y = event.getY(0);
-                        selected = false;
-                        downX = (int) Math.floor((event.getX(0) - getImageTranslationX()) / imageScale);
-                        downY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
-                        moveX = downX;
-                        moveY = downY;
-                        path.moveTo(downX, downY);
-                        switch (toolFlag) {
-                            case ToolFlag.PAINT:
-                                toolBufferPool.addTempToolBuffer(new PointBuffer(paint, downX, downY));
-                                break;
-                            case ToolFlag.ERASER:
-                                toolBufferPool.addTempToolBuffer(new PointBuffer(eraser, downX, downY));
-                                break;
-                            case ToolFlag.SELECTION:
-                                switch (selectionFlag) {
-                                    case ToolFlag.SelectionFlag.CUT:
-                                        selectionBitmapDstX = downX - selectionBitmapDstWidth / 2;
-                                        selectionBitmapDstY = downY - selectionBitmapDstHeight / 2;
-                                        toolBufferPool.clearTempToolBuffers();
-                                        toolBufferPool.addTempToolBuffer(
-                                                getBitmapBuffer());
-                                        selected = true;
-                                        break;
-                                    case ToolFlag.SelectionFlag.COPY:
-                                        selectionBitmapDstX = downX - selectionBitmapDstWidth / 2;
-                                        selectionBitmapDstY = downY - selectionBitmapDstHeight / 2;
-                                        toolBufferPool.clearTempToolBuffers();
-                                        toolBufferPool.addTempToolBuffer(
-                                                getSelectionBuffer());
-                                        selected = true;
-                                        break;
-                                    default:
-                                        if (downX < 0) {
-                                            downX = 0;
-                                        }
-                                        if (downX >= getCurrentBitmap().getWidth()) {
-                                            downX = getCurrentBitmap().getWidth() - 1;
-                                        }
-                                        if (downY < 0) {
-                                            downY = 0;
-                                        }
-                                        if (downY >= getCurrentBitmap().getHeight()) {
-                                            downY = getCurrentBitmap().getHeight() - 1;
-                                        }
-                                        break;
-                                }
-                                break;
-                        }
-                        canvasView.invalidate();
-                        flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
-                        flushPointerCoordsView(downX - getOriginX(), downY - getOriginY());
-                        break;
-                    case MotionEvent.ACTION_POINTER_DOWN:
-                        // Record initial distance
-                        oldDist = Utils.spacing(event);
-                        newDist = oldDist;
-                        scaleMode = true;
-                        readOnlyMode = true;
-                        selectionFlag = ToolFlag.SelectionFlag.NONE;
-                        selected = false;
-                        toolBufferPool.clearTempToolBuffers();
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        if (scaleMode) {
-                            newDist = Utils.spacing(event);
-                            if(newDist != 0) {
-                                if (newDist >= oldDist + ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 64) {
+                if (scaleMode) {
+                    if (pointer0Changed) {
+                        scaleModeRecordX = event.getX(0);
+                        scaleModeRecordY = event.getY(0);
+                    }
+                    switch (event.getActionMasked()) {
+                        case MotionEvent.ACTION_DOWN:
+                            pointer0Changed = true;
+                            break;
+                        case MotionEvent.ACTION_POINTER_DOWN:
+                            if (event.getPointerCount() == 2) {
+                                pointer0Changed = true;
+                            }
+                            break;
+                        case MotionEvent.ACTION_POINTER_UP:
+                            if (event.getPointerCount() == 2) {
+                                pointer0Changed = true;
+                            }
+                            if (event.getPointerCount() <= 2) {
+                                scaleMode = false;
+                            }
+                            break;
+                        case MotionEvent.ACTION_MOVE:
+                            double newTouchDist = spacing(event);
+                            if (newTouchDist != -1) {
+                                if (newTouchDist >= scaleModeTouchDistRecord + ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 75) {
                                     setImageScale(imageScale * 2);
-                                    oldDist = newDist;
+                                    scaleModeTouchDistRecord = newTouchDist;
                                 }
-                                if (newDist <= oldDist - ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 64) {
+                                if (newTouchDist <= scaleModeTouchDistRecord - ApplicationUtils.getResources().getDimension(R.dimen.DP_VALUE_1) * 75) {
                                     setImageScale(imageScale / 2);
-                                    oldDist = newDist;
+                                    scaleModeTouchDistRecord = newTouchDist;
                                 }
                             }
-                            imageToCenterX += event.getX(0) - x;
-                            imageToCenterY += event.getY(0) - y;
-                            x = event.getX(0);
-                            y = event.getY(0);
-                        }
-                        else if (!readOnlyMode) {
-                            // Current path
-                            moveX = (int) Math.floor((event.getX(0) - getImageTranslationX()) / imageScale);
-                            moveY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
-                            switch (toolFlag) {
-                                case ToolFlag.PAINT:
-                                case ToolFlag.ERASER:
-                                    path.lineTo(moveX, moveY);
-                                    break;
-                                case ToolFlag.SHAPE:
-                                    toolBufferPool.clearTempToolBuffers();
-                                    path.reset();
-                                    switch (shapeFlag) {
-                                        case ToolFlag.ShapeFlag.LINE:
-                                            path.moveTo(downX, downY);
-                                            path.lineTo(moveX, moveY);
-                                            break;
-                                        case ToolFlag.ShapeFlag.CIRCLE:
-                                            int circleLeft = Math.min(downX, moveX);
-                                            int circleTop = Math.min(downY, moveY);
-                                            int circleRight = Math.max(downX, moveX);
-                                            int circleBottom = Math.max(downY, moveY);
-                                            int circleDiameter = Math.min(Math.abs(circleLeft - circleRight), Math.abs(circleTop - circleBottom));
-                                            if (moveX > downX) {
-                                                circleRight = circleLeft + circleDiameter;
-                                            }
-                                            if (moveY > downY) {
-                                                circleBottom = circleTop + circleDiameter;
-                                            }
-                                            if (moveX < downX) {
-                                                circleLeft = circleRight - circleDiameter;
-                                            }
-                                            if (moveY < downY) {
-                                                circleTop = circleBottom - circleDiameter;
-                                            }
-                                            float circleX = (circleRight + circleLeft) * 0.5f;
-                                            float circleY = (circleTop + circleBottom) * 0.5f;
-                                            path.addCircle(circleX, circleY, circleDiameter * 0.5f, Path.Direction.CW);
-                                            break;
-                                        case ToolFlag.ShapeFlag.ELLIPSE:
-                                            int ovalLeft = Math.min(downX, moveX);
-                                            int ovalTop = Math.min(downY, moveY);
-                                            int ovalRight = Math.max(downX, moveX);
-                                            int ovalBottom = Math.max(downY, moveY);
-                                            RectF ovalRectF = new RectF(ovalLeft, ovalTop, ovalRight, ovalBottom);
-                                            path.addOval(ovalRectF, Path.Direction.CW);
-                                            break;
-                                        case ToolFlag.ShapeFlag.SQUARE:
-                                            int squareLeft = Math.min(downX, moveX);
-                                            int squareTop = Math.min(downY, moveY);
-                                            int squareRight = Math.max(downX, moveX);
-                                            int squareBottom = Math.max(downY, moveY);
-                                            int edgeLength = Math.min(Math.abs(squareLeft - squareRight), Math.abs(squareTop - squareBottom));
-                                            if (moveX > downX) {
-                                                squareRight = squareLeft + edgeLength;
-                                            }
-                                            if (moveY > downY) {
-                                                squareBottom = squareTop + edgeLength;
-                                            }
-                                            if (moveX < downX) {
-                                                squareLeft = squareRight - edgeLength;
-                                            }
-                                            if (moveY < downY) {
-                                                squareTop = squareBottom - edgeLength;
-                                            }
-                                            RectF squareRectF = new RectF(squareLeft, squareTop, squareRight, squareBottom);
-                                            path.addRect(squareRectF, Path.Direction.CW);
-                                            break;
-                                        case ToolFlag.ShapeFlag.RECTANGLE:
-                                            int rectLeft = Math.min(downX, moveX);
-                                            int rectTop = Math.min(downY, moveY);
-                                            int rectRight = Math.max(downX, moveX);
-                                            int rectBottom = Math.max(downY, moveY);
-                                            RectF rectRectF = new RectF(rectLeft, rectTop, rectRight, rectBottom);
-                                            path.addRect(rectRectF, Path.Direction.CW);
-                                            break;
-                                    }
-                                    break;
-                                case ToolFlag.SELECTION:
-                                    switch (selectionFlag) {
-                                        case ToolFlag.SelectionFlag.CUT:
-                                        case ToolFlag.SelectionFlag.COPY:
-                                            break;
-                                        default:
-                                            if (moveX < 0) {
-                                                moveX = 0;
-                                            }
-                                            if (moveX >= getCurrentBitmap().getWidth()) {
-                                                moveX = getCurrentBitmap().getWidth() - 1;
-                                            }
-                                            if (moveY < 0) {
-                                                moveY = 0;
-                                            }
-                                            if (moveY >= getCurrentBitmap().getHeight()) {
-                                                moveY = getCurrentBitmap().getHeight() - 1;
-                                            }
-                                            break;
-                                    }
-                                    selected = true;
-                                    break;
+                            imageToCenterX += event.getX(0) - scaleModeRecordX;
+                            imageToCenterY += event.getY(0) - scaleModeRecordY;
+                            scaleModeRecordX = event.getX(0);
+                            scaleModeRecordY = event.getY(0);
+                            pointer0Changed = false;
+                            canvasView.invalidate();
+                            break;
+                    }
+                }
+                else {
+                    switch (event.getActionMasked()) {
+                        case MotionEvent.ACTION_DOWN:
+                            if (selectionFlag == ToolFlag.SelectionFlag.SELECTED) {
+                                oldDownX = downX;
+                                oldDownY = downY;
+                                oldMoveX = moveX;
+                                oldMoveY = moveY;
                             }
+                            else {
+                                selected = false;
+                            }
+                            downX = (int) Math.floor((event.getX(0) - getImageTranslationX()) / imageScale);
+                            downY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
+                            moveX = downX;
+                            moveY = downY;
+                            path.moveTo(downX, downY);
                             switch (toolFlag) {
                                 case ToolFlag.PAINT:
-                                    toolBufferPool.addTempToolBuffer(
-                                            new MultiBuffer(new PointBuffer(paint, downX, downY), new PaintBuffer(paint, path)));
+                                    toolBufferPool.addTempToolBuffer(new PointBuffer(paint, downX, downY));
                                     break;
                                 case ToolFlag.ERASER:
-                                    toolBufferPool.addTempToolBuffer(
-                                            new MultiBuffer(new PointBuffer(eraser, downX, downY), new PaintBuffer(eraser, path)));
-                                    break;
-                                case ToolFlag.SHAPE:
-                                    toolBufferPool.addTempToolBuffer(new PaintBuffer(paint, path));
+                                    toolBufferPool.addTempToolBuffer(new PointBuffer(eraser, downX, downY));
                                     break;
                                 case ToolFlag.SELECTION:
                                     switch (selectionFlag) {
                                         case ToolFlag.SelectionFlag.CUT:
-                                            selectionBitmapDstX = moveX - selectionBitmapDstWidth / 2;
-                                            selectionBitmapDstY = moveY - selectionBitmapDstHeight / 2;
+                                            selectionBitmapDstX = downX - selectionBitmapDstWidth / 2;
+                                            selectionBitmapDstY = downY - selectionBitmapDstHeight / 2;
                                             toolBufferPool.clearTempToolBuffers();
                                             toolBufferPool.addTempToolBuffer(
                                                     getBitmapBuffer());
+                                            selected = true;
                                             break;
                                         case ToolFlag.SelectionFlag.COPY:
-                                            selectionBitmapDstX = moveX - selectionBitmapDstWidth / 2;
-                                            selectionBitmapDstY = moveY - selectionBitmapDstHeight / 2;
+                                            selectionBitmapDstX = downX - selectionBitmapDstWidth / 2;
+                                            selectionBitmapDstY = downY - selectionBitmapDstHeight / 2;
                                             toolBufferPool.clearTempToolBuffers();
-                                            toolBufferPool.addTempToolBuffer(
-                                                    getSelectionBuffer());
+                                            toolBufferPool.addTempToolBuffer(getSelectionBuffer());
+                                            selected = true;
+                                            break;
+                                        default:
+                                            if (downX < 0) {
+                                                downX = 0;
+                                            }
+                                            if (downX >= getCurrentBitmap().getWidth()) {
+                                                downX = getCurrentBitmap().getWidth() - 1;
+                                            }
+                                            if (downY < 0) {
+                                                downY = 0;
+                                            }
+                                            if (downY >= getCurrentBitmap().getHeight()) {
+                                                downY = getCurrentBitmap().getHeight() - 1;
+                                            }
                                             break;
                                     }
                                     break;
                             }
-                        }
-                        canvasView.invalidate();
-                        flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
-                        flushPointerCoordsView(moveX - getOriginX(), moveY - getOriginY());
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        upX = (int) Math.floor((event.getX(0) - getImageTranslationX()) / imageScale);
-                        upY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
-                        if (readOnlyMode) {
-                            readOnlyMode = false;
-                        }
-                        else {
-                            switch (toolFlag) {
-                                case ToolFlag.PAINT:
-                                    toolBufferPool.addToolBuffer(
-                                            new MultiBuffer(new PointBuffer(paint, downX, downY), new PaintBuffer(paint, path)));
-                                    break;
-                                case ToolFlag.ERASER:
-                                    toolBufferPool.addToolBuffer(
-                                            new MultiBuffer(new PointBuffer(eraser, downX, downY), new PaintBuffer(eraser, path)));
-                                    break;
-                                case ToolFlag.SHAPE:
-                                    toolBufferPool.addToolBuffer(new PaintBuffer(paint, path));
-                                    break;
-                                case ToolFlag.FILL:
-                                    if (downX >= 0 && downY >= 0 &&
-                                            downX < getCurrentBitmap().getWidth() &&
-                                            downY < getCurrentBitmap().getHeight()) {
-                                        toolBufferPool.addToolBuffer(new FillBuffer(downX, downY, paint.getColor()));
-                                    }
-                                    break;
-                                case ToolFlag.SELECTION:
+                            canvasView.invalidate();
+                            if (toolFlag != ToolFlag.SELECTION) {
+                                flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
+                            }
+                            else {
+                                switch (selectionFlag) {
+                                    case ToolFlag.SelectionFlag.NONE:
+                                    case ToolFlag.SelectionFlag.SELECTED:
+                                        flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
+                                        break;
+                                }
+                            }
+                            flushPointerCoordsView(downX - getOriginX(), downY - getOriginY());
+                            break;
+                        case MotionEvent.ACTION_POINTER_DOWN:
+                            scaleModeTouchDistRecord = spacing(event);
+                            scaleMode = true;
+                            readOnlyMode = true;
+                            if (toolFlag != ToolFlag.SELECTION) {
+                                toolBufferPool.clearTempToolBuffers();
+                                selected = false;
+                            }
+                            else {
+                                switch (selectionFlag) {
+                                    case ToolFlag.SelectionFlag.NONE:
+                                        selected = false;
+                                        break;
+                                    case ToolFlag.SelectionFlag.SELECTED:
+                                        downX = oldDownX;
+                                        downY = oldDownY;
+                                        moveX = oldMoveX;
+                                        moveY = oldMoveY;
+                                        break;
+                                }
+                            }
+                            break;
+                        case MotionEvent.ACTION_MOVE:
+                            if (!readOnlyMode) {
+                                // Current path
+                                moveX = (int) Math.floor((event.getX(0) - getImageTranslationX()) / imageScale);
+                                moveY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
+                                switch (toolFlag) {
+                                    case ToolFlag.PAINT:
+                                    case ToolFlag.ERASER:
+                                        path.lineTo(moveX, moveY);
+                                        break;
+                                    case ToolFlag.SHAPE:
+                                        toolBufferPool.clearTempToolBuffers();
+                                        path.reset();
+                                        switch (shapeFlag) {
+                                            case ToolFlag.ShapeFlag.LINE:
+                                                path.moveTo(downX, downY);
+                                                path.lineTo(moveX, moveY);
+                                                break;
+                                            case ToolFlag.ShapeFlag.CIRCLE:
+                                                int circleLeft = Math.min(downX, moveX);
+                                                int circleTop = Math.min(downY, moveY);
+                                                int circleRight = Math.max(downX, moveX);
+                                                int circleBottom = Math.max(downY, moveY);
+                                                int circleDiameter = Math.min(Math.abs(circleLeft - circleRight), Math.abs(circleTop - circleBottom));
+                                                if (moveX > downX) {
+                                                    circleRight = circleLeft + circleDiameter;
+                                                }
+                                                if (moveY > downY) {
+                                                    circleBottom = circleTop + circleDiameter;
+                                                }
+                                                if (moveX < downX) {
+                                                    circleLeft = circleRight - circleDiameter;
+                                                }
+                                                if (moveY < downY) {
+                                                    circleTop = circleBottom - circleDiameter;
+                                                }
+                                                float circleX = (circleRight + circleLeft) * 0.5f;
+                                                float circleY = (circleTop + circleBottom) * 0.5f;
+                                                path.addCircle(circleX, circleY, circleDiameter * 0.5f, Path.Direction.CW);
+                                                break;
+                                            case ToolFlag.ShapeFlag.ELLIPSE:
+                                                int ovalLeft = Math.min(downX, moveX);
+                                                int ovalTop = Math.min(downY, moveY);
+                                                int ovalRight = Math.max(downX, moveX);
+                                                int ovalBottom = Math.max(downY, moveY);
+                                                RectF ovalRectF = new RectF(ovalLeft, ovalTop, ovalRight, ovalBottom);
+                                                path.addOval(ovalRectF, Path.Direction.CW);
+                                                break;
+                                            case ToolFlag.ShapeFlag.SQUARE:
+                                                int squareLeft = Math.min(downX, moveX);
+                                                int squareTop = Math.min(downY, moveY);
+                                                int squareRight = Math.max(downX, moveX);
+                                                int squareBottom = Math.max(downY, moveY);
+                                                int edgeLength = Math.min(Math.abs(squareLeft - squareRight), Math.abs(squareTop - squareBottom));
+                                                if (moveX > downX) {
+                                                    squareRight = squareLeft + edgeLength;
+                                                }
+                                                if (moveY > downY) {
+                                                    squareBottom = squareTop + edgeLength;
+                                                }
+                                                if (moveX < downX) {
+                                                    squareLeft = squareRight - edgeLength;
+                                                }
+                                                if (moveY < downY) {
+                                                    squareTop = squareBottom - edgeLength;
+                                                }
+                                                RectF squareRectF = new RectF(squareLeft, squareTop, squareRight, squareBottom);
+                                                path.addRect(squareRectF, Path.Direction.CW);
+                                                break;
+                                            case ToolFlag.ShapeFlag.RECTANGLE:
+                                                int rectLeft = Math.min(downX, moveX);
+                                                int rectTop = Math.min(downY, moveY);
+                                                int rectRight = Math.max(downX, moveX);
+                                                int rectBottom = Math.max(downY, moveY);
+                                                RectF rectRectF = new RectF(rectLeft, rectTop, rectRight, rectBottom);
+                                                path.addRect(rectRectF, Path.Direction.CW);
+                                                break;
+                                        }
+                                        break;
+                                    case ToolFlag.SELECTION:
+                                        switch (selectionFlag) {
+                                            case ToolFlag.SelectionFlag.CUT:
+                                            case ToolFlag.SelectionFlag.COPY:
+                                                break;
+                                            default:
+                                                if (moveX < 0) {
+                                                    moveX = 0;
+                                                }
+                                                if (moveX >= getCurrentBitmap().getWidth()) {
+                                                    moveX = getCurrentBitmap().getWidth() - 1;
+                                                }
+                                                if (moveY < 0) {
+                                                    moveY = 0;
+                                                }
+                                                if (moveY >= getCurrentBitmap().getHeight()) {
+                                                    moveY = getCurrentBitmap().getHeight() - 1;
+                                                }
+                                                break;
+                                        }
+                                        selected = true;
+                                        break;
+                                }
+                                switch (toolFlag) {
+                                    case ToolFlag.PAINT:
+                                        toolBufferPool.addTempToolBuffer(
+                                                new MultiBuffer(new PointBuffer(paint, downX, downY), new PaintBuffer(paint, path)));
+                                        break;
+                                    case ToolFlag.ERASER:
+                                        toolBufferPool.addTempToolBuffer(
+                                                new MultiBuffer(new PointBuffer(eraser, downX, downY), new PaintBuffer(eraser, path)));
+                                        break;
+                                    case ToolFlag.SHAPE:
+                                        toolBufferPool.addTempToolBuffer(new PaintBuffer(paint, path));
+                                        break;
+                                    case ToolFlag.SELECTION:
+                                        switch (selectionFlag) {
+                                            case ToolFlag.SelectionFlag.CUT:
+                                                selectionBitmapDstX = moveX - selectionBitmapDstWidth / 2;
+                                                selectionBitmapDstY = moveY - selectionBitmapDstHeight / 2;
+                                                toolBufferPool.clearTempToolBuffers();
+                                                toolBufferPool.addTempToolBuffer(
+                                                        getBitmapBuffer());
+                                                break;
+                                            case ToolFlag.SelectionFlag.COPY:
+                                                selectionBitmapDstX = moveX - selectionBitmapDstWidth / 2;
+                                                selectionBitmapDstY = moveY - selectionBitmapDstHeight / 2;
+                                                toolBufferPool.clearTempToolBuffers();
+                                                toolBufferPool.addTempToolBuffer(
+                                                        getSelectionBuffer());
+                                                break;
+                                        }
+                                        break;
+                                }
+                            }
+                            canvasView.invalidate();
+                            if (toolFlag != ToolFlag.SELECTION) {
+                                flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
+                            }
+                            else {
+                                switch (selectionFlag) {
+                                    case ToolFlag.SelectionFlag.NONE:
+                                    case ToolFlag.SelectionFlag.SELECTED:
+                                        flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
+                                        break;
+                                }
+                            }
+                            flushPointerCoordsView(moveX - getOriginX(), moveY - getOriginY());
+                            break;
+                        case MotionEvent.ACTION_UP:
+                            upX = (int) Math.floor((event.getX(0) - getImageTranslationX()) / imageScale);
+                            upY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
+                            if (readOnlyMode) {
+                                if (toolFlag == ToolFlag.SELECTION) {
                                     switch (selectionFlag) {
                                         case ToolFlag.SelectionFlag.CUT:
                                         case ToolFlag.SelectionFlag.COPY:
                                             buildSelectionPopup2();
                                             break;
-                                        default:
-                                            if (downX >= 0 && downY >= 0 &&
-                                                    downX < getCurrentBitmap().getWidth() &&
-                                                    downY < getCurrentBitmap().getHeight() &&
-                                                    moveX < getCurrentBitmap().getWidth() &&
-                                                    moveY < getCurrentBitmap().getHeight()) {
-                                                buildSelectionPopup1();
-                                            }
+                                        case ToolFlag.SelectionFlag.SELECTED:
+                                            buildSelectionPopup1();
                                             break;
                                     }
-                                    break;
-                                case ToolFlag.COLORIZE:
-                                    if (upX >=0 && upY >= 0 &&
-                                            upX < getCurrentBitmap().getWidth() &&
-                                            upY < getCurrentBitmap().getHeight()) {
-                                        listPalettes.setCheckedPaletteColor(getCurrentBitmap().getPixel(upX, upY));
-                                        flushColors(listPalettes.getCheckedPaletteColor());
-                                        groupTools.checkIndex(0);
-                                    }
-                                    break;
+                                }
+                                readOnlyMode = false;
                             }
-                            if (toolFlag != ToolFlag.SELECTION) {
-                                flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
-                                flushPointerCoordsView(upX - getOriginX(), upY - getOriginY());
-                                canvasView.invalidate();
+                            else {
+                                switch (toolFlag) {
+                                    case ToolFlag.PAINT:
+                                        toolBufferPool.addToolBuffer(
+                                                new MultiBuffer(new PointBuffer(paint, downX, downY), new PaintBuffer(paint, path)));
+                                        break;
+                                    case ToolFlag.ERASER:
+                                        toolBufferPool.addToolBuffer(
+                                                new MultiBuffer(new PointBuffer(eraser, downX, downY), new PaintBuffer(eraser, path)));
+                                        break;
+                                    case ToolFlag.SHAPE:
+                                        toolBufferPool.addToolBuffer(new PaintBuffer(paint, path));
+                                        break;
+                                    case ToolFlag.FILL:
+                                        if (downX >= 0 && downY >= 0 &&
+                                                downX < getCurrentBitmap().getWidth() &&
+                                                downY < getCurrentBitmap().getHeight()) {
+                                            toolBufferPool.addToolBuffer(new FillBuffer(downX, downY, paint.getColor()));
+                                        }
+                                        break;
+                                    case ToolFlag.SELECTION:
+                                        selectionPopupFlagHorizontal = moveX < downX ?
+                                                SelectionPopupFlag.LEFT : SelectionPopupFlag.RIGHT;
+                                        selectionPopupFlagVertical = moveY < downY ?
+                                                SelectionPopupFlag.TOP : SelectionPopupFlag.BOTTOM;
+                                        switch (selectionFlag) {
+                                            case ToolFlag.SelectionFlag.CUT:
+                                            case ToolFlag.SelectionFlag.COPY:
+                                                buildSelectionPopup2();
+                                                break;
+                                            default:
+                                                selectionFlag = ToolFlag.SelectionFlag.SELECTED;
+                                                buildSelectionPopup1();
+                                                break;
+                                        }
+                                        break;
+                                    case ToolFlag.COLORIZE:
+                                        if (upX >= 0 && upY >= 0 &&
+                                                upX < getCurrentBitmap().getWidth() &&
+                                                upY < getCurrentBitmap().getHeight()) {
+                                            listPalettes.setCheckedPaletteColor(getCurrentBitmap().getPixel(upX, upY));
+                                            flushColors(listPalettes.getCheckedPaletteColor());
+                                            groupTools.checkIndex(0);
+                                        }
+                                        break;
+                                }
+                                if (toolFlag != ToolFlag.SELECTION) {
+                                    flushSelectionSizeView(Math.abs(moveX - downX) + 1, Math.abs(moveY - downY) + 1);
+                                    flushPointerCoordsView(upX - getOriginX(), upY - getOriginY());
+                                    canvasView.invalidate();
+                                }
                             }
-                        }
-                        path.reset();
-                        break;
-                    case MotionEvent.ACTION_POINTER_UP:
-                        if (event.getPointerCount() <= 2) {
-                            if(scaleMode) {
-                                scaleMode = false;
-                            }
-                        }
-                        break;
+                            path.reset();
+                            break;
+                    }
                 }
                 return true;
             }
@@ -3705,7 +3835,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @SuppressLint("SetTextI18n")
     private void flushImageSizeView() {
-        tvImageSize.setText(getCurrentBitmap().getWidth() + "x" +
+        tvImageSize.setText("W" + getCurrentBitmap().getWidth() + "\nH" +
                 getCurrentBitmap().getHeight());
     }
 
@@ -3716,12 +3846,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @SuppressLint("SetTextI18n")
     private void flushPointerCoordsView(float x, float y) {
-        tvPointerCoords.setText(x + "," + y);
+        tvPointerCoords.setText("X" + x + "\nY" + y);
     }
 
     @SuppressLint("SetTextI18n")
     private void flushSelectionSizeView(int width, int height) {
-        tvSelectionSize.setText(width + "x" + height);
+        tvSelectionSize.setText("W" + width + "\nH" + height);
     }
 
     private void flushImageNameView() {
@@ -3764,6 +3894,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 return getCurrentBitmap().getHeight() - 1;
         }
         return 0;
+    }
+
+    // Calculate linear distance of two fingers
+    private static double spacing(@NonNull MotionEvent event) {
+        if (event.getPointerCount() >= 2) {
+            float x = event.getX(0) - event.getX(1);
+            float y = event.getY(0) - event.getY(1);
+            return Math.pow(Math.pow(x, 2) + Math.pow(y, 2), 0.5);
+        }
+        return -1;
     }
 
 }

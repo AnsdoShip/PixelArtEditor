@@ -31,7 +31,7 @@ public final class ToolFlag {
 
     public final static int COLORIZE = 5;
 
-    public final static class ShapeFlag {
+    public static final class ShapeFlag {
 
         public final static int LINE = 0;
 
@@ -57,9 +57,11 @@ public final class ToolFlag {
 
         public final static int NONE = -1;
 
-        public final static int CUT = 0;
+        public final static int SELECTED = 0;
 
-        public final static int COPY = 1;
+        public final static int CUT = 1;
+
+        public final static int COPY = 2;
 
     }
 

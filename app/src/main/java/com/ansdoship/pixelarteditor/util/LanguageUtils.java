@@ -24,6 +24,8 @@ import java.util.Locale;
 
 public class LanguageUtils {
 
+    private LanguageUtils() {}
+
     public static String getResourceFolderName(Context context){
         Locale locale;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

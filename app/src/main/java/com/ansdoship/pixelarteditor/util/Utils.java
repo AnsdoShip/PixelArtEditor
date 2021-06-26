@@ -33,6 +33,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.os.EnvironmentCompat;
 
 import com.ansdoship.pixelarteditor.R;
+import com.tianscar.module.ApplicationUtils;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -85,22 +86,6 @@ public final class Utils {
         toast.setDuration(duration);
         toast.setView(view);
         toast.show();
-    }
-
-    public static void hideSoftInputFromView(@NonNull Context context, @NonNull View view) {
-        ((InputMethodManager) (context.getSystemService(Context.INPUT_METHOD_SERVICE)))
-                .hideSoftInputFromWindow(view.getWindowToken(),
-                        InputMethodManager.HIDE_NOT_ALWAYS);
-    }
-
-    // Calculate linear distance of two fingers
-    public static double spacing(@NonNull MotionEvent event) {
-        if(event.getPointerCount() >= 2) {
-            float x = event.getX(0) - event.getX(1);
-            float y = event.getY(0) - event.getY(1);
-            return Math.pow(x * x + y * y, 0.5);
-        }
-        return 0;
     }
 
     @Nullable

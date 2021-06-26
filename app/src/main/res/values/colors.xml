@@ -17,8 +17,8 @@
 
 <resources>
 
-    <color name="colorTheme">#4FC3F7</color>
-    <color name="colorPrimaryText">#212121</color>
-    <color name="colorSecondaryText">#757575</color>
+    <color name="colorTheme">@android:color/holo_blue_light</color>
+    <color name="colorPrimaryText">#233333</color>
+    <color name="colorSecondaryText">#666666</color>
 
 </resources>

@@ -32,7 +32,7 @@ import androidx.annotation.Nullable;
 import com.ansdoship.pixelarteditor.R;
 import com.ansdoship.pixelarteditor.editor.palette.Palette;
 import com.ansdoship.pixelarteditor.ui.view.PaletteView;
-import com.ansdoship.pixelarteditor.util.MathUtils;
+import com.tianscar.module.MathUtils;
 
 public class PaletteList extends LinearLayout implements View.OnClickListener {
 
