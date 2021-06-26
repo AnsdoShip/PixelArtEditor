@@ -71,7 +71,7 @@
     <string name="warning_reset_palette">重置该调色盘？此操作无法被撤销。</string>
     <string name="warning_delete_file">删除该文件？此操作无法被撤销。</string>
     <string name="warning_same_name_file">有同名的文件。是否覆盖？此操作无法被撤销。</string>
-    <string name="warning_permission_denied">无法启动像素编辑器。请授予储存权限。</string>
+    <string name="warning_permission_denied">无法启动纸板像素。请授予储存权限。</string>
     <string name="palette_name_default">调色盘</string>
     <string name="image_name_default">未命名</string>
     <string name="width">宽</string>

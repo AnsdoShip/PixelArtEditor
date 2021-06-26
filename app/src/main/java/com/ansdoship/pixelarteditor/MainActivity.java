@@ -3361,7 +3361,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             downY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
                             moveX = downX;
                             moveY = downY;
-                            path.moveTo(downX, downY);
+                            path.moveTo(downX + 0.5f * paintWidth, downY + 0.5f * paintWidth);
                             switch (toolFlag) {
                                 case ToolFlag.PAINT:
                                     toolBufferPool.addTempToolBuffer(new PointBuffer(paint, downX, downY));
@@ -3447,15 +3447,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 switch (toolFlag) {
                                     case ToolFlag.PAINT:
                                     case ToolFlag.ERASER:
-                                        path.lineTo(moveX, moveY);
+                                        path.lineTo(moveX + 0.5f * paintWidth, moveY + 0.5f * paintWidth);
                                         break;
                                     case ToolFlag.SHAPE:
                                         toolBufferPool.clearTempToolBuffers();
                                         path.reset();
                                         switch (shapeFlag) {
                                             case ToolFlag.ShapeFlag.LINE:
-                                                path.moveTo(downX, downY);
-                                                path.lineTo(moveX, moveY);
+                                                path.moveTo(downX + 0.5f * paintWidth, downY + 0.5f * paintWidth);
+                                                path.lineTo(moveX + 0.5f * paintWidth, moveY + 0.5f * paintWidth);
                                                 break;
                                             case ToolFlag.ShapeFlag.CIRCLE:
                                                 int circleLeft = Math.min(downX, moveX);
@@ -3708,19 +3708,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case R.id.img_shape:
                         toolFlag = ToolFlag.SHAPE;
-                        switch (shapeFlag) {
-                            case ToolFlag.ShapeFlag.CIRCLE:
-                            case ToolFlag.ShapeFlag.ELLIPSE:
-                                setStrokeCap(Paint.Cap.ROUND);
-                                setStrokeJoin(Paint.Join.ROUND);
-                                break;
-                            case ToolFlag.ShapeFlag.LINE:
-                            case ToolFlag.ShapeFlag.SQUARE:
-                            case ToolFlag.ShapeFlag.RECTANGLE:
-                                setStrokeCap(Paint.Cap.SQUARE);
-                                setStrokeJoin(Paint.Join.MITER);
-                                break;
-                        }
+                        setStrokeCap(Paint.Cap.SQUARE);
+                        setStrokeJoin(Paint.Join.MITER);
                         imgShape.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
                     case R.id.img_eraser:
