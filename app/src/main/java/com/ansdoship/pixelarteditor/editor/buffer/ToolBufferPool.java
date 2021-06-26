@@ -89,7 +89,7 @@ public final class ToolBufferPool {
             }
             replaceCacheBitmap(Bitmap.createBitmap(mCacheBitmap));
             if (mToolBufferList.get(0).getBufferFlag() == BufferFlag.BITMAP) {
-                BitmapUtils.recycle(((BitmapBuffer)(mToolBufferList.get(0))).getBitmap());
+                BitmapUtils.recycleBitmap(((BitmapBuffer)(mToolBufferList.get(0))).getBitmap());
             }
             mToolBufferList = mToolBufferList.subList(subIndex, size);
         }
@@ -179,7 +179,7 @@ public final class ToolBufferPool {
         }
         Bitmap temp = mCurrentBitmap;
         mCurrentBitmap = newBitmap;
-        BitmapUtils.recycle(temp);
+        BitmapUtils.recycleBitmap(temp);
     }
 
     private void replaceCacheBitmap(Bitmap newBitmap) {
@@ -188,7 +188,7 @@ public final class ToolBufferPool {
         }
         Bitmap temp = mCacheBitmap;
         mCacheBitmap = newBitmap;
-        BitmapUtils.recycle(temp);
+        BitmapUtils.recycleBitmap(temp);
     }
 
     private void drawToolBuffer (@NonNull Bitmap bitmap, @NonNull ToolBuffer toolBuffer) {
@@ -230,7 +230,7 @@ public final class ToolBufferPool {
                 canvas.drawBitmap(selectedBitmap,
                         ((SelectionBuffer) toolBuffer).getDstX(),
                         ((SelectionBuffer) toolBuffer).getDstY(), mBitmapPaint);
-                BitmapUtils.recycle(selectedBitmap);
+                BitmapUtils.recycleBitmap(selectedBitmap);
                 canvas.save();
                 canvas.restore();
                 break;
@@ -251,7 +251,7 @@ public final class ToolBufferPool {
                 canvas.drawBitmap(tempBitmap,
                         ((BitmapBuffer) toolBuffer).getX(),
                         ((BitmapBuffer) toolBuffer).getY(), mBitmapPaint);
-                BitmapUtils.recycle(tempBitmap);
+                BitmapUtils.recycleBitmap(tempBitmap);
                 canvas.save();
                 canvas.restore();
                 break;

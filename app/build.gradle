@@ -48,7 +48,7 @@ dependencies {
     implementation 'androidx.preference:preference:1.1.1'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'com.github.Tianscar:AndroidUtils:1.0.2'
-    implementation 'com.github.Tianscar:SimpleBitmap:1.0.1b'
+    implementation 'com.github.Tianscar:SimpleBitmap:1.0.1'
     implementation 'org.apache.commons.io:commonsIO:2.5.0'
     implementation project(path: ':colorpicker')
     implementation 'io.noties.markwon:core:4.6.2'

@@ -345,7 +345,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             BitmapEncoder.encodeFile(currentBitmapPathname,
                     getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
         }
-        BitmapUtils.recycle(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
+        BitmapUtils.recycleBitmap(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
 
         if (externalPalette != null) {
             PaletteFactory.encodeFile(externalPalette, getExternalPalettePathname(externalPaletteName), true);
@@ -459,7 +459,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         Bitmap temp = cacheBitmap;
         cacheBitmap = newBitmap;
-        BitmapUtils.recycle(temp);
+        BitmapUtils.recycleBitmap(temp);
     }
 
     private void replaceCanvasBackgroundBitmap(Bitmap newBitmap) {
@@ -468,7 +468,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         Bitmap temp = canvasBackgroundBitmap;
         canvasBackgroundBitmap = newBitmap;
-        BitmapUtils.recycle(temp);
+        BitmapUtils.recycleBitmap(temp);
     }
 
     private void flushGridPaint() {
@@ -1182,7 +1182,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View v) {
                 toolBufferPool.clearTempToolBuffers();
-                BitmapUtils.recycle(selectedBitmap);
+                BitmapUtils.recycleBitmap(selectedBitmap);
                 selectionFlag = ToolFlag.SelectionFlag.NONE;
                 selectionBitmapRotateBuffer = null;
                 selectionBitmapFlipVerticalBuffer = null;
@@ -2806,7 +2806,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Bitmap bounds = BitmapFactory.decodeFile(pathname, options);
                     if ((options.outWidth <= IMAGE_WIDTH_MAX) &&
                     options.outHeight <= IMAGE_HEIGHT_MAX) {
-                        BitmapUtils.recycle(bounds);
+                        BitmapUtils.recycleBitmap(bounds);
                         Bitmap bitmap = BitmapDecoder.decodeFile(pathname);
                         if (bitmap != null) {
                             if (isPaste) {
