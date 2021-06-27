@@ -56,6 +56,7 @@ import android.text.InputFilter;
 import android.text.Spanned;
 import android.text.TextWatcher;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -451,6 +452,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int downY;
     private int moveX;
     private int moveY;
+    private int lastMoveX;
+    private int lastMoveY;
     private int upX;
     private int upY;
 
@@ -1567,7 +1570,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int dialogTempColorH;
     private float dialogTempColorS;
     private float dialogTempColorV;
-    @SuppressLint("SetTextI18n")
+    @SuppressLint({"SetTextI18n", "ClickableViewAccessibility"})
     private void buildColorPickerDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme);
         View view = View.inflate(this, R.layout.dialog_palette, null);
@@ -1590,7 +1593,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         palette.setPaletteBackgroundColors(
                 getCanvasBackgroundColor1(),
                 getCanvasBackgroundColor2());
-        final TextView tvPaletteColorValue = view.findViewById(R.id.tv_palette_color_value);
+        final EditText tvPaletteColorValue = view.findViewById(R.id.tv_palette_color_value);
 
         final ColorPickerView colorPicker = view.findViewById(R.id.tab_picker);
         final TextView tvColorA = view.findViewById(R.id.tv_color_a);
@@ -1630,6 +1633,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         barColorS.setProgress((int) (ColorFactory.saturation(dialogTempColor) * 100));
         barColorV.setProgress((int) (ColorFactory.value(dialogTempColor) * 100));
 
+        tvPaletteColorValue.setCursorVisible(false);
+        tvPaletteColorValue.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                if(event.getAction()==KeyEvent.ACTION_DOWN){
+                    tvPaletteColorValue.setCursorVisible(true);
+                    return true;
+                }
+                return false;
+            }
+        });
+        tvPaletteColorValue.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if((event != null && KeyEvent.KEYCODE_ENTER == event.getKeyCode() && KeyEvent.ACTION_DOWN == event.getAction())){
+                    try{
+                        dialogTempColor = Color.parseColor(tvPaletteColorValue.getText().toString());
+                    }catch (IllegalArgumentException e){
+                        dialogTempColor = Color.WHITE;
+                    }
+                    int alpha = Color.alpha(dialogTempColor);
+                    tvColorA.setText("A: " + alpha);
+                    barColorA.setProgress(alpha);
+                    barColorH.setProgress((int) ColorFactory.hue(dialogTempColor));
+                    barColorS.setProgress((int) ColorFactory.saturation(dialogTempColor) * 100);
+                    barColorV.setProgress((int) ColorFactory.value(dialogTempColor) * 100);
+                    barColorR.setProgress(Color.red(dialogTempColor));
+                    barColorG.setProgress(Color.green(dialogTempColor));
+                    barColorB.setProgress(Color.blue(dialogTempColor));
+                    colorPicker.updateColor(dialogTempColor);
+                    palette.setPaletteColor(dialogTempColor);
+                    tvPaletteColorValue.setText(ColorFactory.colorToHexString(dialogTempColor));
+                    return true;
+                }
+                return false;
+            }
+        });
+
         colorPicker.setOnColorPickedListener(new ColorPickerView.OnColorPickedListener() {
             @Override
             public void onUpdate(ColorPickerView view, int color) {
@@ -1641,7 +1681,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 barColorR.setProgress(Color.red(dialogTempColor));
                 barColorG.setProgress(Color.green(dialogTempColor));
                 barColorB.setProgress(Color.blue(dialogTempColor));
-                palette.setPaletteColor(color);
+                palette.setPaletteColor(dialogTempColor);
             }
         });
 
@@ -3361,6 +3401,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             downY = (int) Math.floor((event.getY(0) - getImageTranslationY()) / imageScale);
                             moveX = downX;
                             moveY = downY;
+                            lastMoveX = downX;
+                            lastMoveY = downY;
                             path.moveTo(downX + 0.5f * paintWidth, downY + 0.5f * paintWidth);
                             switch (toolFlag) {
                                 case ToolFlag.PAINT:
@@ -3447,7 +3489,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 switch (toolFlag) {
                                     case ToolFlag.PAINT:
                                     case ToolFlag.ERASER:
-                                        path.lineTo(moveX + 0.5f * paintWidth, moveY + 0.5f * paintWidth);
+                                        int cX = (lastMoveX+moveX)/2, cY = (lastMoveY+moveY)/2;
+                                        path.quadTo(lastMoveX + 0.5f * paintWidth, lastMoveY + 0.5f * paintWidth,cX + 0.5f * paintWidth, cY + 0.5f * paintWidth);
+                                        lastMoveX = moveX;
+                                        lastMoveY = moveY;
                                         break;
                                     case ToolFlag.SHAPE:
                                         toolBufferPool.clearTempToolBuffers();

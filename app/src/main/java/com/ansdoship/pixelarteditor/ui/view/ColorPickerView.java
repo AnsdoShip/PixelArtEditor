@@ -152,6 +152,10 @@ public class ColorPickerView extends LinearLayout {
         });
     }
 
+    public void updateColor(int color){
+        setOrdinalColor(color);
+    }
+
     public void setOnColorPickedListener(OnColorPickedListener listener){
         this.listener = listener;
     }

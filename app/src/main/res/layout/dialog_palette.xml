@@ -35,18 +35,18 @@
             android:layout_marginLeft="24dp"
             android:checked="false" />
 
-        <TextView
+        <EditText
             android:id="@+id/tv_palette_color_value"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_toEndOf="@id/palette_dialog"
             android:layout_toRightOf="@id/palette_dialog"
-            android:background="?attr/selectableItemBackground"
+            android:background="@android:color/transparent"
             android:gravity="center"
-            android:textAllCaps="true"
             android:textColor="@android:color/black"
             android:textSize="@dimen/text_size"
-            android:textStyle="bold" />
+            android:textStyle="bold"/>
+
 
     </RelativeLayout>
 
