@@ -103,6 +103,7 @@ import com.ansdoship.pixelarteditor.util.Utils;
 import com.tianscar.androidutils.ActivityUtils;
 import com.tianscar.androidutils.ApplicationUtils;
 import com.tianscar.androidutils.ColorFactory;
+import com.tianscar.androidutils.EnvironmentUtils;
 import com.tianscar.androidutils.MathUtils;
 import com.tianscar.androidutils.ScreenUtils;
 import com.tianscar.simplebitmap.BitmapDecoder;
@@ -363,7 +364,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public final static int IMAGE_QUALITY_MIN = 30;
     public final static int IMAGE_QUALITY_DEFAULT = IMAGE_QUALITY_MAX;
     public static String IMAGE_PATH_DEFAULT() {
-        return Utils.getFilesPath("images");
+        return EnvironmentUtils.getAvailableFilesDirPath("images");
     }
     public final static int IMAGE_SCALE_DEFAULT = 16;
     public final static int IMAGE_SCALE_MIN = 1;
@@ -730,7 +731,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public static String getPalettesPath() {
-        return Utils.getFilesPath("palettes");
+        return EnvironmentUtils.getAvailableFilesDirPath("palettes");
     }
 
     @NonNull
@@ -748,12 +749,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return "CACHE.png";
     }
 
-    @Nullable
+    @NonNull
     public static String getCacheBitmapPathname() {
-        String cachePath = Utils.getCachePath();
-        if (cachePath == null) {
-            return null;
-        }
+        String cachePath = EnvironmentUtils.getInternalCacheDirPath();
         return cachePath + "/" + getCacheBitmapName();
     }
 
@@ -762,12 +760,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return "CURRENT.png";
     }
 
-    @Nullable
+    @NonNull
     public static String getCurrentBitmapPathname() {
-        String cachePath = Utils.getCachePath();
-        if (cachePath == null) {
-            return null;
-        }
+        String cachePath = EnvironmentUtils.getInternalCacheDirPath();
         return cachePath + "/" + getCurrentBitmapName();
     }
 
@@ -816,6 +811,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private CheckedImageView imgFill;
     private CheckedImageView imgSelection;
     private CheckedImageView imgColorize;
+    private CheckedImageView imgZoom;
     // PaletteBar
     private ImageButton imgPalette;
     private PaletteList listPalettes;
@@ -3224,6 +3220,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imgFill = findViewById(R.id.img_fill);
         imgSelection = findViewById(R.id.img_selection);
         imgColorize = findViewById(R.id.img_colorize);
+        imgZoom = findViewById(R.id.img_zoom);
         tvPaintWidth.setOnClickListener(this);
         // PaletteBar
         imgPalette = findViewById(R.id.img_palette);
@@ -3352,6 +3349,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             pointer0Changed = true;
                             break;
                         case MotionEvent.ACTION_POINTER_DOWN:
+                            scaleModeTouchDistRecord = spacing(event);
                             if (event.getPointerCount() == 2) {
                                 pointer0Changed = true;
                             }
@@ -3361,7 +3359,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 pointer0Changed = true;
                             }
                             if (event.getPointerCount() <= 2) {
-                                scaleMode = false;
+                                if (toolFlag != ToolFlag.ZOOM) {
+                                    scaleMode = false;
+                                }
                             }
                             break;
                         case MotionEvent.ACTION_MOVE:
@@ -3477,6 +3477,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         downY = oldDownY;
                                         moveX = oldMoveX;
                                         moveY = oldMoveY;
+                                        flushSelectionSizeView(selectionBitmapDstWidth, selectionBitmapDstHeight);
                                         break;
                                 }
                             }
@@ -3489,7 +3490,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 switch (toolFlag) {
                                     case ToolFlag.PAINT:
                                     case ToolFlag.ERASER:
-                                        int cX = (lastMoveX+moveX)/2, cY = (lastMoveY+moveY)/2;
+                                        int cX = (lastMoveX + moveX) / 2, cY = (lastMoveY + moveY) / 2;
                                         path.quadTo(lastMoveX + 0.5f * paintWidth, lastMoveY + 0.5f * paintWidth,cX + 0.5f * paintWidth, cY + 0.5f * paintWidth);
                                         lastMoveX = moveX;
                                         lastMoveY = moveY;
@@ -3775,10 +3776,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         toolFlag = ToolFlag.COLORIZE;
                         imgColorize.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
+                    case R.id.img_zoom:
+                        toolFlag = ToolFlag.ZOOM;
+                        scaleMode = true;
+                        imgZoom.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
+                        break;
                 }
                 if (toolFlag != ToolFlag.SELECTION) {
                     selected = false;
                     selectionFlag = ToolFlag.SelectionFlag.NONE;
+                }
+                if (toolFlag != ToolFlag.ZOOM) {
+                    scaleMode = false;
                 }
                 canvasView.invalidate();
             }
@@ -3808,6 +3817,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case ToolFlag.COLORIZE:
                 groupTools.check(R.id.img_colorize);
                 imgColorize.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
+                break;
+            case ToolFlag.ZOOM:
+                groupTools.check(R.id.img_zoom);
+                imgZoom.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                 break;
         }
         // Double tap

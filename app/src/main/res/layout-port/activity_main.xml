@@ -295,6 +295,14 @@
                             android:background="?attr/selectableItemBackground"
                             android:tint="@color/colorPrimaryText"
                             app:srcCompat="@drawable/ic_baseline_colorize_24" />
+
+                        <com.ansdoship.pixelarteditor.ui.view.CheckedImageView
+                            android:id="@+id/img_zoom"
+                            android:layout_width="?attr/actionBarSize"
+                            android:layout_height="?attr/actionBarSize"
+                            android:background="?attr/selectableItemBackground"
+                            android:tint="@color/colorPrimaryText"
+                            app:srcCompat="@drawable/ic_baseline_zoom_24" />
                     </com.ansdoship.pixelarteditor.ui.viewgroup.CheckedImageGroup>
                 </HorizontalScrollView>
 

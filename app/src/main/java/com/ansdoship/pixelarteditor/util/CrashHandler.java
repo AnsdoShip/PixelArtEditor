@@ -30,6 +30,7 @@ import androidx.annotation.Nullable;
 
 import com.ansdoship.pixelarteditor.R;
 import com.tianscar.androidutils.ApplicationUtils;
+import com.tianscar.androidutils.EnvironmentUtils;
 
 import org.apache.commons.io.FileUtils;
 
@@ -159,7 +160,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
     @Nullable
     public static String getCrashDir() {
-        return Utils.getFilesPath("crashes");
+        return EnvironmentUtils.getAvailableFilesDirPath("crashes");
     }
 
 }

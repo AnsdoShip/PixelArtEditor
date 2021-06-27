@@ -31,6 +31,8 @@ public final class ToolFlag {
 
     public final static int COLORIZE = 5;
 
+    public final static int ZOOM = 6;
+
     public static final class ShapeFlag {
 
         public final static int LINE = 0;
