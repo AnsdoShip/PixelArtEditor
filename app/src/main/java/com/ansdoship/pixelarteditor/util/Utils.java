@@ -33,7 +33,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.os.EnvironmentCompat;
 
 import com.ansdoship.pixelarteditor.R;
-import com.tianscar.module.ApplicationUtils;
+import com.tianscar.androidutils.ApplicationUtils;
 
 import java.io.File;
 import java.lang.reflect.Field;

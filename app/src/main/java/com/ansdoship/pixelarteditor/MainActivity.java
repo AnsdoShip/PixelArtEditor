@@ -99,10 +99,11 @@ import com.ansdoship.pixelarteditor.ui.viewgroup.PaletteList;
 import com.ansdoship.pixelarteditor.util.CrashHandler;
 import com.ansdoship.pixelarteditor.util.MarkdownUtils;
 import com.ansdoship.pixelarteditor.util.Utils;
-import com.tianscar.module.ActivityUtils;
-import com.tianscar.module.ApplicationUtils;
-import com.tianscar.module.ColorFactory;
-import com.tianscar.module.MathUtils;
+import com.tianscar.androidutils.ActivityUtils;
+import com.tianscar.androidutils.ApplicationUtils;
+import com.tianscar.androidutils.ColorFactory;
+import com.tianscar.androidutils.MathUtils;
+import com.tianscar.androidutils.ScreenUtils;
 import com.tianscar.simplebitmap.BitmapDecoder;
 import com.tianscar.simplebitmap.BitmapEncoder;
 import com.tianscar.simplebitmap.BitmapUtils;
@@ -345,7 +346,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             BitmapEncoder.encodeFile(currentBitmapPathname,
                     getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
         }
-        BitmapUtils.recycleBitmap(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
+        BitmapUtils.recycle(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
 
         if (externalPalette != null) {
             PaletteFactory.encodeFile(externalPalette, getExternalPalettePathname(externalPaletteName), true);
@@ -459,7 +460,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         Bitmap temp = cacheBitmap;
         cacheBitmap = newBitmap;
-        BitmapUtils.recycleBitmap(temp);
+        BitmapUtils.recycle(temp);
     }
 
     private void replaceCanvasBackgroundBitmap(Bitmap newBitmap) {
@@ -468,7 +469,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         Bitmap temp = canvasBackgroundBitmap;
         canvasBackgroundBitmap = newBitmap;
-        BitmapUtils.recycleBitmap(temp);
+        BitmapUtils.recycle(temp);
     }
 
     private void flushGridPaint() {
@@ -888,8 +889,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
         yOffset += (typedArray.getDimension(0, 0) * 2);
         typedArray.recycle();
-        yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
-                "dimen", "android"));
+        yOffset += ActivityUtils.getStatusBarHeight();
         window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
         ImageButton imgCut = view.findViewById(R.id.img_cut);
         ImageButton imgCopy = view.findViewById(R.id.img_copy);
@@ -1057,8 +1057,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         TypedArray typedArray = obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
         yOffset += (typedArray.getDimension(0, 0) * 2);
         typedArray.recycle();
-        yOffset += getResources().getDimensionPixelSize(getResources().getIdentifier("status_bar_height",
-                "dimen", "android"));
+        yOffset += ActivityUtils.getStatusBarHeight();
         window.showAtLocation(canvasView, Gravity.START | Gravity.TOP, xOffset, yOffset);
         ImageButton imgRotateLeft = view.findViewById(R.id.img_rotate_left);
         ImageButton imgRotateRight = view.findViewById(R.id.img_rotate_right);
@@ -1182,7 +1181,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View v) {
                 toolBufferPool.clearTempToolBuffers();
-                BitmapUtils.recycleBitmap(selectedBitmap);
+                BitmapUtils.recycle(selectedBitmap);
                 selectionFlag = ToolFlag.SelectionFlag.NONE;
                 selectionBitmapRotateBuffer = null;
                 selectionBitmapFlipVerticalBuffer = null;
@@ -2089,7 +2088,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             @Override
                             public void onFileExists(boolean isDirectory) {
                                 if (!isDirectory) {
-                                    ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
+                                    ActivityUtils.hideSoftInputFromView(MainActivity.this, etPaletteName);
                                     buildFileSameNameDialog(new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
@@ -2113,7 +2112,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (dialogTempPaletteSameName) {
                     return;
                 }
-                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
+                ActivityUtils.hideSoftInputFromView(MainActivity.this, etPaletteName);
                 buildPaletteFlagDialog();
             }
         });
@@ -2127,7 +2126,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onCancel(DialogInterface dialog) {
                 dialogTempPalette = null;
-                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
+                ActivityUtils.hideSoftInputFromView(MainActivity.this, etPaletteName);
                 buildAddPaletteDialog();
             }
         });
@@ -2222,7 +2221,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialog) {
-                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
+                ActivityUtils.hideSoftInputFromView(MainActivity.this, etPaletteName);
                 buildPaletteFlagDialog();
             }
         });
@@ -2484,7 +2483,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 if ((width < getCurrentBitmap().getWidth()) ||
                 height < getCurrentBitmap().getHeight()) {
-                    ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
+                    ActivityUtils.hideSoftInputFromView(MainActivity.this, etImageWidth);
+                    ActivityUtils.hideSoftInputFromView(MainActivity.this, etImageHeight);
                     final int finalHeight = height;
                     final int finalWidth = width;
                     buildResizeImageWarningDialog(new DialogInterface.OnClickListener() {
@@ -2596,7 +2596,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         dialogTempImageName = dialogTempImageName + ".png";
                         break;
                 }
-                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
+                ActivityUtils.hideSoftInputFromView(MainActivity.this, dialogTempEtImageName);
                 BitmapEncoder.encodeFile(getImagePathname(dialogTempImageName),
                         getCurrentBitmap(),
                         false, compressFormat, imageQuality,
@@ -2636,7 +2636,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     }, new DialogInterface.OnCancelListener() {
                                         @Override
                                         public void onCancel(DialogInterface dialog) {
-                                            ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
+                                            ActivityUtils.hideSoftInputFromView(MainActivity.this, dialogTempEtImageName);
                                             buildSaveDialog(FilenameUtils.getBaseName(dialogTempImageName));
                                         }
                                     });
@@ -2666,7 +2666,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialog) {
-                ActivityUtils.hideSoftKeyboardFromActivity(MainActivity.this);
+                ActivityUtils.hideSoftInputFromView(MainActivity.this, dialogTempEtImageName);
             }
         });
         dialogTempRecyclerImageList = view.findViewById(R.id.recycler_images);
@@ -2806,7 +2806,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Bitmap bounds = BitmapFactory.decodeFile(pathname, options);
                     if ((options.outWidth <= IMAGE_WIDTH_MAX) &&
                     options.outHeight <= IMAGE_HEIGHT_MAX) {
-                        BitmapUtils.recycleBitmap(bounds);
+                        BitmapUtils.recycle(bounds);
                         Bitmap bitmap = BitmapDecoder.decodeFile(pathname);
                         if (bitmap != null) {
                             if (isPaste) {

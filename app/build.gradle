@@ -24,7 +24,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 3
-        versionName "0.0.3.1-beta"
+        versionName "0.0.3.2-beta"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -47,8 +47,8 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.preference:preference:1.1.1'
     implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'com.github.Tianscar:AndroidUtils:1.0.2'
-    implementation 'com.github.Tianscar:SimpleBitmap:1.0.1'
+    implementation 'com.github.Tianscar:AndroidUtils:1.0.3'
+    implementation 'com.github.Tianscar:SimpleBitmap:1.0.1c'
     implementation 'org.apache.commons.io:commonsIO:2.5.0'
     implementation project(path: ':colorpicker')
     implementation 'io.noties.markwon:core:4.6.2'
