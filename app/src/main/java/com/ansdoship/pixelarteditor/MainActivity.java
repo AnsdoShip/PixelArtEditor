@@ -105,7 +105,6 @@ import com.tianscar.androidutils.ApplicationUtils;
 import com.tianscar.androidutils.ColorFactory;
 import com.tianscar.androidutils.EnvironmentUtils;
 import com.tianscar.androidutils.MathUtils;
-import com.tianscar.androidutils.ScreenUtils;
 import com.tianscar.simplebitmap.BitmapDecoder;
 import com.tianscar.simplebitmap.BitmapEncoder;
 import com.tianscar.simplebitmap.BitmapUtils;
@@ -330,6 +329,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         flushPaint(listPalettes.getCheckedPaletteColor());
 
+        switch (toolFlag) {
+            case ToolFlag.PAINT:
+            case ToolFlag.ERASER:
+                setStrokeCap(Paint.Cap.ROUND);
+                setStrokeJoin(Paint.Join.ROUND);
+                break;
+            case ToolFlag.SHAPE:
+                setStrokeCap(Paint.Cap.SQUARE);
+                setStrokeJoin(Paint.Join.MITER);
+                break;
+        }
+
     }
 
     private void saveData() {
@@ -429,8 +440,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public final static int IMAGE_WIDTH_MIN = 1;
     public final static int IMAGE_HEIGHT_MIN = 1;
-    public final static int IMAGE_WIDTH_MAX = 2048;
-    public final static int IMAGE_HEIGHT_MAX = 2048;
+    public final static int IMAGE_WIDTH_MAX = 1024;
+    public final static int IMAGE_HEIGHT_MAX = 1024;
     
     public static int TEXT_SIZE_INTEGER() {
         return ApplicationUtils.getResources().getInteger(R.integer.text_size_integer);
