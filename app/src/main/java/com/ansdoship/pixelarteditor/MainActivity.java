@@ -188,27 +188,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if (toolBufferPool == null) {
             String cacheBitmapPathname = getCurrentBitmapPathname();
-            Bitmap bitmap = BitmapDecoder.decodeFile(cacheBitmapPathname);
-            if (bitmap == null) {
-                bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
-                        IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+            Bitmap bitmap = null;
+            try {
+                bitmap = BitmapDecoder.decodeFile(cacheBitmapPathname);
             }
-            replaceCacheBitmap(bitmap);
-            setBitmap(bitmap);
-        }
-        else {
-            String cacheBitmapPathname = getCacheBitmapPathname();
-            Bitmap bitmap = BitmapDecoder.decodeFile(cacheBitmapPathname);
-            if (bitmap == null) {
-                bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
-                        IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+            finally {
+                if (bitmap == null) {
+                    bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                            IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+                }
                 replaceCacheBitmap(bitmap);
                 setBitmap(bitmap);
             }
-            else {
+        }
+        else {
+            String cacheBitmapPathname = getCacheBitmapPathname();
+            Bitmap bitmap = null;
+            try {
+                bitmap = BitmapDecoder.decodeFile(cacheBitmapPathname);
+            }
+            finally {
+                if (bitmap == null) {
+                    bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                            IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+                    replaceCacheBitmap(bitmap);
+                    setBitmap(bitmap);
+                }
+                else {
+                    replaceCacheBitmap(bitmap);
+                    toolBufferPool.setCacheBitmap(bitmap);
+                    toolBufferPool.flushCurrentBitmap();
+                }
                 replaceCacheBitmap(bitmap);
-                toolBufferPool.setCacheBitmap(bitmap);
-                toolBufferPool.flushCurrentBitmap();
+                setBitmap(bitmap);
             }
         }
 
