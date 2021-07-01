@@ -184,52 +184,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean readOnlyMode;
 
     private void loadData() {
-        if (toolBufferPool == null) {
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    Bitmap bitmap = BitmapDecoder.decodeFile(getCurrentBitmapPathname());
-                    if (bitmap == null) {
-                        bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
-                                IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
-                    }
-                    replaceCacheBitmap(bitmap);
-                    setBitmap(cacheBitmap);
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Bitmap bitmap = BitmapDecoder.decodeFile(getCurrentBitmapPathname());
+                if (bitmap == null) {
+                    bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                            IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
                 }
-            });
-            thread.start();
-            try {
-                thread.join();
+                replaceCacheBitmap(bitmap);
+                setBitmap(cacheBitmap);
             }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        });
+        thread.start();
+        try {
+            thread.join();
         }
-        else {
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    Bitmap bitmap = BitmapDecoder.decodeFile(getCacheBitmapPathname());
-                    if (bitmap == null) {
-                        bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
-                                IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
-                        replaceCacheBitmap(bitmap);
-                        setBitmap(cacheBitmap);
-                    }
-                    else {
-                        replaceCacheBitmap(bitmap);
-                        toolBufferPool.setCacheBitmap(cacheBitmap);
-                        toolBufferPool.flushCurrentBitmap();
-                    }
-                }
-            });
-            thread.start();
-            try {
-                thread.join();
-            }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         gridPaint = new Paint();
@@ -369,18 +342,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         editor.putString(KEY_BUILTIN_PALETTE, PaletteFactory.encodeString(builtinPalette));
         editor.apply();
 
-        String cacheBitmapPathname = getCacheBitmapPathname();
-        BitmapEncoder.encodeFile(cacheBitmapPathname,
-                toolBufferPool.getCacheBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
-        String currentBitmapPathname = getCurrentBitmapPathname();
-        BitmapEncoder.encodeFile(currentBitmapPathname,
+        BitmapEncoder.encodeFile(getCurrentBitmapPathname(),
                 getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
-        BitmapUtils.recycle(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
 
-        if (externalPalette != null) {
-            PaletteFactory.encodeFile(externalPalette, getExternalPalettePathname(externalPaletteName), true);
+    }
+
+    private void releaseData() {
+        Bitmap currentBitmap = null;
+        if (toolBufferPool != null) {
+            currentBitmap = getCurrentBitmap();
         }
-
+        BitmapUtils.recycle(cacheBitmap, currentBitmap, canvasBackgroundBitmap);
     }
 
     public static String IMAGE_NAME_DEFAULT() {
@@ -440,8 +412,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public final static int IMAGE_WIDTH_MIN = 1;
     public final static int IMAGE_HEIGHT_MIN = 1;
-    public final static int IMAGE_WIDTH_MAX = 1024;
-    public final static int IMAGE_HEIGHT_MAX = 1024;
+    public final static int IMAGE_WIDTH_MAX = 4096;
+    public final static int IMAGE_HEIGHT_MAX = 4096;
     
     public static int TEXT_SIZE_INTEGER() {
         return ApplicationUtils.getResources().getInteger(R.integer.text_size_integer);
@@ -732,12 +704,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void loadExternalPalette(@Nullable String externalPaletteName) {
-        if (externalPalette != null) {
-            if (!this.externalPaletteName.equals(externalPaletteName)) {
-                PaletteFactory.encodeFile(externalPalette,
-                        getExternalPalettePathname(this.externalPaletteName), true);
-            }
-        }
         if (externalPaletteName != null) {
             externalPalette = PaletteFactory.decodeFile(getExternalPalettePathname(externalPaletteName));
             if (externalPalette != null) {
@@ -776,17 +742,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @NonNull
-    public static String getCacheBitmapName() {
-        return "CACHE.png";
-    }
-
-    @NonNull
-    public static String getCacheBitmapPathname() {
-        String cachePath = EnvironmentUtils.getInternalCacheDirPath();
-        return cachePath + "/" + getCacheBitmapName();
-    }
-
-    @NonNull
     public static String getCurrentBitmapName() {
         return "CURRENT.png";
     }
@@ -819,7 +774,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private boolean dataSaved = false;
-    private boolean uiLoaded = false;
+    private boolean dataLoaded = false;
 
     // WIDGETS
     // TopBar
@@ -1860,6 +1815,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 listPalettes.setCheckedPaletteColor(dialogTempColor);
+                if (paletteFlag == PaletteFlag.EXTERNAL) {
+                    PaletteFactory.encodeFile(externalPalette,
+                            getExternalPalettePathname(externalPaletteName), true);
+                }
                 flushColors(dialogTempColor);
             }
         });
@@ -3124,8 +3083,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    saveData();
-                    dataSaved = true;
+                    if (dataLoaded) {
+                        saveData();
+                        dataSaved = true;
+                    }
                 }
             });
             thread.start();
@@ -3150,8 +3111,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    saveData();
-                    dataSaved = true;
+                    if (dataLoaded) {
+                        saveData();
+                        dataSaved = true;
+                    }
                 }
             });
             thread.start();
@@ -3170,34 +3133,59 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    // On restore instance state
     @Override
-    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        if (dataSaved && uiLoaded) {
-            loadData();
+    protected void onResume() {
+        if (dataSaved) {
             dataSaved = false;
         }
+        super.onResume();
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        if (dataSaved && uiLoaded) {
-            loadData();
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        if (dataSaved) {
             dataSaved = false;
+        }
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (!dataSaved) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (dataLoaded) {
+                        saveData();
+                        dataSaved = true;
+                    }
+                }
+            });
+            thread.start();
+            try {
+                thread.join();
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            finally {
+                releaseData();
+                super.onDestroy();
+            }
+        }
+        else {
+            releaseData();
+            super.onDestroy();
         }
     }
 
     // On create
-    @SuppressLint({"ClickableViewAccessibility", "SetTextI18n"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-
         dataSaved = false;
-        uiLoaded = false;
+        dataLoaded = false;
 
         // Get permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -3210,6 +3198,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 return;
             }
         }
+
+        // Load data
+        loadActivityData();
+        dataLoaded = true;
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void loadActivityData() {
 
         CrashHandler.getInstance().init(this);
 
@@ -3259,8 +3255,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         listPalettes = findViewById(R.id.list_palettes);
         // CanvasView
         canvasView = findViewById(R.id.canvas_view);
-
-        uiLoaded = true;
 
         // Load data
         preferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
@@ -3722,6 +3716,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                 upX < getCurrentBitmap().getWidth() &&
                                                 upY < getCurrentBitmap().getHeight()) {
                                             listPalettes.setCheckedPaletteColor(getCurrentBitmap().getPixel(upX, upY));
+                                            if (paletteFlag == PaletteFlag.EXTERNAL) {
+                                                PaletteFactory.encodeFile(externalPalette,
+                                                        getExternalPalettePathname(externalPaletteName), true);
+                                            }
                                             flushColors(listPalettes.getCheckedPaletteColor());
                                             groupTools.checkIndex(0);
                                         }
@@ -3884,7 +3882,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 listPalettes.setPalette(builtinPalette);
                 break;
             case PaletteFlag.EXTERNAL:
-               loadExternalPalette(externalPaletteName);
+                loadExternalPalette(externalPaletteName);
                 if (externalPalette == null) {
                     paletteFlag = PaletteFlag.INTERNAL;
                     listPalettes.setPalette(builtinPalette);
