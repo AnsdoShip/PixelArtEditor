@@ -185,42 +185,51 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean readOnlyMode;
 
     private void loadData() {
-
         if (toolBufferPool == null) {
-            String cacheBitmapPathname = getCurrentBitmapPathname();
-            Bitmap bitmap = null;
-            try {
-                bitmap = BitmapDecoder.decodeFile(cacheBitmapPathname);
-            }
-            finally {
-                if (bitmap == null) {
-                    bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
-                            IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Bitmap bitmap = BitmapDecoder.decodeFile(getCurrentBitmapPathname());
+                    if (bitmap == null) {
+                        bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                                IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+                    }
+                    replaceCacheBitmap(bitmap);
+                    setBitmap(cacheBitmap);
                 }
-                replaceCacheBitmap(bitmap);
-                setBitmap(bitmap);
+            });
+            thread.start();
+            try {
+                thread.join();
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
         else {
-            String cacheBitmapPathname = getCacheBitmapPathname();
-            Bitmap bitmap = null;
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Bitmap bitmap = BitmapDecoder.decodeFile(getCacheBitmapPathname());
+                    if (bitmap == null) {
+                        bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                                IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+                        replaceCacheBitmap(bitmap);
+                        setBitmap(cacheBitmap);
+                    }
+                    else {
+                        replaceCacheBitmap(bitmap);
+                        toolBufferPool.setCacheBitmap(cacheBitmap);
+                        toolBufferPool.flushCurrentBitmap();
+                    }
+                }
+            });
+            thread.start();
             try {
-                bitmap = BitmapDecoder.decodeFile(cacheBitmapPathname);
+                thread.join();
             }
-            finally {
-                if (bitmap == null) {
-                    bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
-                            IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
-                    replaceCacheBitmap(bitmap);
-                    setBitmap(bitmap);
-                }
-                else {
-                    replaceCacheBitmap(bitmap);
-                    toolBufferPool.setCacheBitmap(bitmap);
-                    toolBufferPool.flushCurrentBitmap();
-                }
-                replaceCacheBitmap(bitmap);
-                setBitmap(bitmap);
+            catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
