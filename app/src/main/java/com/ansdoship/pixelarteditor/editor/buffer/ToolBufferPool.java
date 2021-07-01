@@ -30,16 +30,19 @@ import com.tianscar.simplebitmap.BitmapUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public final class ToolBufferPool {
 
     private Bitmap mCacheBitmap;
     private Bitmap mCurrentBitmap;
+    private final Canvas mCanvas;
     private List<ToolBuffer> mToolBufferList;
     private int index;
     private final int maxSize;
     private final Paint mEraser;
     private final Paint mBitmapPaint;
+    private final ReentrantReadWriteLock mReadWriteLock;
 
     private boolean tempMode;
 
@@ -52,6 +55,7 @@ public final class ToolBufferPool {
         }
         tempMode = false;
         mCurrentBitmap = Bitmap.createBitmap(mCacheBitmap);
+        mCanvas = new Canvas();
         mToolBufferList = new ArrayList<>(maxSize);
         index = -1;
         this.maxSize = maxSize;
@@ -65,6 +69,7 @@ public final class ToolBufferPool {
         mBitmapPaint.setAntiAlias(false);
         mBitmapPaint.setDither(false);
         mBitmapPaint.setFilterBitmap(false);
+        mReadWriteLock = new ReentrantReadWriteLock(true);
     }
 
     @NonNull
@@ -73,25 +78,31 @@ public final class ToolBufferPool {
     }
 
     public void addToolBuffer (@NonNull ToolBuffer toolBuffer) {
-        setTempModeDisabled();
-        drawToolBuffer(mCurrentBitmap, toolBuffer);
-        if (getRedoCount() > 0) {
-            mToolBufferList = mToolBufferList.subList(0, index + 1);
+        mReadWriteLock.writeLock().lock();
+        try {
+            setTempModeDisabled();
+            drawToolBuffer(mCurrentBitmap, toolBuffer);
+            if (getRedoCount() > 0) {
+                mToolBufferList = mToolBufferList.subList(0, index + 1);
+            }
+            mToolBufferList.add(toolBuffer);
+            int size = mToolBufferList.size();
+            index ++;
+            if (size > maxSize) {
+                index = maxSize - 1;
+                int subIndex = size - maxSize;
+                for (int i = 0; i < subIndex; i++) {
+                    drawToolBuffer(mCacheBitmap, mToolBufferList.get(i));
+                }
+                replaceCacheBitmap(Bitmap.createBitmap(mCacheBitmap));
+                if (mToolBufferList.get(0).getBufferFlag() == BufferFlag.BITMAP) {
+                    BitmapUtils.recycle(((BitmapBuffer)(mToolBufferList.get(0))).getBitmap());
+                }
+                mToolBufferList = mToolBufferList.subList(subIndex, size);
+            }
         }
-        mToolBufferList.add(toolBuffer);
-        int size = mToolBufferList.size();
-        index ++;
-        if (size > maxSize) {
-            index = maxSize - 1;
-            int subIndex = size - maxSize;
-            for (int i = 0; i < subIndex; i++) {
-                drawToolBuffer(mCacheBitmap, mToolBufferList.get(i));
-            }
-            replaceCacheBitmap(Bitmap.createBitmap(mCacheBitmap));
-            if (mToolBufferList.get(0).getBufferFlag() == BufferFlag.BITMAP) {
-                BitmapUtils.recycle(((BitmapBuffer)(mToolBufferList.get(0))).getBitmap());
-            }
-            mToolBufferList = mToolBufferList.subList(subIndex, size);
+        finally {
+            mReadWriteLock.writeLock().unlock();
         }
     }
 
@@ -111,65 +122,121 @@ public final class ToolBufferPool {
     }
 
     public void addTempToolBuffer (@NonNull ToolBuffer toolBuffer) {
-        setTempModeEnabled();
-        drawToolBuffer(mCurrentBitmap, toolBuffer);
+        mReadWriteLock.writeLock().lock();
+        try {
+            setTempModeEnabled();
+            drawToolBuffer(mCurrentBitmap, toolBuffer);
+        }
+        finally {
+            mReadWriteLock.writeLock().unlock();
+        }
     }
 
     public void clearTempToolBuffers() {
-        if (tempMode) {
-            flushCurrentBitmap();
+        mReadWriteLock.writeLock().lock();
+        try {
+            if (tempMode) {
+                flushCurrentBitmap();
+            }
+        }
+        finally {
+            mReadWriteLock.writeLock().unlock();
         }
     }
 
     public void setCacheBitmap(Bitmap cacheBitmap) {
-        mCacheBitmap = cacheBitmap;
+        mReadWriteLock.writeLock().lock();
+        try {
+            mCacheBitmap = cacheBitmap;
+        }
+        finally {
+            mReadWriteLock.writeLock().unlock();
+        }
     }
 
     public Bitmap getCacheBitmap() {
-        return mCacheBitmap;
-    }
-
-    public void setCurrentBitmap(Bitmap currentBitmap) {
-        mCurrentBitmap = currentBitmap;
+        mReadWriteLock.readLock().lock();
+        try {
+            return mCacheBitmap;
+        }
+        finally {
+            mReadWriteLock.readLock().unlock();
+        }
     }
 
     public Bitmap getCurrentBitmap () {
-        return mCurrentBitmap;
+        mReadWriteLock.readLock().lock();
+        try {
+            return mCurrentBitmap;
+        }
+        finally {
+            mReadWriteLock.readLock().unlock();
+        }
     }
 
     public void undo () {
-        index -= 1;
-        if (index < -1) {
-            index = -1;
-            return;
+        mReadWriteLock.writeLock().lock();
+        try {
+            index -= 1;
+            if (index < -1) {
+                index = -1;
+                return;
+            }
+            flushCurrentBitmap();
         }
-        flushCurrentBitmap();
+        finally {
+            mReadWriteLock.writeLock().unlock();
+        }
     }
 
     public void redo () {
-        index += 1;
-        if (index >= mToolBufferList.size()) {
-            index = mToolBufferList.size() - 1;
-            return;
+        mReadWriteLock.writeLock().lock();
+        try {
+            index += 1;
+            if (index >= mToolBufferList.size()) {
+                index = mToolBufferList.size() - 1;
+                return;
+            }
+            flushCurrentBitmap();
         }
-        flushCurrentBitmap();
+        finally {
+            mReadWriteLock.writeLock().unlock();
+        }
     }
 
     public int getUndoCount () {
-        return index + 1;
+        mReadWriteLock.readLock().lock();
+        try {
+            return index + 1;
+        }
+        finally {
+            mReadWriteLock.readLock().unlock();
+        }
     }
 
     public int getRedoCount () {
-        if (mToolBufferList.size() - 1 > index) {
-            return mToolBufferList.size() - 1 - index;
+        mReadWriteLock.readLock().lock();
+        try {
+            if (mToolBufferList.size() - 1 > index) {
+                return mToolBufferList.size() - 1 - index;
+            }
+            return 0;
         }
-        return 0;
+        finally {
+            mReadWriteLock.readLock().unlock();
+        }
     }
 
     public void flushCurrentBitmap() {
-        replaceCurrentBitmap(Bitmap.createBitmap(mCacheBitmap));
-        for (int i = 0; i <= index; i ++) {
-            drawToolBuffer(mCurrentBitmap, mToolBufferList.get(i));
+        mReadWriteLock.writeLock().lock();
+        try {
+            replaceCurrentBitmap(Bitmap.createBitmap(mCacheBitmap));
+            for (int i = 0; i <= index; i ++) {
+                drawToolBuffer(mCurrentBitmap, mToolBufferList.get(i));
+            }
+        }
+        finally {
+            mReadWriteLock.writeLock().unlock();
         }
     }
 
@@ -192,7 +259,8 @@ public final class ToolBufferPool {
     }
 
     private void drawToolBuffer (@NonNull Bitmap bitmap, @NonNull ToolBuffer toolBuffer) {
-        Canvas canvas = new Canvas(bitmap);
+        Canvas canvas = mCanvas;
+        canvas.setBitmap(bitmap);
         switch (toolBuffer.getBufferFlag()) {
             case BufferFlag.MULTIPLE:
                 for (ToolBuffer buffer : ((MultiBuffer)toolBuffer).getToolBuffers()) {

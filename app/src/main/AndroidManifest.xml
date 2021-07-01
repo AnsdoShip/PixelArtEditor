@@ -35,8 +35,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true"
-        android:largeHeap="true"
-        android:hardwareAccelerated="false">
+        android:largeHeap="true">
 
         <activity android:name="com.ansdoship.pixelarteditor.MainActivity">
             <intent-filter>

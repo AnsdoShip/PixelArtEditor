@@ -188,27 +188,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if (toolBufferPool == null) {
             String cacheBitmapPathname = getCurrentBitmapPathname();
-            if (cacheBitmapPathname != null) {
-                replaceCacheBitmap(BitmapDecoder.decodeFile(cacheBitmapPathname));
+            Bitmap bitmap = BitmapDecoder.decodeFile(cacheBitmapPathname);
+            if (bitmap == null) {
+                bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                        IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
             }
-            if(cacheBitmap == null) {
-                replaceCacheBitmap(Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
-                        IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888));
-            }
-            setBitmap(cacheBitmap);
+            replaceCacheBitmap(bitmap);
+            setBitmap(bitmap);
         }
         else {
             String cacheBitmapPathname = getCacheBitmapPathname();
-            if (cacheBitmapPathname != null) {
-                replaceCacheBitmap(BitmapDecoder.decodeFile(cacheBitmapPathname));
-            }
-            if (cacheBitmap == null) {
-                replaceCacheBitmap(Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
-                        IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888));
-                setBitmap(cacheBitmap);
+            Bitmap bitmap = BitmapDecoder.decodeFile(cacheBitmapPathname);
+            if (bitmap == null) {
+                bitmap = Bitmap.createBitmap(IMAGE_WIDTH_DEFAULT,
+                        IMAGE_HEIGHT_DEFAULT, Bitmap.Config.ARGB_8888);
+                replaceCacheBitmap(bitmap);
+                setBitmap(bitmap);
             }
             else {
-                toolBufferPool.setCacheBitmap(cacheBitmap);
+                replaceCacheBitmap(bitmap);
+                toolBufferPool.setCacheBitmap(bitmap);
                 toolBufferPool.flushCurrentBitmap();
             }
         }
@@ -339,15 +338,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         editor.apply();
 
         String cacheBitmapPathname = getCacheBitmapPathname();
-        if (cacheBitmapPathname != null) {
-            BitmapEncoder.encodeFile(cacheBitmapPathname,
-                    toolBufferPool.getCacheBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
-        }
+        BitmapEncoder.encodeFile(cacheBitmapPathname,
+                toolBufferPool.getCacheBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
         String currentBitmapPathname = getCurrentBitmapPathname();
-        if (currentBitmapPathname != null) {
-            BitmapEncoder.encodeFile(currentBitmapPathname,
-                    getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
-        }
+        BitmapEncoder.encodeFile(currentBitmapPathname,
+                getCurrentBitmap(), true, BitmapEncoder.CompressFormat.PNG, 100);
         BitmapUtils.recycle(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
 
         if (externalPalette != null) {
@@ -415,6 +410,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public final static int IMAGE_HEIGHT_MIN = 1;
     public final static int IMAGE_WIDTH_MAX = 2048;
     public final static int IMAGE_HEIGHT_MAX = 2048;
+    
+    public static int TEXT_SIZE_INTEGER() {
+        return ApplicationUtils.getResources().getInteger(R.integer.text_size_integer);
+    }
 
     private SharedPreferences preferences;
 
@@ -2280,7 +2279,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(15);
+            tvMessage.setTextSize(TEXT_SIZE_INTEGER());
             tvMessage.invalidate();
         }
     }
@@ -2572,7 +2571,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(15);
+            tvMessage.setTextSize(TEXT_SIZE_INTEGER());
             tvMessage.invalidate();
         }
     }
@@ -2890,7 +2889,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(15);
+            tvMessage.setTextSize(TEXT_SIZE_INTEGER());
             tvMessage.invalidate();
         }
     }
@@ -2911,7 +2910,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(15);
+            tvMessage.setTextSize(TEXT_SIZE_INTEGER());
             tvMessage.invalidate();
         }
     }
@@ -2923,7 +2922,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(15);
+            tvMessage.setTextSize(TEXT_SIZE_INTEGER());
             tvMessage.invalidate();
         }
     }
@@ -3022,7 +3021,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
         TextView tvMessage = Utils.getMessageView(dialog);
         if (tvMessage != null) {
-            tvMessage.setTextSize(15);
+            tvMessage.setTextSize(TEXT_SIZE_INTEGER());
             tvMessage.invalidate();
         }
     }
@@ -3403,13 +3402,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             moveY = downY;
                             lastMoveX = downX;
                             lastMoveY = downY;
-                            path.moveTo(downX + 0.5f * paintWidth, downY + 0.5f * paintWidth);
+                            path.moveTo(downX + 0.5f, downY + 0.5f);
                             switch (toolFlag) {
                                 case ToolFlag.PAINT:
-                                    toolBufferPool.addTempToolBuffer(new PointBuffer(paint, downX, downY));
+                                    toolBufferPool.addTempToolBuffer(new PointBuffer(paint, downX + 0.5f, downY + 0.5f));
                                     break;
                                 case ToolFlag.ERASER:
-                                    toolBufferPool.addTempToolBuffer(new PointBuffer(eraser, downX, downY));
+                                    toolBufferPool.addTempToolBuffer(new PointBuffer(eraser, downX + 0.5f, downY + 0.5f));
                                     break;
                                 case ToolFlag.SELECTION:
                                     switch (selectionFlag) {
@@ -3491,7 +3490,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     case ToolFlag.PAINT:
                                     case ToolFlag.ERASER:
                                         int cX = (lastMoveX + moveX) / 2, cY = (lastMoveY + moveY) / 2;
-                                        path.quadTo(lastMoveX + 0.5f * paintWidth, lastMoveY + 0.5f * paintWidth,cX + 0.5f * paintWidth, cY + 0.5f * paintWidth);
+                                        path.quadTo(lastMoveX + 0.5f, lastMoveY + 0.5f,cX + 0.5f, cY + 0.5f);
                                         lastMoveX = moveX;
                                         lastMoveY = moveY;
                                         break;
@@ -3500,8 +3499,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         path.reset();
                                         switch (shapeFlag) {
                                             case ToolFlag.ShapeFlag.LINE:
-                                                path.moveTo(downX + 0.5f * paintWidth, downY + 0.5f * paintWidth);
-                                                path.lineTo(moveX + 0.5f * paintWidth, moveY + 0.5f * paintWidth);
+                                                path.moveTo(downX + 0.5f, downY + 0.5f);
+                                                path.lineTo(moveX + 0.5f, moveY + 0.5f);
                                                 break;
                                             case ToolFlag.ShapeFlag.CIRCLE:
                                                 int circleLeft = Math.min(downX, moveX);
@@ -3590,11 +3589,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 switch (toolFlag) {
                                     case ToolFlag.PAINT:
                                         toolBufferPool.addTempToolBuffer(
-                                                new MultiBuffer(new PointBuffer(paint, downX, downY), new PaintBuffer(paint, path)));
+                                                new MultiBuffer(new PointBuffer(paint, downX + 0.5f, downY + 0.5f), new PaintBuffer(paint, path)));
                                         break;
                                     case ToolFlag.ERASER:
                                         toolBufferPool.addTempToolBuffer(
-                                                new MultiBuffer(new PointBuffer(eraser, downX, downY), new PaintBuffer(eraser, path)));
+                                                new MultiBuffer(new PointBuffer(eraser, downX + 0.5f, downY + 0.5f), new PaintBuffer(eraser, path)));
                                         break;
                                     case ToolFlag.SHAPE:
                                         toolBufferPool.addTempToolBuffer(new PaintBuffer(paint, path));
@@ -3654,11 +3653,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 switch (toolFlag) {
                                     case ToolFlag.PAINT:
                                         toolBufferPool.addToolBuffer(
-                                                new MultiBuffer(new PointBuffer(paint, downX, downY), new PaintBuffer(paint, path)));
+                                                new MultiBuffer(new PointBuffer(paint, downX + 0.5f, downY + 0.5f), new PaintBuffer(paint, path)));
                                         break;
                                     case ToolFlag.ERASER:
                                         toolBufferPool.addToolBuffer(
-                                                new MultiBuffer(new PointBuffer(eraser, downX, downY), new PaintBuffer(eraser, path)));
+                                                new MultiBuffer(new PointBuffer(eraser, downX + 0.5f, downY + 0.5f), new PaintBuffer(eraser, path)));
                                         break;
                                     case ToolFlag.SHAPE:
                                         toolBufferPool.addToolBuffer(new PaintBuffer(paint, path));
@@ -3748,7 +3747,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 switch (checkedId) {
                     case R.id.img_paint:
                         toolFlag = ToolFlag.PAINT;
-                        setStrokeCap(Paint.Cap.SQUARE);
+                        setStrokeCap(Paint.Cap.ROUND);
                         setStrokeJoin(Paint.Join.ROUND);
                         imgPaint.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;
@@ -3760,7 +3759,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case R.id.img_eraser:
                         toolFlag = ToolFlag.ERASER;
-                        setStrokeCap(Paint.Cap.SQUARE);
+                        setStrokeCap(Paint.Cap.ROUND);
                         setStrokeJoin(Paint.Join.ROUND);
                         imgEraser.setColorFilter(ContextCompat.getColor(MainActivity.this, R.color.colorTheme));
                         break;

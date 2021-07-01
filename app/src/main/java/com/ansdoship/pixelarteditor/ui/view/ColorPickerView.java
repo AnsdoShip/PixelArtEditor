@@ -164,8 +164,8 @@ public class ColorPickerView extends LinearLayout {
         float y = viewHue.getMeasuredHeight() - (getHue() * viewHue.getMeasuredHeight() / 360.f);
         if (y == viewHue.getMeasuredHeight()) y = 0.f;
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) viewCursor.getLayoutParams();
-        layoutParams.leftMargin = (int) (viewHue.getLeft() - Math.floor(viewCursor.getMeasuredWidth() / 2) - viewContainer.getPaddingLeft());
-        layoutParams.topMargin = (int) (viewHue.getTop() + y - Math.floor(viewCursor.getMeasuredHeight() / 2) - viewContainer.getPaddingTop());
+        layoutParams.leftMargin = (int) (viewHue.getLeft() - Math.floor(viewCursor.getMeasuredWidth() * 0.5f) - viewContainer.getPaddingLeft());
+        layoutParams.topMargin = (int) (viewHue.getTop() + y - Math.floor(viewCursor.getMeasuredHeight() * 0.5f) - viewContainer.getPaddingTop());
         viewCursor.setLayoutParams(layoutParams);
     }
 
@@ -173,8 +173,8 @@ public class ColorPickerView extends LinearLayout {
         float x = getSat() * viewSatVal.getMeasuredWidth();
         float y = (1.f - getVal()) * viewSatVal.getMeasuredHeight();
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) viewTarget.getLayoutParams();
-        layoutParams.leftMargin = (int) (viewSatVal.getLeft() + x - Math.floor(viewTarget.getMeasuredWidth() / 2) - viewContainer.getPaddingLeft());
-        layoutParams.topMargin = (int) (viewSatVal.getTop() + y - Math.floor(viewTarget.getMeasuredHeight() / 2) - viewContainer.getPaddingTop());
+        layoutParams.leftMargin = (int) (viewSatVal.getLeft() + x - Math.floor(viewTarget.getMeasuredWidth() * 0.5f) - viewContainer.getPaddingLeft());
+        layoutParams.topMargin = (int) (viewSatVal.getTop() + y - Math.floor(viewTarget.getMeasuredHeight() * 0.5f) - viewContainer.getPaddingTop());
         viewTarget.setLayoutParams(layoutParams);
     }
 

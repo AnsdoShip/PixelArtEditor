@@ -23,8 +23,8 @@ android {
         applicationId "com.ansdoship.pixelarteditor"
         minSdkVersion 16
         targetSdkVersion 30
-        versionCode 14
-        versionName "0.0.3.4-beta"
+        versionCode 15
+        versionName "0.0.3.5-beta"
         vectorDrawables {
             useSupportLibrary = true
         }

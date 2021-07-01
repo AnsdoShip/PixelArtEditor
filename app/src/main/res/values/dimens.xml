@@ -18,5 +18,6 @@
 
 <resources>
     <dimen name="DP_VALUE_1">1dp</dimen>
-    <dimen name="text_size">15sp</dimen>
+    <dimen name="text_size">14sp</dimen>
+    <integer name="text_size_integer">14</integer>
 </resources>

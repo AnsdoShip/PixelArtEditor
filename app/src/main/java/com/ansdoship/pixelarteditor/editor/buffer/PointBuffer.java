@@ -21,11 +21,11 @@ import android.graphics.Paint;
 
 public class PointBuffer extends ToolBuffer {
 
-    private final int mPointX;
-    private final int mPointY;
+    private final float mPointX;
+    private final float mPointY;
     private final Paint mPaint;
 
-    public PointBuffer(Paint paint, int pointX, int pointY) {
+    public PointBuffer(Paint paint, float pointX, float pointY) {
         mPaint = new Paint(paint);
         mPointX = pointX;
         mPointY = pointY;
@@ -35,11 +35,11 @@ public class PointBuffer extends ToolBuffer {
         return mPaint;
     }
 
-    public int getPointX() {
+    public float getPointX() {
         return mPointX;
     }
 
-    public int getPointY() {
+    public float getPointY() {
         return mPointY;
     }
 

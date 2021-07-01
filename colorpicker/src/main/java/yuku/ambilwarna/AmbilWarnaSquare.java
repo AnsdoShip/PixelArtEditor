@@ -20,9 +20,14 @@ import android.view.View;
  */
 
 public class AmbilWarnaSquare extends View {
+
 	Paint paint;
 	Shader luar;
 	final float[] color = { 1.f, 1.f, 1.f };
+
+	public AmbilWarnaSquare(Context context) {
+		super(context);
+	}
 
 	public AmbilWarnaSquare(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -42,7 +47,7 @@ public class AmbilWarnaSquare extends View {
 		Shader dalam = new LinearGradient(0.f, 0.f, this.getMeasuredWidth(), 0.f, 0xffffffff, rgb, TileMode.CLAMP);
 		ComposeShader shader = new ComposeShader(luar, dalam, PorterDuff.Mode.MULTIPLY);
 		paint.setShader(shader);
-		canvas.drawRect(0.f, 0.f, this.getMeasuredWidth(), this.getMeasuredHeight(), paint);
+		canvas.drawPaint(paint);
 	}
 
 	public void setHue(float hue) {
@@ -54,4 +59,5 @@ public class AmbilWarnaSquare extends View {
 	public boolean performClick() {
 		return super.performClick();
 	}
+
 }
