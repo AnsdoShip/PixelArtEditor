@@ -105,9 +105,10 @@ import com.tianscar.androidutils.ApplicationUtils;
 import com.tianscar.androidutils.ColorFactory;
 import com.tianscar.androidutils.EnvironmentUtils;
 import com.tianscar.androidutils.MathUtils;
-import com.tianscar.simplebitmap.BitmapDecoder;
-import com.tianscar.simplebitmap.BitmapEncoder;
-import com.tianscar.simplebitmap.BitmapUtils;
+import com.tianscar.quickbitmap.BitmapDecoder;
+import com.tianscar.quickbitmap.BitmapEncoder;
+import com.tianscar.quickbitmap.BitmapPool;
+import com.tianscar.quickbitmap.BitmapUtils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -177,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Palette externalPalette;
 
-    private ToolBufferPool toolBufferPool;
+    private BitmapPool bitmapPool;
 
     private boolean scaleMode;
 
@@ -348,11 +349,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void releaseData() {
-        Bitmap currentBitmap = null;
-        if (toolBufferPool != null) {
-            currentBitmap = getCurrentBitmap();
-        }
-        BitmapUtils.recycle(cacheBitmap, currentBitmap, canvasBackgroundBitmap);
+        BitmapUtils.recycle(cacheBitmap, getCurrentBitmap(), canvasBackgroundBitmap);
+        toolBufferPool.release();
     }
 
     public static String IMAGE_NAME_DEFAULT() {
@@ -412,8 +410,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public final static int IMAGE_WIDTH_MIN = 1;
     public final static int IMAGE_HEIGHT_MIN = 1;
-    public final static int IMAGE_WIDTH_MAX = 4096;
-    public final static int IMAGE_HEIGHT_MAX = 4096;
+    public final static int IMAGE_WIDTH_MAX = 1024;
+    public final static int IMAGE_HEIGHT_MAX = 1024;
     
     public static int TEXT_SIZE_INTEGER() {
         return ApplicationUtils.getResources().getInteger(R.integer.text_size_integer);
@@ -765,8 +763,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void setBitmap(@NonNull Bitmap bitmap) {
         replaceCacheBitmap(bitmap);
-        toolBufferPool = ToolBufferPool.createToolBufferPool(cacheBitmap,
-                MAX_BUFFER_SIZE_DEFAULT, false);
+        bitmapPool = new BitmapPool(BitmapPool.getDefaultDirectory(), BitmapPool.getDefaultLruCacheMaxSize(),
+                BitmapPool.getDefaultDiskLruCacheMaxSize() * 2);
         canvasView.invalidate();
         flushImageSizeView();
         flushImageScaleView();
@@ -3169,12 +3167,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 e.printStackTrace();
             }
             finally {
-                releaseData();
+                if (dataLoaded) {
+                    releaseData();
+                }
                 super.onDestroy();
             }
         }
         else {
-            releaseData();
+            if (dataLoaded) {
+                releaseData();
+            }
             super.onDestroy();
         }
     }
