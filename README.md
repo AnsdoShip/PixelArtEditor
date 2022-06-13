@@ -1,4 +1,4 @@
-# AnsdoShip PixEdit
+# PixEdit
 A simple bitmap-editor for pixel art.
 
 ## NOTICE
