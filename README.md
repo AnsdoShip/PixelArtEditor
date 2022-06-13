@@ -1,5 +1,5 @@
-# Pixel Art Editor
-**A simple android bitmap-editor for pixel art.**  
+# AnsdoShip PixEdit
+A simple android bitmap-editor for pixel art.  
 
 -Supports transparency channel.  
 -Can read & store images in PNG, JPEG & BMP formats.  
