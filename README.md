@@ -2,7 +2,7 @@
 A simple bitmap-editor for pixel art.
 
 ## NOTICE
-The new version is under active development and will support Windows, GNU/Linux and macOS platforms (Desktop version using JavaFX)
+The new version is under active development and will also support all platforms which can run J2SE (Desktop version using AWT)
 
 ## Functions
 -Supports transparency channel.  
