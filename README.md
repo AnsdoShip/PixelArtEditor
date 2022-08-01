@@ -1,5 +1,5 @@
-# PixEdit
-A simple bitmap-editor for pixel art.
+# PixelArtEditor
+A simple Android image editor for pixel art.
 
 ## NOTICE
 For some reason, development is temporarily suspended.
